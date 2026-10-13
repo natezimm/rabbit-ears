@@ -1,0 +1,42 @@
+<div class="tv" [class.flat]="!curved()" [class.glow]="picture().osd.glow" [style.--osd]="picture().osd.color">
+  <!-- Two players so a channel change can cut cleanly. They sit under the glass
+       and are only looked at directly when WebGL is unavailable. -->
+  <video #deckA [class.live]="liveDeck() === 0" playsinline></video>
+  <video #deckB [class.live]="liveDeck() === 1" playsinline></video>
+  <canvas #glass></canvas>
+
+  <!-- The on-screen display is laid out inside a 4:3 safe area so it always
+       sits over the picture, never out in the black bars. -->
+  <div class="osd">
+    <!-- Messages share the top of the screen with the banner, so they take its place. -->
+    @if (!message() && banner(); as channel) {
+      <div class="channel">
+        <div class="channel-number">CH {{ channelNumber(channel) }}</div>
+        <div class="channel-name">{{ channel.name }}</div>
+      </div>
+    }
+
+    @if (message(); as text) {
+      <div class="message">{{ text }}</div>
+    }
+
+    @if (standby()) {
+      <div class="standby">STANDBY</div>
+    }
+
+    @if (volumeShown()) {
+      <div class="volume">
+        <div class="volume-label">{{ muted() ? 'Mute' : 'Volume' }}</div>
+        <div class="volume-row">
+          @for (lit of segments(); track $index) {
+            <span [class.bar]="lit" [class.dot]="!lit"></span>
+          }
+        </div>
+      </div>
+    }
+
+    @if (soundBlocked()) {
+      <div class="hint">PRESS ANY KEY FOR SOUND</div>
+    }
+  </div>
+</div>

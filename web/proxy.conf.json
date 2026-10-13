@@ -1,0 +1,5 @@
+{
+  "/api": { "target": "http://127.0.0.1:5080", "secure": false },
+  "/media": { "target": "http://127.0.0.1:5080", "secure": false },
+  "/hub": { "target": "http://127.0.0.1:5080", "secure": false, "ws": true }
+}

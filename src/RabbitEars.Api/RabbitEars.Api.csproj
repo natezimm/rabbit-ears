@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <!-- Nothing here is culture-sensitive, and this spares the box from needing
+         the system ICU libraries to match what .NET expects. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../RabbitEars.Core/RabbitEars.Core.csproj" />
+  </ItemGroup>
+
+</Project>
