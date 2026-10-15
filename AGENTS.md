@@ -76,7 +76,9 @@ plain video is shown.
 
 **Kept in sync by hand:** `web/src/app/core/models.ts` mirrors the records in
 `RabbitEars.Core/Models.cs` and the picture options in `RabbitEars.Api/BoxOptions.cs`.
-Change both sides together.
+Change both sides together. `ModelSyncTests.cs` reads `models.ts` and fails when
+a field, type, nullability, play reason or `DEFAULT_PICTURE` value differs from
+what the server sends; a new interface also needs an entry in its `Mirrors` map.
 
 **Media:** each folder under the media root is a channel, numbered from 2 in
 A-to-Z order. Episode ids are a hash of the relative path, and `/media/{id}`
