@@ -28,7 +28,27 @@ public sealed class BoxOptions
     public TvSettings Tv { get; set; } = new();
 
     public PictureOptions Picture { get; set; } = new();
+
+    public DemoOptions Demo { get; set; } = new();
 }
+
+/// <summary>
+/// A public demo site rather than a TV at home: every visitor gets a television
+/// of their own, nothing is saved, and the box never powers off or rescans on request.
+/// </summary>
+public sealed class DemoOptions
+{
+    public bool Enabled { get; set; }
+
+    /// <summary>Televisions on at once; past this the one left unwatched longest is switched off.</summary>
+    public int MaxTvs { get; set; } = 100;
+
+    /// <summary>How long a television nobody is watching stays on, so a reload comes back to it.</summary>
+    public double IdleMinutes { get; set; } = 15;
+}
+
+/// <summary>What the web app asks to learn whether it is on a public demo site.</summary>
+public sealed record DemoInfo(bool Enabled);
 
 /// <summary>How the screen looks and cuts between channels. Sent to the TV page as-is.</summary>
 public sealed class PictureOptions

@@ -40,13 +40,21 @@ public sealed class TvHubTests : IAsyncLifetime
         Directory.Delete(_state, recursive: true);
     }
 
-    private async Task<(HubConnection Remote, ChannelReader<TvSnapshot> States)> ConnectRemote()
+    /// <summary>The same box set up as the public demo site.</summary>
+    private WebApplicationFactory<Program> Demo() =>
+        _box.WithWebHostBuilder(host => host.UseSetting("Box:Demo:Enabled", "true"));
+
+    private Task<(HubConnection Remote, ChannelReader<TvSnapshot> States)> ConnectRemote() =>
+        ConnectRemote(_box, "hub/tv");
+
+    private static async Task<(HubConnection Remote, ChannelReader<TvSnapshot> States)> ConnectRemote(
+        WebApplicationFactory<Program> box, string path)
     {
         var states = Channel.CreateUnbounded<TvSnapshot>();
         var remote = new HubConnectionBuilder()
-            .WithUrl(new Uri(_box.Server.BaseAddress, "hub/tv"), options =>
+            .WithUrl(new Uri(box.Server.BaseAddress, path), options =>
             {
-                options.HttpMessageHandlerFactory = _ => _box.Server.CreateHandler();
+                options.HttpMessageHandlerFactory = _ => box.Server.CreateHandler();
                 options.Transports = HttpTransportType.LongPolling;
             })
             .Build();
@@ -110,5 +118,70 @@ public sealed class TvHubTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, episode.StatusCode);
         Assert.Equal("video/mp4", episode.Content.Headers.ContentType!.MediaType);
         Assert.Equal(HttpStatusCode.NotFound, (await http.GetAsync("/media/0000000000000000")).StatusCode);
+    }
+
+    [Fact]
+    public async Task On_the_demo_site_each_visitor_has_a_tv_of_their_own()
+    {
+        await using var demo = Demo();
+        var (first, firstStates) = await ConnectRemote(demo, "hub/tv?room=visitor-one");
+        var (second, secondStates) = await ConnectRemote(demo, "hub/tv?room=visitor-two");
+        await using var _ = first;
+        await using var __ = second;
+        var start = await Next(firstStates, _ => true);
+        await Next(secondStates, _ => true);
+
+        await first.InvokeAsync("ChannelUp");
+        await Next(firstStates, s => s.Revision > start.Revision);
+
+        var http = demo.CreateClient();
+        Assert.Equal(new ChannelInfo(2, "Arthur"),
+            (await http.GetFromJsonAsync<TvSnapshot>("/api/state?room=visitor-two"))!.Channel);
+        Assert.Equal(new ChannelInfo(3, "Dragon Tales"),
+            (await http.GetFromJsonAsync<TvSnapshot>("/api/state?room=visitor-one"))!.Channel);
+    }
+
+    [Fact]
+    public async Task On_the_demo_site_a_connection_with_no_room_is_turned_away()
+    {
+        await using var demo = Demo();
+
+        var closed = new TaskCompletionSource();
+        var (remote, _) = await ConnectRemote(demo, "hub/tv");
+        await using var connection = remote;
+        remote.Closed += _ =>
+        {
+            closed.TrySetResult();
+            return Task.CompletedTask;
+        };
+
+        if (remote.State != HubConnectionState.Disconnected)
+        {
+            await closed.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        }
+        Assert.Equal(HubConnectionState.Disconnected, remote.State);
+    }
+
+    [Fact]
+    public async Task The_demo_site_opens_on_the_demo_page_and_has_no_rescan_button()
+    {
+        await using var demo = Demo();
+        var http = demo.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        var home = await http.GetAsync("/");
+        var info = await http.GetFromJsonAsync<DemoInfo>("/api/demo");
+
+        Assert.Equal(HttpStatusCode.Redirect, home.StatusCode);
+        Assert.Equal("/demo", home.Headers.Location!.OriginalString);
+        Assert.True(info!.Enabled);
+        Assert.Equal(HttpStatusCode.NotFound, (await http.PostAsync("/api/rescan", null)).StatusCode);
+    }
+
+    [Fact]
+    public async Task At_home_the_demo_is_off()
+    {
+        var info = await _box.CreateClient().GetFromJsonAsync<DemoInfo>("/api/demo");
+
+        Assert.False(info!.Enabled);
     }
 }

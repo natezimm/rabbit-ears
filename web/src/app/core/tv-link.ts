@@ -4,6 +4,29 @@ import { HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel } fro
 import { TvSnapshot } from './models';
 
 const RETRY_MS = 2000;
+const ROOM_KEY = 'rabbitears.room';
+
+/**
+ * Which television this browser belongs to. Only the public demo site uses it,
+ * to give every visitor a TV of their own; the box at home ignores it. A phone
+ * that scans the demo's QR code arrives with the TV's room in its address.
+ */
+function pickRoom(): string {
+  const fromAddress = new URLSearchParams(location.search).get('room');
+  let room = fromAddress;
+  try {
+    room ??= localStorage.getItem(ROOM_KEY);
+  } catch {
+    // Storage can be blocked; a fresh room per visit is fine.
+  }
+  room ??= crypto.randomUUID().replaceAll('-', '').slice(0, 12);
+  try {
+    localStorage.setItem(ROOM_KEY, room);
+  } catch {
+    // As above.
+  }
+  return room;
+}
 
 /**
  * The live connection to the box. Every screen and remote shares the same
@@ -14,9 +37,10 @@ const RETRY_MS = 2000;
 export class TvLink {
   readonly state = signal<TvSnapshot | null>(null);
   readonly connected = signal(false);
+  readonly room = pickRoom();
 
   private readonly hub: HubConnection = new HubConnectionBuilder()
-    .withUrl('/hub/tv')
+    .withUrl(`/hub/tv?room=${encodeURIComponent(this.room)}`)
     // The box may be restarting; keep trying for as long as it takes.
     .withAutomaticReconnect({ nextRetryDelayInMilliseconds: () => RETRY_MS })
     .configureLogging(LogLevel.Warning)

@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/.angular/
+**/wwwroot/
+.git/
+.local/
+dev-media/
+publish/
+tests/
