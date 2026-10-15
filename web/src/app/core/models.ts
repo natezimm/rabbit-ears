@@ -1,4 +1,5 @@
 // Mirrors the records in RabbitEars.Core/Models.cs and the options in BoxOptions.cs.
+// ModelSyncTests.cs checks this file against them, so `dotnet test` catches drift.
 
 export interface ChannelInfo {
   number: number;
