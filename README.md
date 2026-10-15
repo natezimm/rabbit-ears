@@ -11,11 +11,9 @@ no apps: just a remote and channels.
 It runs on a mini PC under Linux: one small service that owns the TV, and a
 full-screen browser page that draws the picture.
 
-**Try it: <https://rabbit-ears.onrender.com>** (the free server sleeps when
-nobody is watching, so the first visit can take up to a minute to wake it). Every
-visitor gets a TV of their own; scan the QR code beside it to use your phone as
-the remote. The demo plays clips made for it, since real shows cannot be put on
-a public website.
+There is a public demo site where every visitor gets a TV of their own; scan
+the QR code beside it to use your phone as the remote. It plays clips made for
+it, since real shows cannot be put on a public website.
 
 ![Flipping channels on the demo site: the curved picture, the green channel banner and volume bar, and the remote beside it following along](docs/demo.gif)
 
@@ -163,9 +161,8 @@ a QR code for a phone remote on one page.
 docker build -t rabbit-ears . && docker run --rm -p 8080:8080 rabbit-ears
 ```
 
-It is hosted on [Render](https://render.com)'s free plan from
-[`render.yaml`](render.yaml): in the Render dashboard choose **New > Blueprint**,
-pick this repository, and every push to `main` redeploys it.
+[demo/README.md](demo/README.md) has the steps for hosting it on a server
+behind nginx.
 
 ## How it fits together
 
@@ -186,7 +183,7 @@ web/src/app/
 deploy/                    systemd service, kiosk launcher, installer (run on the box)
 scripts/                   build, deploy to the box, convert shows (run on the laptop)
 docs/box-setup.md          step-by-step checklist for getting the box working
-Dockerfile, render.yaml    the public demo site
+Dockerfile, demo/          the public demo site and how to host it
 ```
 
 The box is the single source of truth. The TV page and the phone only send

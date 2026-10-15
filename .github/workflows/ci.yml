@@ -30,7 +30,7 @@ jobs:
       - run: npm ci
       - run: npx ng build
 
-  # The demo site's container, built the way Render builds it.
+  # The demo site's container, built the way the server builds it.
   demo-image:
     runs-on: ubuntu-latest
     steps:

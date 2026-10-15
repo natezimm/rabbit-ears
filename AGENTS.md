@@ -28,7 +28,8 @@ dotnet test --filter "FullyQualifiedName~ShuffleBagTests"                       
 - There is no linter and no frontend test suite. .NET warnings are errors
   (`Directory.Build.props`).
 - `docker build -t rabbit-ears . && docker run --rm -p 8080:8080 rabbit-ears` runs
-  the public demo site (see "Demo mode" below). `render.yaml` deploys it to Render.
+  the public demo site (see "Demo mode" below). `demo/` has the compose file and
+  nginx config for hosting it.
 - `scripts/` runs on the laptop (`publish.sh`, `deploy.sh YOU@host`,
   `convert-media.sh`). `deploy/` runs on the box. `docs/box-setup.md` is the
   step-by-step for bringing a box up.
