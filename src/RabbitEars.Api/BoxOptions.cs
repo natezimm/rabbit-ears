@@ -13,7 +13,10 @@ public sealed class BoxOptions
 
     public int FirstChannelNumber { get; set; } = 2;
 
-    /// <summary>Formats Chromium plays natively. Anything else is reported as needing conversion.</summary>
+    /// <summary>
+    /// Formats Chromium plays natively. With the browser as the TV, anything else
+    /// is reported as needing conversion; mpv plays these and the common rip formats.
+    /// </summary>
     public string[] VideoExtensions { get; set; } = [".mp4", ".m4v", ".webm", ".mov"];
 
     /// <summary>How often to look for new episodes and show folders. 0 turns it off.</summary>
@@ -29,8 +32,35 @@ public sealed class BoxOptions
 
     public PictureOptions Picture { get; set; } = new();
 
+    public PlayerOptions Player { get; set; } = new();
+
     public DemoOptions Demo { get; set; } = new();
+
+    /// <summary>
+    /// True when mpv draws the picture on the box. The public demo has no box
+    /// screen, so it is always the browser there.
+    /// </summary>
+    public bool UsesMpv => !Demo.Enabled && Player.Kind == PlayerOptions.Mpv;
 }
+
+/// <summary>What draws the TV on the box's own screen.</summary>
+public sealed class PlayerOptions
+{
+    public const string Mpv = "mpv";
+    public const string Browser = "browser";
+
+    /// <summary>
+    /// "mpv" plays the original files, whatever their format. "browser" is the
+    /// <c>/tv</c> page in Chromium, which only plays MP4 and WebM.
+    /// </summary>
+    public string Kind { get; set; } = Mpv;
+
+    /// <summary>The control socket mpv opens and the box connects to.</summary>
+    public string MpvSocket { get; set; } = "/run/rabbitears-tv/mpv.sock";
+}
+
+/// <summary>What the kiosk launcher asks to learn which player to start.</summary>
+public sealed record PlayerInfo(string Kind, string Socket);
 
 /// <summary>
 /// A public demo site rather than a TV at home: every visitor gets a television

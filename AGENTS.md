@@ -77,6 +77,32 @@ The TV page (`web/src/app/tv/`) has three parts:
 With `Picture.Crt.Enabled` false, or no WebGL, the shader is skipped and the
 plain video is shown.
 
+**On the box, mpv is the screen** (`Box:Player:Kind`, `mpv` by default and
+`browser` in Development). The kiosk launcher asks `/api/player` and starts mpv
+with `src/RabbitEars.Api/mpv/` as its config folder; mpv plays the original
+files, so the scanner accepts MKV, AVI and the like. The server drives it over
+mpv's JSON control socket:
+
+- `MpvScreen.cs` does what the TV page does, by sending mpv commands: follows
+  snapshots (`loadfile` with a `start`, volume, `stop` for standby, lavfi
+  `smptebars` for no channels, a lavfi snow clip before a tune), and turns
+  mpv's `end-file` events into `EpisodeEnded`/`EpisodeFailed`. mpv's playlist
+  entry ids play the part of play tokens. Remote keys arrive as
+  `script-message ears ...` from `mpv/input.conf`.
+- `MpvOsd.cs` draws the green display as ASS text in an `osd-overlay`, laid out
+  on the same 960x720 frame as `tv-screen.css`. Keep the two in step.
+- `mpv/crt.glsl` is `crt-shader.ts`'s tube maths as an mpv hook shader. mpv
+  0.37 (Ubuntu 24.04) has no shader parameters, so the server writes a copy
+  with `Picture.Crt` baked into `#define`s into the state folder.
+- `MpvPlayer.cs` connects, reconnects when the kiosk restarts mpv, and feeds
+  `MpvScreen` from one queue, so it never runs two things at once.
+
+mpv runs as the desktop user and the service as `rabbitears`; the socket lives
+in `/run/rabbitears-tv`, which the installer makes group-owned by `rabbitears`.
+To try mpv on a laptop, run the API with `Box__Player__Kind=mpv`, then
+`mpv --config-dir=src/RabbitEars.Api/bin/Debug/net10.0/mpv --input-ipc-server=.local/mpv.sock`
+from the repo root.
+
 **Demo mode** (`Box:Demo:Enabled`, set by the `Dockerfile`) is the public demo
 site. `TvService` then runs one `Television` per room instead of one for the
 house: the browser makes up a room id (`tv-link.ts`, kept in `localStorage` or

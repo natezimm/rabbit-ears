@@ -7,6 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- mpv's settings, keys and tube shader, loaded from /opt/rabbitears/mpv by
+         kiosk.sh. The OSD font is the web app's own copy. -->
+    <Content Include="mpv/**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../../web/public/VT323-Regular.ttf" Link="mpv/fonts/VT323-Regular.ttf"
+             CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../../web/public/OFL.txt" Link="mpv/fonts-license/OFL.txt"
+             CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="../RabbitEars.Core/RabbitEars.Core.csproj" />
   </ItemGroup>
 

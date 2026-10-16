@@ -67,6 +67,12 @@ public sealed partial class TvService : BackgroundService
 
     private bool Demo => _options.Demo.Enabled;
 
+    /// <summary>
+    /// The home television changed. Raised after every broadcast, from whichever
+    /// thread pressed the button, for the box's own screen when mpv draws it.
+    /// </summary>
+    public event Action<TvSnapshot>? HomeChanged;
+
     private DateTimeOffset Now => _clock.GetUtcNow();
 
     /// <summary>
@@ -279,6 +285,7 @@ public sealed partial class TvService : BackgroundService
         }
 
         await _hub.Clients.All.SendAsync("State", snapshot);
+        HomeChanged?.Invoke(snapshot);
         if (snapshot.PoweredOff) BeginShutdown();
     }
 

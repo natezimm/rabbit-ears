@@ -53,6 +53,18 @@ else
 fi
 rm -f "$rule"
 
+echo "==> Player"
+# mpv plays the shows exactly as they are, whatever their format.
+if ! command -v mpv >/dev/null; then
+  apt-get install -y mpv || { apt-get update && apt-get install -y mpv; } \
+    || todo+=("Install mpv for the TV: sudo apt install mpv (until then the TV is the browser page, which only plays MP4)")
+fi
+# mpv runs as you, on the desktop; the service reaches it through a socket in
+# this folder, which is yours and the service's group's. /run is emptied at
+# every boot, so systemd makes the folder again each time.
+echo "d /run/rabbitears-tv 2770 $desktop_user rabbitears -" > /etc/tmpfiles.d/rabbitears.conf
+systemd-tmpfiles --create /etc/tmpfiles.d/rabbitears.conf
+
 echo "==> Start on boot"
 install -m 0644 "$here/rabbitears.service" /etc/systemd/system/rabbitears.service
 systemctl daemon-reload

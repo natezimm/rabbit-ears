@@ -6,7 +6,10 @@ namespace RabbitEars.Api;
 
 /// <param name="Channels">Show folders that have at least one playable episode.</param>
 /// <param name="Files">Episode id to absolute path. The only files the box will ever serve.</param>
-/// <param name="NeedsConversion">Videos in a format the browser cannot play, relative to the media root.</param>
+/// <param name="NeedsConversion">
+/// Videos in a format the TV cannot play, relative to the media root. Only the
+/// browser TV has any; mpv plays them all.
+/// </param>
 public sealed record Library(
     IReadOnlyList<ChannelDefinition> Channels,
     IReadOnlyDictionary<string, string> Files,
@@ -22,8 +25,8 @@ public sealed record Library(
 /// </summary>
 public sealed class LibraryScanner(BoxOptions options, ILogger<LibraryScanner> log)
 {
-    // Common rips that Chromium will not play; worth telling the owner about.
-    private static readonly HashSet<string> UnplayableVideo = new(StringComparer.OrdinalIgnoreCase)
+    // Common rips that Chromium will not play but mpv will.
+    private static readonly HashSet<string> OtherVideo = new(StringComparer.OrdinalIgnoreCase)
     {
         ".mkv", ".avi", ".wmv", ".mpg", ".mpeg", ".ts", ".flv", ".divx", ".vob", ".ogv", ".3gp",
     };
@@ -38,6 +41,7 @@ public sealed class LibraryScanner(BoxOptions options, ILogger<LibraryScanner> l
         }
 
         var playable = new HashSet<string>(options.VideoExtensions, StringComparer.OrdinalIgnoreCase);
+        if (options.UsesMpv) playable.UnionWith(OtherVideo);
         var channels = new List<ChannelDefinition>();
         var files = new Dictionary<string, string>();
         var needsConversion = new List<string>();
@@ -66,7 +70,7 @@ public sealed class LibraryScanner(BoxOptions options, ILogger<LibraryScanner> l
                     files[id] = path;
                     episodes.Add(new Episode(id, Path.GetFileNameWithoutExtension(path)));
                 }
-                else if (UnplayableVideo.Contains(extension))
+                else if (OtherVideo.Contains(extension))
                 {
                     needsConversion.Add(relative);
                 }

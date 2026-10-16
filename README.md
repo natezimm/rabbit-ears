@@ -8,8 +8,9 @@ The picture is bent like a tube TV (bulged glass, rounded corners, scanlines),
 with a chunky green `CH 03` banner and a bars-and-dots volume display. No menus,
 no apps: just a remote and channels.
 
-It runs on a mini PC under Linux: one small service that owns the TV, and a
-full-screen browser page that draws the picture.
+It runs on a mini PC under Linux: one small service that owns the TV, and mpv
+playing the shows full screen, exactly as they were downloaded. On a laptop and
+on the demo site, a browser page draws the same picture instead.
 
 There is a public demo site where every visitor gets a TV of their own; scan
 the QR code beside it to use your phone as the remote. It plays clips made for
@@ -91,17 +92,18 @@ shuffle. With the default `Resume` setting a movie picks up where you left it
 when you flip back, which matters more for a ninety-minute film than for a
 cartoon.
 
-The TV is a browser, so episodes must be H.264 + AAC in MP4 (WebM works too).
-Convert a library once, keeping its folder layout:
+On the box, mpv plays the files as they are: MKV, AVI, MP4, MPEG and the other
+common rip formats, with no converting. The browser TV page (the laptop and the
+demo site) only plays H.264 + AAC in MP4, or WebM, and `GET /api/library` lists
+any files it cannot play. To make a library the browser can play too, convert
+it once, keeping its folder layout:
 
 ```bash
 bash scripts/convert-media.sh /path/to/originals /path/to/converted
 ```
 
-It skips files it has already converted. `GET /api/library` lists the channels
-the box found and any files that still need converting. New episodes and new
-show folders are picked up within ten minutes, or at once with
-`curl -X POST http://localhost:5080/api/rescan`.
+New episodes and new show folders are picked up within ten minutes, or at once
+with `curl -X POST http://localhost:5080/api/rescan`.
 
 ## Settings
 
@@ -118,6 +120,7 @@ joined with two underscores) and restart the service. The ones worth knowing:
 | `Picture.Crt.*` | see the file | `Curvature`, `CornerRadius`, `Vignette`, `ScanlineIntensity`. `Enabled: false` shows the plain video with no shader at all, the lightest option for a weak graphics chip. |
 | `Picture.Osd.Color` | `#4DFF5A` | The phosphor green. |
 | `Tv.InitialVolume` / `VolumeStep` | `60` / `5` | |
+| `Player.Kind` | `mpv` | What draws the box's screen: `mpv` plays any format, `browser` is the `/tv` page in Chromium (MP4 and WebM only). Takes effect at the next login. |
 
 ## Put it on the mini PC
 
@@ -139,8 +142,8 @@ when something is off, is [docs/box-setup.md](docs/box-setup.md). In short:
    ```
 
    The installer starts the service on boot, opens the TV full screen at login,
-   installs Chromium if there is no browser, and stops the screen blanking or
-   locking. Anything it could not do itself is listed at the end.
+   installs mpv (and Chromium, if there is no browser), and stops the screen
+   blanking or locking. Anything it could not do itself is listed at the end.
 3. On the box, turn on **Settings > System > Users > Automatic Login**, set the
    display to 1080p, and pick the TV as the sound output.
 4. Copy shows into `/srv/rabbitears/media/` and reboot.
@@ -174,6 +177,10 @@ src/RabbitEars.Api/      ASP.NET Core: one process that owns the TV
   TvService.cs             the single television; saves state, rescans, broadcasts
   TvHub.cs                 SignalR: button presses in, state out
   LibraryScanner.cs        folders -> channels
+  MpvScreen.cs             the box's screen: drives mpv as tube.ts drives <video>
+  MpvPlayer.cs             keeps mpv connected and feeds MpvScreen one thing at a time
+  MpvOsd.cs                the green on-screen display, drawn as mpv overlay text
+  mpv/                     mpv's settings, remote keys and tube shader
 web/src/app/
   tv/crt-shader.ts         the tube picture (a WebGL shader)
   tv/tube.ts               two video players, so channel changes cut cleanly
