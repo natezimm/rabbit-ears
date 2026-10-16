@@ -16,8 +16,10 @@ public sealed class LibraryScannerTests : IDisposable
         File.WriteAllText(path, "");
     }
 
-    private Library Scan() =>
-        new LibraryScanner(new BoxOptions { MediaRoot = _root }, NullLogger<LibraryScanner>.Instance).Scan();
+    private Library Scan(string player = PlayerOptions.Mpv) =>
+        new LibraryScanner(
+            new BoxOptions { MediaRoot = _root, Player = new PlayerOptions { Kind = player } },
+            NullLogger<LibraryScanner>.Instance).Scan();
 
     [Fact]
     public void Folders_become_channels_numbered_from_two_in_alphabetical_order()
@@ -34,17 +36,31 @@ public sealed class LibraryScannerTests : IDisposable
     }
 
     [Fact]
-    public void Only_browser_playable_files_are_episodes_and_the_rest_are_reported()
+    public void With_the_browser_as_the_tv_only_its_formats_are_episodes_and_the_rest_are_reported()
     {
         Touch("Arthur/S01E01.mp4");
         Touch("Arthur/S01E02.mkv");
         Touch("Arthur/cover.jpg");
         Touch("Arthur/.hidden.mp4");
 
-        var library = Scan();
+        var library = Scan(PlayerOptions.Browser);
 
         Assert.Single(library.Channels[0].Episodes);
         Assert.Equal(["Arthur/S01E02.mkv"], library.NeedsConversion);
+    }
+
+    [Fact]
+    public void With_mpv_as_the_tv_rips_play_as_they_are_and_nothing_needs_converting()
+    {
+        Touch("Arthur/S01E01.mp4");
+        Touch("Arthur/S01E02.mkv");
+        Touch("Arthur/S01E03.AVI");
+        Touch("Arthur/cover.jpg");
+
+        var library = Scan();
+
+        Assert.Equal(["S01E01", "S01E02", "S01E03"], library.Channels[0].Episodes.Select(e => e.Title));
+        Assert.Empty(library.NeedsConversion);
     }
 
     [Fact]
@@ -54,7 +70,7 @@ public sealed class LibraryScannerTests : IDisposable
         Touch("Old Rips/S01E01.avi");
         Directory.CreateDirectory(Path.Combine(_root, "Empty"));
 
-        var library = Scan();
+        var library = Scan(PlayerOptions.Browser);
 
         Assert.Equal(["Arthur"], library.Channels.Select(c => c.Name));
     }

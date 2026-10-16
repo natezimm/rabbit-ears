@@ -6,12 +6,16 @@ var options = builder.Configuration.GetSection("Box").Get<BoxOptions>() ?? new B
 // Relative paths in config are relative to the app folder, wherever it is started from.
 options.MediaRoot = Path.GetFullPath(options.MediaRoot, builder.Environment.ContentRootPath);
 options.StateDir = Path.GetFullPath(options.StateDir, builder.Environment.ContentRootPath);
+options.Player.MpvSocket = Path.GetFullPath(options.Player.MpvSocket, builder.Environment.ContentRootPath);
 
 builder.Services.AddSingleton(options);
 builder.Services.AddSingleton<LibraryScanner>();
 builder.Services.AddSingleton<StateFile>();
 builder.Services.AddSingleton<TvService>();
 builder.Services.AddHostedService(services => services.GetRequiredService<TvService>());
+// With mpv as the box's screen, the server drives it directly; otherwise this does nothing.
+builder.Services.AddSingleton<MpvScreen>();
+builder.Services.AddHostedService<MpvPlayer>();
 builder.Services.AddSignalR();
 
 var app = builder.Build();
@@ -38,6 +42,10 @@ app.MapGet("/api/state", (TvService tv, string? room) =>
         : Results.NotFound());
 app.MapGet("/api/picture", () => options.Picture);
 app.MapGet("/api/demo", () => new DemoInfo(options.Demo.Enabled));
+// Asked by the kiosk launcher at login, to know whether to start mpv or the browser.
+app.MapGet("/api/player", () => new PlayerInfo(
+    options.UsesMpv ? PlayerOptions.Mpv : PlayerOptions.Browser,
+    options.Player.MpvSocket));
 app.MapGet("/api/library", (TvService tv) => tv.Report());
 // A rescan reads the whole media folder; on a public demo that is nobody's button to press.
 app.MapPost("/api/rescan", async (TvService tv) =>

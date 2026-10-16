@@ -102,7 +102,8 @@ To get out of the TV screen, press the Windows key and open Terminal.
 | TV page is black or says it cannot connect | `systemctl status rabbitears --no-pager` |
 | Colour bars and `NO CHANNELS` | No shows found. Check `ls /srv/rabbitears/media` |
 | Picture but no sound | Settings > Sound > Output Device |
-| `PRESS ANY KEY FOR SOUND` | Press a key once. It means the browser was not started by the kiosk launcher |
+| Black screen, and the keys do nothing | `journalctl -u rabbitears -n 20 --no-pager` should say `Connected to mpv`. If it says `Waiting for mpv`, log out and back in (or reboot) so the TV launcher starts mpv |
+| `PRESS ANY KEY FOR SOUND` | Only with the browser as the TV. Press a key once. It means the browser was not started by the kiosk launcher |
 | Picture stutters | Confirm step 3's 1080p setting. If it still stutters, add `Box__Picture__Crt__Enabled=false` to `/etc/rabbitears/box.env` and restart the service. That shows the plain video with no curved-glass effect; if it is smooth then, the effect is too much for the graphics chip |
 | Login screen after a restart | Automatic Login (step 3) is not on |
 
@@ -114,40 +115,41 @@ journalctl -u rabbitears -n 50 --no-pager
 
 ## 5. Put real shows on
 
-**On the laptop.**
+**On the box.** Shows play exactly as you downloaded them (MKV, AVI, MP4 and
+the rest); nothing is converted.
 
-- [ ] Arrange your originals as one folder per channel (season subfolders are
-      fine). A folder of movies is one channel.
-- [ ] Convert them. `480` suits old 4:3 shows and saves space; leave it off for
-      720:
-
-  ```bash
-  bash scripts/convert-media.sh /path/to/originals /path/to/converted 480
-  ```
-
-- [ ] Copy them to the box. This can be re-run; it only sends what is new:
+- [ ] Each folder in `/srv/rabbitears/media` is a channel, named after the
+      folder. Move each show's folder in. Season subfolders are fine, and a
+      folder of movies is one channel. On the same disk a move is instant:
 
   ```bash
-  rsync -a --progress /path/to/converted/ YOU@rabbitears.local:/srv/rabbitears/media/
+  mv ~/Videos/Shows/Arthur /srv/rabbitears/media/
   ```
 
-  If it says `rsync: command not found`, run `sudo apt install -y rsync` on the box.
+  From the laptop instead, copy the originals over. This can be re-run; it only
+  sends what is new (if it says `rsync: command not found`, run
+  `sudo apt install -y rsync` on the box):
+
+  ```bash
+  rsync -a --progress /path/to/shows/ YOU@rabbitears.local:/srv/rabbitears/media/
+  ```
 
 - [ ] Remove the test channels:
 
   ```bash
-  ssh YOU@rabbitears.local 'cd /srv/rabbitears/media && rm -rf "Bars and Tone" "Mandelbrot Hour" "Test Card" "Wide Load"'
+  cd /srv/rabbitears/media && rm -rf "Bars and Tone" "Game of Life" "Mandelbrot Hour" "Test Card" "Wide Load"
   ```
 
-- [ ] Tell the box to look again (or wait ten minutes):
+- [ ] Tell the box to look again (or wait ten minutes). If `curl` is missing,
+      `sudo apt install -y curl`:
 
   ```bash
-  curl -X POST http://rabbitears.local:5080/api/rescan
+  curl -X POST http://localhost:5080/api/rescan
   ```
 
-**You should see** your channels in the reply, numbered from 2 in A-to-Z order.
-The box has about 100 GB free: roughly 350 to 650 cartoon episodes, or 50 to
-100 movies.
+**You should see** your channels in the reply, numbered from 2 in A-to-Z order,
+and the TV switches to them. The box has about 100 GB free; `df -h /srv` shows
+what is left.
 
 ## 6. The remote
 

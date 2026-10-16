@@ -1,10 +1,46 @@
 #!/usr/bin/env bash
-# Runs at desktop login: waits for the box to be on the air, then shows the TV
-# full screen in Chromium and brings it back if it ever exits.
+# Runs at desktop login: waits for the box to be on the air, then puts the TV
+# on the screen full screen and brings it back if it ever exits. The service
+# says which player to use: mpv, which plays the shows exactly as they are, or
+# the /tv page in Chromium.
 set -uo pipefail
 
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 port=5080
 url="http://localhost:$port/tv"
+
+# Wait until the service is listening. Plain bash, so there is nothing to install.
+until (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null; do
+  sleep 1
+done
+
+# One GET, also in plain bash. Prints the reply's body.
+ask() {
+  local reply
+  exec 3<>"/dev/tcp/127.0.0.1/$port" || return 1
+  printf 'GET %s HTTP/1.0\r\nHost: localhost\r\n\r\n' "$1" >&3
+  reply="$(cat <&3)"
+  exec 3<&-
+  printf '%s' "${reply#*$'\r\n\r\n'}"
+}
+
+player="$(ask /api/player)"
+kind="$(sed -n 's/.*"kind":"\([^"]*\)".*/\1/p' <<<"$player")"
+socket="$(sed -n 's/.*"socket":"\([^"]*\)".*/\1/p' <<<"$player")"
+
+if [[ "$kind" == mpv ]]; then
+  if command -v mpv >/dev/null; then
+    # The service runs as its own user and reaches mpv through this socket.
+    # The folder it sits in belongs to the service's group, and this keeps the
+    # socket group-writable so the service can connect.
+    umask 007
+    while true; do
+      mpv --config-dir="$here/mpv" --input-ipc-server="$socket"
+      sleep 2
+    done
+  fi
+  echo "mpv is not installed (sudo apt install mpv); showing the TV in the browser instead." >&2
+fi
 
 browser="${RABBITEARS_BROWSER:-}"
 if [[ -z "$browser" ]]; then
@@ -26,11 +62,6 @@ profile="$HOME/.config/rabbitears-kiosk"
 if [[ "$(command -v "$browser")" == /snap/* ]]; then
   profile="$HOME/snap/chromium/common/rabbitears-kiosk"
 fi
-
-# Wait until the service is listening. Plain bash, so there is nothing to install.
-until (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null; do
-  sleep 1
-done
 
 while true; do
   # --password-store=basic: with automatic login the desktop keyring stays
