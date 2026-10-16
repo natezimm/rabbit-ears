@@ -8,11 +8,12 @@
 
   <ItemGroup>
     <!-- mpv's settings, keys and tube shader, loaded from /opt/rabbitears/mpv by
-         kiosk.sh. The OSD font is the web app's own copy. -->
+         kiosk.sh. The OSD font is the web app's own copy; the demo's container builds
+         from src/ alone and never runs mpv, so it goes without. -->
     <Content Include="mpv/**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="../../web/public/VT323-Regular.ttf" Link="mpv/fonts/VT323-Regular.ttf"
+    <Content Include="../../web/public/VT323-Regular.ttf" Condition="Exists('../../web/public/VT323-Regular.ttf')" Link="mpv/fonts/VT323-Regular.ttf"
              CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="../../web/public/OFL.txt" Link="mpv/fonts-license/OFL.txt"
+    <Content Include="../../web/public/OFL.txt" Condition="Exists('../../web/public/OFL.txt')" Link="mpv/fonts-license/OFL.txt"
              CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
