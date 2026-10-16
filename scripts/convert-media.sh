@@ -21,6 +21,11 @@ mkdir -p "$dest"
 dest="$(cd "$dest" && pwd)"
 [[ "$dest" != "$src"* ]] || { echo "The converted folder must not be inside the originals." >&2; exit 1; }
 
+# One property of the first video (v) or audio (a) stream, or nothing.
+probe() {
+  ffprobe -v error -select_streams "$2:0" -show_entries "stream=$3" -of default=nw=1:nk=1 "$1" 2>/dev/null | head -n 1 || true
+}
+
 converted=0 skipped=0 failed=0
 while IFS= read -r -d '' file; do
   relative="${file#"$src"/}"
@@ -33,13 +38,29 @@ while IFS= read -r -d '' file; do
 
   mkdir -p "$(dirname "$out")"
   partial="$out.partial"
-  echo "converting $relative"
-  # yadif only touches frames flagged as interlaced, which old DVD rips often are.
+  # Most rips are already H.264, so the picture can usually be copied as is: that
+  # takes seconds, where re-encoding takes minutes on the box. Only re-encode when
+  # the browser could not play it, it is taller than asked, or it is interlaced.
+  vcodec="$(probe "$file" v codec_name)" pixfmt="$(probe "$file" v pix_fmt)"
+  height="$(probe "$file" v height)" field="$(probe "$file" v field_order)"
+  acodec="$(probe "$file" a codec_name)"
+  if [[ "$vcodec" == h264 && "$pixfmt" == yuv420p && "$height" =~ ^[0-9]+$ && "$height" -le "$max_height" \
+        && ( -z "$field" || "$field" == progressive || "$field" == unknown ) ]]; then
+    echo "copying $relative"
+    video=(-c:v copy)
+  else
+    echo "converting $relative"
+    # yadif only touches frames flagged as interlaced, which old DVD rips often are.
+    video=(-vf "yadif=deint=interlaced,scale=-2:'min($max_height,ih)',format=yuv420p"
+      -c:v libx264 -preset medium -crf 20)
+  fi
+  if [[ "$acodec" == aac && "$(probe "$file" a channels)" =~ ^[12]$ ]]; then
+    audio=(-c:a copy)
+  else
+    audio=(-c:a aac -b:a 160k -ac 2)
+  fi
   if ffmpeg -hide_banner -loglevel error -nostdin -y -i "$file" \
-      -map 0:v:0 -map 0:a:0? \
-      -vf "yadif=deint=interlaced,scale=-2:'min($max_height,ih)',format=yuv420p" \
-      -c:v libx264 -preset medium -crf 20 \
-      -c:a aac -b:a 160k -ac 2 \
+      -map 0:v:0 -map 0:a:0? "${video[@]}" "${audio[@]}" \
       -movflags +faststart -f mp4 "$partial"; then
     mv "$partial" "$out"
     converted=$((converted + 1))
