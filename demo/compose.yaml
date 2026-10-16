@@ -1,0 +1,17 @@
+# Runs the public demo site on a server that already hosts other things,
+# built from this checkout. See demo/README.md.
+#
+#   docker compose up -d --build     build and start it; it comes back after reboots
+#   git pull && docker compose up -d --build     update after a merge
+services:
+  rabbit-ears:
+    build: ..
+    image: rabbit-ears
+    restart: unless-stopped
+    # Only the reverse proxy on this machine talks to it. Change the first
+    # number if something else already uses 8080.
+    ports:
+      - "127.0.0.1:8080:8080"
+    # It idles around 25 MB and stays under 50 MB with dozens of visitors;
+    # the cap keeps it from ever crowding out the other sites.
+    mem_limit: 256m

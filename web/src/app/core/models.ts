@@ -83,3 +83,8 @@ export const DEFAULT_PICTURE: PictureConfig = {
   },
   osd: { color: '#4DFF5A', glow: true },
 };
+
+/** From /api/demo: whether this is the public demo site, where every visitor has a TV of their own. */
+export interface DemoInfo {
+  enabled: boolean;
+}

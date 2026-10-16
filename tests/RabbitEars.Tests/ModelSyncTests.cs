@@ -25,6 +25,7 @@ public sealed partial class ModelSyncTests
         ["TvSnapshot"] = typeof(TvSnapshot),
         ["CrtConfig"] = typeof(CrtOptions),
         ["PictureConfig"] = typeof(PictureOptions),
+        ["DemoInfo"] = typeof(DemoInfo),
     };
 
     private static readonly NullabilityInfoContext Nullability = new();

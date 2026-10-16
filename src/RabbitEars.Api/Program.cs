@@ -16,18 +16,35 @@ builder.Services.AddSignalR();
 
 var app = builder.Build();
 
+// A visitor to the public demo arrives at the bare address; show them the TV, not the remote.
+if (options.Demo.Enabled)
+{
+    app.Use((context, next) =>
+    {
+        if (context.Request.Path != "/") return next(context);
+        context.Response.Redirect("/demo");
+        return Task.CompletedTask;
+    });
+}
+
 // The Angular build (the TV screen and the phone remote) is served from wwwroot.
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.MapGet("/api/health", () => Results.Ok(new { status = "on the air" }));
-app.MapGet("/api/state", (TvService tv) => tv.Snapshot());
+app.MapGet("/api/state", (TvService tv, string? room) =>
+    tv.Snapshot(options.Demo.Enabled ? room ?? "" : TvService.HomeRoom) is { } snapshot
+        ? Results.Ok(snapshot)
+        : Results.NotFound());
 app.MapGet("/api/picture", () => options.Picture);
+app.MapGet("/api/demo", () => new DemoInfo(options.Demo.Enabled));
 app.MapGet("/api/library", (TvService tv) => tv.Report());
+// A rescan reads the whole media folder; on a public demo that is nobody's button to press.
 app.MapPost("/api/rescan", async (TvService tv) =>
 {
+    if (options.Demo.Enabled) return Results.NotFound();
     await tv.Rescan();
-    return tv.Report();
+    return Results.Ok(tv.Report());
 });
 
 // Episodes are addressed by id, never by path, and only scanned files resolve.

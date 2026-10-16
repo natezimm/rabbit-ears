@@ -10,6 +10,7 @@ public sealed class TvServiceTests : IDisposable
     private readonly string _media = Directory.CreateTempSubdirectory("rabbitears-media-").FullName;
     private readonly string _state = Directory.CreateTempSubdirectory("rabbitears-state-").FullName;
     private readonly RecordingHub _hub = new();
+    private readonly FakeClock _clock = new();
 
     public TvServiceTests()
     {
@@ -31,16 +32,26 @@ public sealed class TvServiceTests : IDisposable
         File.WriteAllText(path, "");
     }
 
-    private TvService Service()
+    private TvService Service(DemoOptions? demo = null)
     {
-        var options = new BoxOptions { MediaRoot = _media, StateDir = _state, RescanMinutes = 0 };
+        var options = new BoxOptions
+        {
+            MediaRoot = _media,
+            StateDir = _state,
+            RescanMinutes = 0,
+            Demo = demo ?? new DemoOptions(),
+        };
         return new TvService(
             options,
             new LibraryScanner(options, NullLogger<LibraryScanner>.Instance),
             new StateFile(options, NullLogger<StateFile>.Instance),
             _hub,
-            NullLogger<TvService>.Instance);
+            NullLogger<TvService>.Instance,
+            _clock);
     }
+
+    private TvService DemoService(int maxTvs = 100) =>
+        Service(new DemoOptions { Enabled = true, MaxTvs = maxTvs, IdleMinutes = 15 });
 
     [Fact]
     public async Task A_press_that_changes_the_tv_sends_the_new_snapshot_to_everyone()
@@ -122,31 +133,126 @@ public sealed class TvServiceTests : IDisposable
         Assert.Equal(3, snapshot.Channels.Count);
     }
 
-    /// <summary>Stands in for SignalR: every client gets the same messages, so one list records them.</summary>
-    private sealed class RecordingHub : IHubContext<TvHub>, IClientProxy
+    [Fact]
+    public void At_home_every_connection_joins_the_one_tv_whatever_room_it_asks_for()
     {
-        public List<(string Method, object?[] Args)> Sent { get; } = [];
+        var tv = Service();
 
-        IHubClients IHubContext<TvHub>.Clients => new Everyone(this);
+        Assert.Equal(TvService.HomeRoom, tv.Join(null));
+        Assert.Equal(TvService.HomeRoom, tv.Join("somebody-else"));
+        Assert.Equal(1, tv.RoomCount);
+    }
+
+    [Fact]
+    public async Task In_demo_mode_each_room_is_its_own_tv_and_hears_only_its_own_presses()
+    {
+        var tv = DemoService();
+        Assert.Equal("visitor-a", tv.Join("visitor-a"));
+        Assert.Equal("visitor-b", tv.Join("visitor-b"));
+
+        await tv.Press(t => t.ChannelUp(), "visitor-a");
+
+        Assert.Equal(new ChannelInfo(3, "Dragon Tales"), tv.Snapshot("visitor-a")!.Channel);
+        Assert.Equal(new ChannelInfo(2, "Arthur"), tv.Snapshot("visitor-b")!.Channel);
+        Assert.Equal("visitor-a", Assert.Single(_hub.Sent).Group);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("short")]
+    [InlineData("../../etc")]
+    public void In_demo_mode_a_missing_or_odd_room_id_is_refused(string? room)
+    {
+        var tv = DemoService();
+
+        Assert.Null(tv.Join(room));
+        Assert.Equal(0, tv.RoomCount);
+    }
+
+    [Fact]
+    public async Task In_demo_mode_nothing_is_written_to_disk()
+    {
+        var tv = DemoService();
+        tv.Join("visitor-a");
+        tv.ReportPosition(tv.Snapshot("visitor-a")!.Playing!.Token, 42, "visitor-a");
+
+        await tv.StopAsync(CancellationToken.None);
+
+        Assert.Empty(Directory.GetFiles(_state));
+    }
+
+    [Fact]
+    public void An_unwatched_demo_tv_is_switched_off_after_the_idle_time_but_a_watched_one_stays()
+    {
+        var tv = DemoService();
+        tv.Join("visitor-a");
+        tv.Join("visitor-b");
+        tv.Leave("visitor-a");
+
+        _clock.Advance(TimeSpan.FromMinutes(14));
+        tv.ClearIdleRooms();
+        Assert.Equal(2, tv.RoomCount);
+
+        _clock.Advance(TimeSpan.FromMinutes(2));
+        tv.ClearIdleRooms();
+        Assert.Null(tv.Snapshot("visitor-a"));
+        Assert.NotNull(tv.Snapshot("visitor-b"));
+    }
+
+    [Fact]
+    public void When_the_demo_is_full_a_new_visitor_takes_the_place_of_the_longest_unwatched_tv()
+    {
+        var tv = DemoService(maxTvs: 2);
+        tv.Join("visitor-a");
+        tv.Leave("visitor-a");
+        _clock.Advance(TimeSpan.FromMinutes(1));
+        tv.Join("visitor-b");
+
+        Assert.Equal("visitor-c", tv.Join("visitor-c"));
+        Assert.Null(tv.Snapshot("visitor-a"));
+
+        // Both remaining TVs are being watched, so there is no room for a fourth.
+        Assert.Null(tv.Join("visitor-d"));
+    }
+
+    private sealed class FakeClock : TimeProvider
+    {
+        private DateTimeOffset _now = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+        public override DateTimeOffset GetUtcNow() => _now;
+
+        public void Advance(TimeSpan by) => _now += by;
+    }
+
+    /// <summary>
+    /// Stands in for SignalR. One list records every message, with the room it
+    /// went to, or null when it went to everyone.
+    /// </summary>
+    private sealed class RecordingHub : IHubContext<TvHub>, IHubClients
+    {
+        public List<(string? Group, string Method, object?[] Args)> Sent { get; } = [];
+
+        IHubClients IHubContext<TvHub>.Clients => this;
         IGroupManager IHubContext<TvHub>.Groups => throw new NotSupportedException();
 
-        public Task SendCoreAsync(string method, object?[] args, CancellationToken cancellationToken = default)
-        {
-            Sent.Add((method, args));
-            return Task.CompletedTask;
-        }
+        public IClientProxy All => new Proxy(this, null);
+        public IClientProxy AllExcept(IReadOnlyList<string> excludedConnectionIds) => throw new NotSupportedException();
+        public IClientProxy Client(string connectionId) => throw new NotSupportedException();
+        public IClientProxy Clients(IReadOnlyList<string> connectionIds) => throw new NotSupportedException();
+        public IClientProxy Group(string groupName) => new Proxy(this, groupName);
+        public IClientProxy GroupExcept(string groupName, IReadOnlyList<string> excludedConnectionIds) => throw new NotSupportedException();
+        public IClientProxy Groups(IReadOnlyList<string> groupNames) => throw new NotSupportedException();
+        public IClientProxy User(string userId) => throw new NotSupportedException();
+        public IClientProxy Users(IReadOnlyList<string> userIds) => throw new NotSupportedException();
 
-        private sealed class Everyone(IClientProxy proxy) : IHubClients
+        private sealed class Proxy(RecordingHub hub, string? group) : IClientProxy
         {
-            public IClientProxy All => proxy;
-            public IClientProxy AllExcept(IReadOnlyList<string> excludedConnectionIds) => proxy;
-            public IClientProxy Client(string connectionId) => proxy;
-            public IClientProxy Clients(IReadOnlyList<string> connectionIds) => proxy;
-            public IClientProxy Group(string groupName) => proxy;
-            public IClientProxy GroupExcept(string groupName, IReadOnlyList<string> excludedConnectionIds) => proxy;
-            public IClientProxy Groups(IReadOnlyList<string> groupNames) => proxy;
-            public IClientProxy User(string userId) => proxy;
-            public IClientProxy Users(IReadOnlyList<string> userIds) => proxy;
+            public Task SendCoreAsync(string method, object?[] args, CancellationToken cancellationToken = default)
+            {
+                hub.Sent.Add((group, method, args));
+                return Task.CompletedTask;
+            }
         }
     }
 }

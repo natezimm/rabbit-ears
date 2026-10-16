@@ -1,11 +1,16 @@
 :host {
   display: block;
-}
-
-.tv {
-  --osd: #4dff5a;
   position: fixed;
   inset: 0;
+}
+
+/* The screen fills whatever box it is given: the whole window on the box, a
+   panel on the demo page. Sizes inside are measured against it, not the window. */
+.tv {
+  --osd: #4dff5a;
+  position: absolute;
+  inset: 0;
+  container-type: size;
   overflow: hidden;
   background: #000;
   cursor: none;
@@ -45,8 +50,8 @@ video {
   position: absolute;
   inset: 0;
   margin: auto;
-  width: min(100vw, 100vh * 4 / 3);
-  height: min(100vh, 100vw * 3 / 4);
+  width: min(100cqw, 100cqh * 4 / 3);
+  height: min(100cqh, 100cqw * 3 / 4);
   container-type: size;
   pointer-events: none;
 
@@ -153,4 +158,9 @@ video {
   text-align: center;
   font-size: 4.2cqh;
   opacity: 0.85;
+}
+
+/* On the demo page the pointer is how a visitor gets sound and finds the remote. */
+:host-context(.demo) .tv {
+  cursor: auto;
 }

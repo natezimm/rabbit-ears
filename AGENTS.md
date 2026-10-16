@@ -27,6 +27,9 @@ dotnet test --filter "FullyQualifiedName~ShuffleBagTests"                       
   alone serves a stale or missing page until the web app has been built.
 - There is no linter and no frontend test suite. .NET warnings are errors
   (`Directory.Build.props`).
+- `docker build -t rabbit-ears . && docker run --rm -p 8080:8080 rabbit-ears` runs
+  the public demo site (see "Demo mode" below). `demo/` has the compose file and
+  nginx config for hosting it.
 - `scripts/` runs on the laptop (`publish.sh`, `deploy.sh YOU@host`,
   `convert-media.sh`). `deploy/` runs on the box. `docs/box-setup.md` is the
   step-by-step for bringing a box up.
@@ -73,6 +76,15 @@ The TV page (`web/src/app/tv/`) has three parts:
 
 With `Picture.Crt.Enabled` false, or no WebGL, the shader is skipped and the
 plain video is shown.
+
+**Demo mode** (`Box:Demo:Enabled`, set by the `Dockerfile`) is the public demo
+site. `TvService` then runs one `Television` per room instead of one for the
+house: the browser makes up a room id (`tv-link.ts`, kept in `localStorage` or
+taken from `?room=`), the hub joins the matching SignalR group, and snapshots go
+to that group only. Nothing is saved, idle rooms are switched off, `/api/rescan`
+is off, and `/` redirects to `/demo` (TV, remote and QR code on one page). At
+home the room id is ignored and everything behaves as before. Demo mode is not
+authentication and must not grow into it.
 
 **Kept in sync by hand:** `web/src/app/core/models.ts` mirrors the records in
 `RabbitEars.Core/Models.cs` and the picture options in `RabbitEars.Api/BoxOptions.cs`.

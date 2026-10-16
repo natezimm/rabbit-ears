@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.SignalR;
 using RabbitEars.Core;
 
@@ -15,8 +16,16 @@ public sealed record LibraryReport(
 /// remote press at a time through, tells every connected screen and remote what
 /// changed, and keeps the state file and channel lineup fresh in the background.
 /// </summary>
-public sealed class TvService : BackgroundService
+/// <remarks>
+/// In demo mode the same service runs many televisions, one per visitor, each
+/// addressed by a room id the browser makes up. Strangers on a public website
+/// then cannot change each other's channel, and nothing is saved to disk.
+/// </remarks>
+public sealed partial class TvService : BackgroundService
 {
+    /// <summary>The room every client is in when demo mode is off.</summary>
+    public const string HomeRoom = "home";
+
     private static readonly TimeSpan TickInterval = TimeSpan.FromMilliseconds(200);
     private static readonly TimeSpan SaveInterval = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan GoodbyeDelay = TimeSpan.FromSeconds(2);
@@ -27,7 +36,8 @@ public sealed class TvService : BackgroundService
     private readonly StateFile _stateFile;
     private readonly IHubContext<TvHub> _hub;
     private readonly ILogger<TvService> _log;
-    private readonly Television _tv;
+    private readonly TimeProvider _clock;
+    private readonly Dictionary<string, Room> _rooms = [];
 
     private Library _library;
     private bool _unsaved;
@@ -38,21 +48,80 @@ public sealed class TvService : BackgroundService
         LibraryScanner scanner,
         StateFile stateFile,
         IHubContext<TvHub> hub,
-        ILogger<TvService> log)
+        ILogger<TvService> log,
+        TimeProvider? clock = null)
     {
         _options = options;
         _scanner = scanner;
         _stateFile = stateFile;
         _hub = hub;
         _log = log;
+        _clock = clock ?? TimeProvider.System;
 
         _library = scanner.Scan();
-        _tv = new Television(options.Tv, _library.Channels, stateFile.Load());
+        if (!Demo)
+        {
+            _rooms[HomeRoom] = new Room(new Television(options.Tv, _library.Channels, stateFile.Load()), Now);
+        }
     }
 
-    public TvSnapshot Snapshot()
+    private bool Demo => _options.Demo.Enabled;
+
+    private DateTimeOffset Now => _clock.GetUtcNow();
+
+    /// <summary>
+    /// Finds the television a new connection belongs to, making one if need be,
+    /// and counts the connection so the room is not cleared away under it.
+    /// Returns null when the connection should be refused.
+    /// </summary>
+    public string? Join(string? requested)
     {
-        lock (_gate) return _tv.Snapshot();
+        if (!Demo)
+        {
+            lock (_gate) _rooms[HomeRoom].Connections++;
+            return HomeRoom;
+        }
+
+        if (requested is null || !RoomId().IsMatch(requested)) return null;
+        lock (_gate)
+        {
+            if (!_rooms.TryGetValue(requested, out var room))
+            {
+                if (_rooms.Count >= _options.Demo.MaxTvs && !EvictOldestEmptyRoom()) return null;
+                room = new Room(new Television(_options.Tv, _library.Channels), Now);
+                _rooms[requested] = room;
+            }
+
+            room.Connections++;
+            room.LastActive = Now;
+            return requested;
+        }
+    }
+
+    public void Leave(string room)
+    {
+        lock (_gate)
+        {
+            if (!_rooms.TryGetValue(room, out var found)) return;
+            found.Connections = Math.Max(0, found.Connections - 1);
+            found.LastActive = Now;
+        }
+    }
+
+    /// <summary>How many televisions are on; more than one only in demo mode.</summary>
+    public int RoomCount
+    {
+        get { lock (_gate) return _rooms.Count; }
+    }
+
+    /// <summary>The state of the home television.</summary>
+    public TvSnapshot Snapshot() =>
+        Snapshot(HomeRoom) ?? throw new InvalidOperationException("Demo mode has no home television.");
+
+    /// <summary>The state of one television, or null if no such room is on.</summary>
+    public TvSnapshot? Snapshot(string room)
+    {
+        lock (_gate) return _rooms.GetValueOrDefault(room)?.Tv.Snapshot();
     }
 
     /// <summary>The file behind an episode id, or null. Only scanned episodes resolve.</summary>
@@ -65,47 +134,54 @@ public sealed class TvService : BackgroundService
     {
         lock (_gate)
         {
-            return new LibraryReport(
-                _options.MediaRoot,
-                _tv.Snapshot().Channels,
-                _library.Files.Count,
-                _library.NeedsConversion);
+            var channels = _rooms.GetValueOrDefault(HomeRoom)?.Tv.Snapshot().Channels
+                ?? [.. _library.Channels.Select(c => new ChannelListing(c.Number, c.Name, c.Episodes.Count, null))];
+            return new LibraryReport(_options.MediaRoot, channels, _library.Files.Count, _library.NeedsConversion);
         }
     }
 
-    /// <summary>Apply one remote press and, if it changed anything, tell everyone.</summary>
-    public Task Press(Action<Television> press)
+    /// <summary>Apply one remote press and, if it changed anything, tell everyone watching that TV.</summary>
+    public Task Press(Action<Television> press, string room = HomeRoom)
     {
         TvSnapshot snapshot;
         lock (_gate)
         {
-            var before = _tv.Revision;
-            press(_tv);
-            if (_tv.Revision == before) return Task.CompletedTask;
+            if (!_rooms.TryGetValue(room, out var found)) return Task.CompletedTask;
+            found.LastActive = Now;
+            var before = found.Tv.Revision;
+            press(found.Tv);
+            if (found.Tv.Revision == before) return Task.CompletedTask;
             _unsaved = true;
-            snapshot = _tv.Snapshot();
+            snapshot = found.Tv.Snapshot();
         }
-        return Broadcast(snapshot);
+        return Broadcast(room, snapshot);
     }
 
     /// <summary>Frequent and uninteresting to other clients, so nothing is broadcast.</summary>
-    public void ReportPosition(string token, double seconds)
+    public void ReportPosition(string token, double seconds, string room = HomeRoom)
     {
         lock (_gate)
         {
-            _tv.ReportPosition(token, seconds);
+            if (!_rooms.TryGetValue(room, out var found)) return;
+            found.Tv.ReportPosition(token, seconds);
             _unsaved = true;
         }
     }
 
-    public Task Rescan()
+    public async Task Rescan()
     {
         var library = _scanner.Scan();
-        return Press(tv =>
+        string[] rooms;
+        lock (_gate)
         {
             _library = library;
-            tv.SetLineup(library.Channels);
-        });
+            rooms = [.. _rooms.Keys];
+        }
+
+        foreach (var room in rooms)
+        {
+            await Press(tv => tv.SetLineup(library.Channels), room);
+        }
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -121,11 +197,12 @@ public sealed class TvService : BackgroundService
         {
             while (await timer.WaitForNextTickAsync(stoppingToken))
             {
-                await Press(tv => tv.Tick());
+                await TickAll();
 
                 if (lastSave.Elapsed >= SaveInterval)
                 {
-                    Save();
+                    if (Demo) ClearIdleRooms();
+                    else Save();
                     lastSave.Restart();
                 }
 
@@ -147,20 +224,75 @@ public sealed class TvService : BackgroundService
         Save();
     }
 
-    private async Task Broadcast(TvSnapshot snapshot)
+    private async Task TickAll()
     {
+        var changed = new List<(string Room, TvSnapshot Snapshot)>();
+        lock (_gate)
+        {
+            foreach (var (name, room) in _rooms)
+            {
+                // Ticking is the clock moving, not a viewer, so it does not keep a room alive.
+                var before = room.Tv.Revision;
+                room.Tv.Tick();
+                if (room.Tv.Revision == before) continue;
+                _unsaved = true;
+                changed.Add((name, room.Tv.Snapshot()));
+            }
+        }
+
+        foreach (var (room, snapshot) in changed)
+        {
+            await Broadcast(room, snapshot);
+        }
+    }
+
+    /// <summary>A visitor who closed the tab leaves a TV nobody can see; switch it off after a while.</summary>
+    public void ClearIdleRooms()
+    {
+        var cutoff = Now - TimeSpan.FromMinutes(_options.Demo.IdleMinutes);
+        lock (_gate)
+        {
+            foreach (var (name, room) in _rooms.ToList())
+            {
+                if (room.Connections == 0 && room.LastActive < cutoff) _rooms.Remove(name);
+            }
+        }
+    }
+
+    /// <summary>Makes space for a new visitor by switching off the TV nobody has watched for longest.</summary>
+    private bool EvictOldestEmptyRoom()
+    {
+        var oldest = _rooms
+            .Where(pair => pair.Value.Connections == 0)
+            .OrderBy(pair => pair.Value.LastActive)
+            .Select(pair => pair.Key)
+            .FirstOrDefault();
+        return oldest is not null && _rooms.Remove(oldest);
+    }
+
+    private async Task Broadcast(string room, TvSnapshot snapshot)
+    {
+        if (Demo)
+        {
+            await _hub.Clients.Group(room).SendAsync("State", snapshot);
+            return;
+        }
+
         await _hub.Clients.All.SendAsync("State", snapshot);
         if (snapshot.PoweredOff) BeginShutdown();
     }
 
     private void Save()
     {
+        // Demo televisions belong to passing visitors; there is nothing worth keeping.
+        if (Demo) return;
+
         SavedState state;
         lock (_gate)
         {
             if (!_unsaved) return;
             _unsaved = false;
-            state = _tv.Save();
+            state = _rooms[HomeRoom].Tv.Save();
         }
         _stateFile.Save(state);
     }
@@ -194,5 +326,16 @@ public sealed class TvService : BackgroundService
                 _log.LogError(ex, "Power-off command failed.");
             }
         });
+    }
+
+    /// <summary>Room ids are made up by the browser; keep them short and plain.</summary>
+    [GeneratedRegex("^[A-Za-z0-9_-]{6,40}$")]
+    private static partial Regex RoomId();
+
+    private sealed class Room(Television tv, DateTimeOffset now)
+    {
+        public Television Tv { get; } = tv;
+        public int Connections { get; set; }
+        public DateTimeOffset LastActive { get; set; } = now;
     }
 }

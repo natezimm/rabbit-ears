@@ -11,6 +11,12 @@ no apps: just a remote and channels.
 It runs on a mini PC under Linux: one small service that owns the TV, and a
 full-screen browser page that draws the picture.
 
+There is a public demo site where every visitor gets a TV of their own; scan
+the QR code beside it to use your phone as the remote. It plays clips made for
+it, since real shows cannot be put on a public website.
+
+![Flipping channels on the demo site: the curved picture, the green channel banner and volume bar, and the remote beside it following along](docs/demo.gif)
+
 Inspired by [NostalgiaBox](https://github.com/landonbtw/NostalgiaBox) by Landon
 Bytheway, which does this with Python and mpv on a Raspberry Pi. Rabbit Ears is
 a separate codebase for the browser, built in Angular and ASP.NET Core. A few
@@ -142,6 +148,22 @@ when something is off, is [docs/box-setup.md](docs/box-setup.md). In short:
 The install scripts have been rehearsed on the laptop but **not yet run on the
 real box**; expect to adjust them on first contact with the hardware.
 
+## The demo site
+
+The [`Dockerfile`](Dockerfile) builds the whole thing into one container in
+demo mode (`Box:Demo:Enabled`): every browser picks its own room id, so each
+visitor gets a separate TV that nobody else can change. Nothing is saved, idle
+TVs switch off after 15 minutes, and the clips are generated at build time by
+`scripts/make-dev-media.sh`. `/` opens `/demo`, which puts the TV, a remote and
+a QR code for a phone remote on one page.
+
+```bash
+docker build -t rabbit-ears . && docker run --rm -p 8080:8080 rabbit-ears
+```
+
+[demo/README.md](demo/README.md) has the steps for hosting it on a server
+behind nginx.
+
 ## How it fits together
 
 ```text
@@ -157,15 +179,18 @@ web/src/app/
   tv/tube.ts               two video players, so channel changes cut cleanly
   tv/tv-screen.*           the TV page and green on-screen display
   remote/                  the phone remote
+  demo/                    the public demo page: TV, remote and QR code together
 deploy/                    systemd service, kiosk launcher, installer (run on the box)
 scripts/                   build, deploy to the box, convert shows (run on the laptop)
 docs/box-setup.md          step-by-step checklist for getting the box working
+Dockerfile, demo/          the public demo site and how to host it
 ```
 
 The box is the single source of truth. The TV page and the phone only send
 button presses and render the state that comes back over SignalR. There are no
 accounts or pairing: it is meant for your home network only, so do not expose
-port 5080 to the internet.
+port 5080 to the internet. The demo site's container is the one build meant to
+be public.
 
 ## Not built yet
 
