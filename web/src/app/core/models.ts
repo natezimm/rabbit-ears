@@ -75,13 +75,13 @@ export const DEFAULT_PICTURE: PictureConfig = {
   osdSeconds: 2,
   crt: {
     enabled: true,
-    curvature: 0.12,
-    cornerRadius: 0.065,
-    vignette: 0.25,
+    curvature: 0.15,
+    cornerRadius: 0.05,
+    vignette: 0.3,
     scanlines: true,
-    scanlineIntensity: 0.12,
+    scanlineIntensity: 0.1,
   },
-  osd: { color: '#4DFF5A', glow: true },
+  osd: { color: '#3DFF6E', glow: true },
 };
 
 /** From /api/demo: whether this is the public demo site, where every visitor has a TV of their own. */

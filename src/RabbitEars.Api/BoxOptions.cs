@@ -111,22 +111,22 @@ public sealed class CrtOptions
     public bool Enabled { get; set; } = true;
 
     /// <summary>0 is flat; about 0.2 is strongly bulged.</summary>
-    public double Curvature { get; set; } = 0.12;
+    public double Curvature { get; set; } = 0.15;
 
-    public double CornerRadius { get; set; } = 0.065;
+    public double CornerRadius { get; set; } = 0.05;
 
     /// <summary>Edge darkening, 0 to 1.</summary>
-    public double Vignette { get; set; } = 0.25;
+    public double Vignette { get; set; } = 0.3;
 
     public bool Scanlines { get; set; } = true;
 
-    public double ScanlineIntensity { get; set; } = 0.12;
+    public double ScanlineIntensity { get; set; } = 0.1;
 }
 
 /// <summary>The green on-screen readouts.</summary>
 public sealed class OsdOptions
 {
-    public string Color { get; set; } = "#4DFF5A";
+    public string Color { get; set; } = "#3DFF6E";
 
     public bool Glow { get; set; } = true;
 }

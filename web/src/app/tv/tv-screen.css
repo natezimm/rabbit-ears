@@ -7,7 +7,7 @@
 /* The screen fills whatever box it is given: the whole window on the box, a
    panel on the demo page. Sizes inside are measured against it, not the window. */
 .tv {
-  --osd: #4dff5a;
+  --osd: #3dff6e;
   position: absolute;
   inset: 0;
   container-type: size;
@@ -43,8 +43,9 @@ video {
 }
 
 /*
- * On-screen display. The layout was designed on a 960x720 frame: every length
+ * On-screen display. The layout was designed on a 640x480 frame: every length
  * below is that design's pixels as a share of the frame (cqw across, cqh down).
+ * The margins keep everything clear of the tube's rounded corners.
  */
 .osd {
   position: absolute;
@@ -74,27 +75,27 @@ video {
 
 .channel {
   position: absolute;
-  top: 6cqh;
-  right: 6cqw;
+  top: 6.67cqh;
+  right: 5cqw;
   text-align: right;
 }
 
 .channel-number {
-  font-size: 12.2cqh;
+  font-size: 13.3cqh;
 }
 
 .channel-name {
-  margin-top: 2.2cqh;
-  font-size: 5.6cqh;
+  margin-top: 1.25cqh;
+  font-size: 5.4cqh;
 }
 
 .message {
   position: absolute;
-  top: 6cqh;
+  top: 6.67cqh;
   left: 0;
   right: 0;
   text-align: center;
-  font-size: 8.3cqh;
+  font-size: 7.5cqh;
 }
 
 .standby {
@@ -102,34 +103,34 @@ video {
   inset: 0;
   display: grid;
   place-items: center;
-  font-size: 10cqh;
+  font-size: 9cqh;
 }
 
 .volume {
   position: absolute;
-  bottom: 6cqh;
+  bottom: 6.67cqh;
   left: 50%;
-  width: 76.9cqw;
+  width: 70cqw;
   transform: translateX(-50%);
 }
 
 .volume-label {
-  margin-bottom: 1.9cqh;
-  font-size: 6.7cqh;
+  margin-bottom: 1.67cqh;
+  font-size: 6.25cqh;
 }
 
 .volume-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 6.7cqh;
+  height: 5.8cqh;
 }
 
-/* Each of the 20 slots is one bar wide, so the dots line up with the bars. */
+/* Each of the 25 slots is one bar wide, so the dots line up with the bars. */
 .volume-row span {
   display: grid;
   place-items: center;
-  width: 1.67cqw;
+  width: 1.56cqw;
   height: 100%;
 }
 
@@ -139,7 +140,7 @@ video {
 
 .volume-row .dot::before {
   content: '';
-  width: 1.67cqh;
+  width: 1.46cqh;
   aspect-ratio: 1;
   border-radius: 50%;
   background: var(--osd);

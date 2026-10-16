@@ -335,7 +335,7 @@ public sealed class MpvScreenTests : IDisposable
 
         Assert.Contains("#define CURVATURE 0.2\n", baked);
         Assert.Contains("#define SCANLINES 0.0\n", baked);
-        Assert.Contains("#define VIGNETTE 0.25\n", baked);
+        Assert.Contains("#define VIGNETTE 0.3\n", baked);
         Assert.StartsWith("//", baked);
         Assert.Contains("//!HOOK OUTPUT", baked);
     }

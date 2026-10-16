@@ -16,7 +16,7 @@ import { TvLink } from '../core/tv-link';
 import { CrtRenderer, ScreenMode } from './crt-renderer';
 import { Tube } from './tube';
 
-const VOLUME_SEGMENTS = 20;
+const VOLUME_SEGMENTS = 25;
 const POWER_OFF_SECONDS = 0.45;
 const POWER_ON_SECONDS = 0.6;
 

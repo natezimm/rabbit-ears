@@ -14,7 +14,7 @@ bash scripts/dev.sh              # build the web app, then run the box at http:/
 bash scripts/dev.sh --no-build   # run with the web app as last built
 dotnet test                      # all backend tests (xUnit)
 dotnet test --filter "FullyQualifiedName~TelevisionTests.Typed_digits_tune_after_a_pause"   # one test
-dotnet test --filter "FullyQualifiedName~ShuffleBagTests"                                   # one class
+dotnet test --filter "FullyQualifiedName~ShuffleDeckTests"                                  # one class
 (cd web && npx ng build)         # web app only; output goes to src/RabbitEars.Api/wwwroot
 ```
 
@@ -90,7 +90,7 @@ mpv's JSON control socket:
   entry ids play the part of play tokens. Remote keys arrive as
   `script-message ears ...` from `mpv/input.conf`.
 - `MpvOsd.cs` draws the green display as ASS text in an `osd-overlay`, laid out
-  on the same 960x720 frame as `tv-screen.css`. Keep the two in step.
+  on the same 4:3 frame as `tv-screen.css`. Keep the two in step.
 - `mpv/crt.glsl` is `crt-shader.ts`'s tube maths as an mpv hook shader. mpv
   0.37 (Ubuntu 24.04) has no shader parameters, so the server writes a copy
   with `Picture.Crt` baked into `#define`s into the state folder.
@@ -130,10 +130,7 @@ settings are overridden in `/etc/rabbitears/box.env` using `Box__Section__Name`.
 
 - **Home network only.** There are no accounts, logins or pairing, by design.
   Do not add authentication.
-- **Credit to NostalgiaBox lives in exactly three places:** the "Inspired by"
-  paragraph in `README.md`, `THIRD-PARTY-NOTICES.md`, and the comment at the top
-  of `web/src/app/tv/crt-shader.ts`. Leave those as they are and do not mention
-  that project anywhere else. Describe what code does, not where it came from.
+- **Describe what code does, not where it came from.**
 - **Culture-invariant.** The API builds with `InvariantGlobalization`; avoid
   culture-sensitive formatting and comparisons.
 - **Commit and push only when asked.**

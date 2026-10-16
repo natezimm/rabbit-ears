@@ -23,11 +23,11 @@ public sealed class MpvOsdTests
         var overlay = MpvOsd.Draw(view, 16.0 / 9, Flat);
 
         Assert.Equal((1280, 720), (overlay.Width, overlay.Height));
-        // 6% in from the frame's right edge, and the frame starts 160 in.
-        Assert.Contains(@"\an9\pos(1062.4,", overlay.Ass);
+        // 5% in from the frame's right edge, and the frame starts 160 in.
+        Assert.Contains(@"\an9\pos(1072,", overlay.Ass);
         Assert.Contains("}CH 02", overlay.Ass);
         Assert.Contains("}Arthur", overlay.Ass);
-        Assert.Contains(@"\1c&H5AFF4D&", overlay.Ass);
+        Assert.Contains(@"\1c&H6EFF3D&", overlay.Ass);
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public sealed class MpvOsdTests
     }
 
     [Fact]
-    public void The_volume_bar_has_twenty_slots_lit_to_the_level()
+    public void The_volume_bar_has_twenty_five_slots_lit_to_the_level()
     {
         var view = OsdView.Nothing with { ShowVolume = true, Volume = 60 };
 
@@ -51,8 +51,8 @@ public sealed class MpvOsdTests
         Assert.Contains("}Volume", ass);
         var shapes = ass.Split('\n').Single(line => line.Contains(@"\p1"));
         // Bars are four-cornered paths; dots are drawn with curves.
-        Assert.Equal(12, Regex.Count(shapes, @"m [\d.]+ [\d.]+ l"));
-        Assert.Equal(8, Regex.Count(shapes, @"m [\d.]+ [\d.]+ b"));
+        Assert.Equal(15, Regex.Count(shapes, @"m [\d.]+ [\d.]+ l"));
+        Assert.Equal(10, Regex.Count(shapes, @"m [\d.]+ [\d.]+ b"));
     }
 
     [Fact]

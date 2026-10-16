@@ -39,7 +39,7 @@ make "Test Card"       "S01E02" 60 "testsrc=size=$size:rate=30"    294
 make "Test Card"       "S01E03" 60 "rgbtestsrc=size=$size:rate=30" 349
 
 # Generated animation, so a channel has something moving that is not a test card.
-make "Game of Life"    "S01E01" 60 "life=size=320x240:rate=30:mold=10:ratio=0.12:life_color=#4dff5a:death_color=#123a18,scale=640:480:flags=neighbor" 220
+make "Game of Life"    "S01E01" 60 "life=size=320x240:rate=30:mold=10:ratio=0.12:life_color=#3dff6e:death_color=#123a18,scale=640:480:flags=neighbor" 220
 make "Game of Life"    "S01E02" 60 "cellauto=size=640x480:rate=30:rule=110:scroll=1,negate" 247
 
 # One widescreen show, to see how 16:9 sits in the tube.

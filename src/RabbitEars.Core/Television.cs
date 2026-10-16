@@ -392,7 +392,7 @@ public sealed class Television
     /// <summary>One channel's runtime state: its shuffle and what it was last showing.</summary>
     private sealed class Tuner(ChannelDefinition definition, Random random)
     {
-        private ShuffleBag<Episode> _bag = new(definition.Episodes, random);
+        private ShuffleDeck<Episode> _deck = new(definition.Episodes, random);
 
         public int Number { get; private set; } = definition.Number;
         public string Name { get; } = definition.Name;
@@ -404,7 +404,7 @@ public sealed class Television
 
         public void Draw(double startAt)
         {
-            Showing = _bag.Next();
+            Showing = _deck.Next();
             Position = startAt;
         }
 
@@ -428,7 +428,7 @@ public sealed class Television
                 return this;
 
             Episodes = next.Episodes;
-            _bag = new ShuffleBag<Episode>(next.Episodes, rng);
+            _deck = new ShuffleDeck<Episode>(next.Episodes, rng);
             if (Showing is not null && Find(Showing.Id) is null) Forget();
             return this;
         }

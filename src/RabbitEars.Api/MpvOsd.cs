@@ -33,7 +33,11 @@ public static class MpvOsd
 {
     private const double FrameWidth = 960;
     private const double FrameHeight = 720;
-    private const int VolumeSegments = 20;
+    private const int VolumeSegments = 25;
+
+    // Clear of the tube's rounded corners: the stylesheet's 32px on a 640x480 design.
+    private const double MarginX = 0.05 * FrameWidth;
+    private const double MarginY = 0.0667 * FrameHeight;
 
     // libass sizes VT323 by its Windows ascent plus descent (1.04 + 0.24 em),
     // where CSS sizes the em. These turn one into the other and line the
@@ -53,20 +57,19 @@ public static class MpvOsd
         // Messages share the top of the screen with the banner, so they take its place.
         if (view.Message is { } message)
         {
-            page.Text(message, FrameWidth / 2, 0.06 * FrameHeight, 0.083 * FrameHeight, Align.TopCentre);
+            page.Text(message, FrameWidth / 2, MarginY, 0.075 * FrameHeight, Align.TopCentre);
         }
         else if (view.Banner is { } channel)
         {
-            var right = FrameWidth * (1 - 0.06);
-            var top = 0.06 * FrameHeight;
-            var numberSize = 0.122 * FrameHeight;
-            page.Text($"CH {channel.Number:00}", right, top, numberSize, Align.TopRight);
-            page.Text(channel.Name, right, top + numberSize + 0.022 * FrameHeight, 0.056 * FrameHeight, Align.TopRight);
+            var right = FrameWidth - MarginX;
+            var numberSize = 0.133 * FrameHeight;
+            page.Text($"CH {channel.Number:00}", right, MarginY, numberSize, Align.TopRight);
+            page.Text(channel.Name, right, MarginY + numberSize + 0.0125 * FrameHeight, 0.054 * FrameHeight, Align.TopRight);
         }
 
         if (view.Standby)
         {
-            page.Text("STANDBY", FrameWidth / 2, FrameHeight / 2, 0.1 * FrameHeight, Align.Centre);
+            page.Text("STANDBY", FrameWidth / 2, FrameHeight / 2, 0.09 * FrameHeight, Align.Centre);
         }
 
         if (view.ShowVolume)
@@ -80,16 +83,16 @@ public static class MpvOsd
     /// <summary>Solid bars for the level, dots for the rest, like a classic TV volume display.</summary>
     private static void DrawVolume(Page page, int volume, bool muted)
     {
-        var rowWidth = 0.769 * FrameWidth;
-        var rowHeight = 0.067 * FrameHeight;
+        var rowWidth = 0.7 * FrameWidth;
+        var rowHeight = 0.058 * FrameHeight;
         var left = (FrameWidth - rowWidth) / 2;
-        var rowTop = FrameHeight * (1 - 0.06) - rowHeight;
-        var labelSize = 0.067 * FrameHeight;
-        var labelTop = rowTop - 0.019 * FrameHeight - labelSize;
+        var rowTop = FrameHeight - MarginY - rowHeight;
+        var labelSize = 0.0625 * FrameHeight;
+        var labelTop = rowTop - 0.0167 * FrameHeight - labelSize;
         page.Text(muted ? "Mute" : "Volume", left, labelTop, labelSize, Align.TopLeft);
 
-        var slot = 0.0167 * FrameWidth;
-        var dot = 0.0167 * FrameHeight;
+        var slot = 0.0156 * FrameWidth;
+        var dot = 0.0146 * FrameHeight;
         var lit = (int)Math.Round(Math.Clamp(volume, 0, 100) / 100.0 * VolumeSegments);
         var shapes = new StringBuilder();
         for (var index = 0; index < VolumeSegments; index++)
@@ -115,13 +118,13 @@ public static class MpvOsd
         path.Append(Invariant($"b {cx - r} {cy - k} {cx - k} {cy - r} {cx} {cy - r} "));
     }
 
-    /// <summary>"#4DFF5A" as ASS writes colours: blue, green, red.</summary>
+    /// <summary>"#3DFF6E" as ASS writes colours: blue, green, red.</summary>
     private static string Colour(string css)
     {
         var hex = css.TrimStart('#');
         if (hex.Length != 6 || !int.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out _))
         {
-            hex = "4DFF5A";
+            hex = "3DFF6E";
         }
         return $"&H{hex[4..6]}{hex[2..4]}{hex[0..2]}&".ToUpperInvariant();
     }

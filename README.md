@@ -18,12 +18,6 @@ it, since real shows cannot be put on a public website.
 
 ![Flipping channels on the demo site: the curved picture, the green channel banner and volume bar, and the remote beside it following along](docs/demo.gif)
 
-Inspired by [NostalgiaBox](https://github.com/landonbtw/NostalgiaBox) by Landon
-Bytheway, which does this with Python and mpv on a Raspberry Pi. Rabbit Ears is
-a separate codebase for the browser, built in Angular and ASP.NET Core. A few
-pieces are adapted from that project: the CRT shader maths, the on-screen
-display layout and the shuffle.
-
 ## Run it on your laptop
 
 You need the .NET 10 SDK, Node 22 or newer, and ffmpeg (for the test shows).
@@ -118,7 +112,7 @@ joined with two underscores) and restart the service. The ones worth knowing:
 | `Tv.StartOffsetMin` / `Max` | `6` / `10` | A new episode starts this many seconds in, so it feels already on. |
 | `Picture.Transition` | `none` | Channel-change effect: `none`, `static` (analog snow) or `glitch`. |
 | `Picture.Crt.*` | see the file | `Curvature`, `CornerRadius`, `Vignette`, `ScanlineIntensity`. `Enabled: false` shows the plain video with no shader at all, the lightest option for a weak graphics chip. |
-| `Picture.Osd.Color` | `#4DFF5A` | The phosphor green. |
+| `Picture.Osd.Color` | `#3DFF6E` | The phosphor green. |
 | `Tv.InitialVolume` / `VolumeStep` | `60` / `5` | |
 | `Player.Kind` | `mpv` | What draws the box's screen: `mpv` plays any format, `browser` is the `/tv` page in Chromium (MP4 and WebM only). Takes effect at the next login. |
 
@@ -172,7 +166,7 @@ behind nginx.
 ```text
 src/RabbitEars.Core/     no web or disk: the TV's behaviour, unit tested
   Television.cs            the state machine (channels, volume, standby, digits)
-  ShuffleBag.cs            every episode once, then reshuffle, no back-to-back repeats
+  ShuffleDeck.cs           every episode once per pass, no back-to-back repeats
 src/RabbitEars.Api/      ASP.NET Core: one process that owns the TV
   TvService.cs             the single television; saves state, rescans, broadcasts
   TvHub.cs                 SignalR: button presses in, state out

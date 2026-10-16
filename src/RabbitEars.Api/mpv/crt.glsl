@@ -9,36 +9,41 @@
 //!DESC Rabbit Ears tube
 
 // Replaced with the box's own settings when it writes this file out for mpv.
-#define CURVATURE 0.12
-#define CORNER_RADIUS 0.065
-#define VIGNETTE 0.25
-#define SCANLINES 0.12
+#define CURVATURE 0.15
+#define CORNER_RADIUS 0.05
+#define VIGNETTE 0.3
+#define SCANLINES 0.1
 
-#define PI 3.14159265
 #define SCAN_LINES 480.0
 
 vec4 hook() {
-  vec2 uv = HOOKED_pos;
-  vec2 cc = uv - 0.5;
-  float dist2 = dot(cc, cc);
+  // Centred tube coordinates: -1..1 across the picture, y down.
+  vec2 p = HOOKED_pos * 2.0 - 1.0;
 
-  // Barrel distortion: push pixels outward with distance from centre.
-  vec2 warped = uv + cc * dist2 * CURVATURE;
+  // Bulge: each axis bends by how far out the other one is, so the edges bow
+  // outward like glass over a tube and the corners stretch the most.
+  vec2 bent = p * (1.0 + 0.5 * CURVATURE * p.yx * p.yx);
 
-  // Rounded-rectangle mask over the warped frame, anti-aliased at the edge.
-  vec2 d = abs(warped - 0.5) - (vec2(0.5) - CORNER_RADIUS);
-  float outside = length(max(d, vec2(0.0))) - CORNER_RADIUS;
-  float aa = 1.5 / max(HOOKED_size.x, HOOKED_size.y);
-  float mask = 1.0 - smoothstep(0.0, aa, outside);
+  // Rounded corners, measured in pixels so they stay round on any shape of
+  // screen, with an edge that fades over one pixel.
+  vec2 halfSize = 0.5 * HOOKED_size;
+  float radius = CORNER_RADIUS * min(HOOKED_size.x, HOOKED_size.y);
+  vec2 inset = abs(bent) * halfSize - (halfSize - radius);
+  float edge = length(max(inset, 0.0)) + min(max(inset.x, inset.y), 0.0) - radius;
+  float mask = clamp(0.5 - edge, 0.0, 1.0);
   if (mask <= 0.0) return vec4(0.0, 0.0, 0.0, 1.0);
 
+  vec2 warped = bent * 0.5 + 0.5;
   vec3 col = HOOKED_tex(clamp(warped, 0.0, 1.0)).rgb;
 
-  // Vignette: darken toward the edges and corners.
-  col *= clamp(1.0 - VIGNETTE * dist2 * 4.0, 0.0, 1.0);
+  // Vignette: the picture dims toward the edges of the glass, most in the corners.
+  vec2 centred = warped * (1.0 - warped) * 4.0;
+  col *= pow(clamp(centred.x * centred.y, 1e-4, 1.0), VIGNETTE * 0.6);
 
-  // Scanlines: subtle horizontal darkening at a standard-definition line pitch.
-  col *= 1.0 - SCANLINES * (0.5 + 0.5 * cos(warped.y * SCAN_LINES * PI));
+  // Scanlines: each line is a soft beam, brightest along its middle, at a
+  // standard-definition line count.
+  float row = fract(warped.y * SCAN_LINES) - 0.5;
+  col *= 1.0 - SCANLINES * 1.2 * (1.0 - exp(-8.0 * row * row));
 
   return vec4(col * mask, 1.0);
 }

@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
   <rect width="192" height="192" rx="42" fill="#1b1d1a"/>
   <!-- rabbit ears -->
-  <path d="M64 28l32 30 32-30" fill="none" stroke="#4dff5a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="64" cy="28" r="8" fill="#4dff5a"/>
-  <circle cx="128" cy="28" r="8" fill="#4dff5a"/>
+  <path d="M64 28l32 30 32-30" fill="none" stroke="#3dff6e" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="64" cy="28" r="8" fill="#3dff6e"/>
+  <circle cx="128" cy="28" r="8" fill="#3dff6e"/>
   <!-- the set -->
-  <rect x="30" y="56" width="132" height="104" rx="24" fill="#0b1a0d" stroke="#4dff5a" stroke-width="9"/>
+  <rect x="30" y="56" width="132" height="104" rx="24" fill="#0b1a0d" stroke="#3dff6e" stroke-width="9"/>
   <!-- the volume display: bars for the level, dots for the rest -->
-  <path d="M56 91v34M71 91v34M86 91v34M101 91v34" fill="none" stroke="#4dff5a" stroke-width="9"/>
-  <circle cx="120" cy="108" r="4.5" fill="#4dff5a"/>
-  <circle cx="136" cy="108" r="4.5" fill="#4dff5a"/>
+  <path d="M56 91v34M71 91v34M86 91v34M101 91v34" fill="none" stroke="#3dff6e" stroke-width="9"/>
+  <circle cx="120" cy="108" r="4.5" fill="#3dff6e"/>
+  <circle cx="136" cy="108" r="4.5" fill="#3dff6e"/>
 </svg>

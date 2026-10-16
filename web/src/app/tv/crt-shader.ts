@@ -3,9 +3,6 @@
 // glitch blocks and colour bars are drawn here too rather than played from
 // clips, which keeps them inside the curved glass like everything else.
 //
-// The curvature, corner mask, vignette and scanline maths are adapted from
-// NostalgiaBox (MIT); see THIRD-PARTY-NOTICES.md.
-//
 // Written in GLSL ES 1.00 so it runs on both WebGL 1 and WebGL 2.
 
 export const VERTEX_SHADER = `
@@ -35,7 +32,6 @@ uniform int uMode;          // 0 video, 1 snow, 2 glitch, 3 colour bars, 4 blank
 uniform float uTime;        // seconds, wrapped by the caller to stay precise
 uniform float uPower;       // 1 on, 0 off; in between the picture collapses
 
-const float PI = 3.14159265;
 const float SCAN_LINES = 480.0;
 
 // Dave Hoskins' hash12: even-looking noise with no visible lattice.
@@ -82,22 +78,26 @@ vec3 bars(vec2 uv) {
 }
 
 void main() {
-  vec2 uv = (vUv - uTube.xy) / uTube.zw;
-  vec2 cc = uv - 0.5;
-  float dist2 = dot(cc, cc);
+  // Centred tube coordinates: -1..1 across the picture, y down.
+  vec2 p = (vUv - uTube.xy) / uTube.zw * 2.0 - 1.0;
 
-  // Barrel distortion: push pixels outward with distance from centre.
-  vec2 warped = uv + cc * dist2 * uCurvature;
+  // Bulge: each axis bends by how far out the other one is, so the edges bow
+  // outward like glass over a tube and the corners stretch the most.
+  vec2 bent = p * (1.0 + 0.5 * uCurvature * p.yx * p.yx);
 
-  // Rounded-rectangle mask over the warped frame, anti-aliased at the edge.
-  vec2 d = abs(warped - 0.5) - (vec2(0.5) - uCornerRadius);
-  float outside = length(max(d, vec2(0.0))) - uCornerRadius;
-  float aa = 1.5 / max(uTubePixels.x, uTubePixels.y);
-  float mask = 1.0 - smoothstep(0.0, aa, outside);
+  // Rounded corners, measured in pixels so they stay round on any shape of
+  // screen, with an edge that fades over one pixel.
+  vec2 halfSize = 0.5 * uTubePixels;
+  float radius = uCornerRadius * min(uTubePixels.x, uTubePixels.y);
+  vec2 inset = abs(bent) * halfSize - (halfSize - radius);
+  float edge = length(max(inset, 0.0)) + min(max(inset.x, inset.y), 0.0) - radius;
+  float mask = clamp(0.5 - edge, 0.0, 1.0);
   if (mask <= 0.0) {
     gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
     return;
   }
+
+  vec2 warped = bent * 0.5 + 0.5;
 
   // Switching off: the picture squeezes to a bright line, then to a dot.
   float tall = clamp((uPower - 0.35) / 0.65, 0.0, 1.0);
@@ -116,11 +116,14 @@ void main() {
     col = mix(col, vec3(1.0), (1.0 - tall) * 0.85);
   }
 
-  // Vignette: darken toward the edges and corners.
-  col *= clamp(1.0 - uVignette * dist2 * 4.0, 0.0, 1.0);
+  // Vignette: the picture dims toward the edges of the glass, most in the corners.
+  vec2 centred = warped * (1.0 - warped) * 4.0;
+  col *= pow(clamp(centred.x * centred.y, 1e-4, 1.0), uVignette * 0.6);
 
-  // Scanlines: subtle horizontal darkening at a standard-definition line pitch.
-  col *= 1.0 - uScanlines * (0.5 + 0.5 * cos(warped.y * SCAN_LINES * PI));
+  // Scanlines: each line is a soft beam, brightest along its middle, at a
+  // standard-definition line count.
+  float row = fract(warped.y * SCAN_LINES) - 0.5;
+  col *= 1.0 - uScanlines * 1.2 * (1.0 - exp(-8.0 * row * row));
 
   gl_FragColor = vec4(col * mask, 1.0);
 }
