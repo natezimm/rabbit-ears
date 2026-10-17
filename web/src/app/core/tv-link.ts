@@ -71,7 +71,8 @@ export class TvLink {
 
   episodeEnded = (token: string) => this.send('EpisodeEnded', token);
   episodeFailed = (token: string) => this.send('EpisodeFailed', token);
-  reportPosition = (token: string, seconds: number) => this.send('ReportPosition', token, seconds);
+  reportPosition = (token: string, seconds: number, duration: number | null) =>
+    this.send('ReportPosition', token, seconds, duration);
 
   /**
    * Two presses made at the same instant are broadcast separately and can
