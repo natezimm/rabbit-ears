@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: dotnet test
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npx ng build
+
+  # The demo site's container, built the way the server builds it.
+  demo-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t rabbit-ears .
+      - name: The container answers and opens on the demo page
+        run: |
+          docker run -d --name demo -p 8080:8080 rabbit-ears
+          for i in $(seq 30); do curl -fs http://localhost:8080/api/health && break; sleep 1; done
+          curl -fs http://localhost:8080/api/demo | grep -q '"enabled":true'
+          test "$(curl -fs http://localhost:8080/api/library | jq .episodes)" -gt 0
+          curl -s -o /dev/null -w '%{redirect_url}' http://localhost:8080/ | grep -q '/demo$'

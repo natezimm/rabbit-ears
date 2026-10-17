@@ -1,0 +1,50 @@
+<div class="demo">
+  <section class="screen" aria-label="The television">
+    <ears-tv-screen />
+  </section>
+
+  <aside class="panel">
+    <header>
+      <h1>Rabbit Ears</h1>
+      <p>
+        A 90s TV in the browser. Folders of shows become channels on a curved tube picture,
+        and something is always already on. This TV is yours alone: nobody else can change it.
+      </p>
+    </header>
+
+    <section class="phone">
+      <svg class="qr" [attr.viewBox]="'0 0 ' + qr.size + ' ' + qr.size" shape-rendering="crispEdges" role="img"
+           aria-label="QR code for the phone remote">
+        <rect [attr.width]="qr.size" [attr.height]="qr.size" fill="#fff" />
+        <path [attr.d]="qr.d" fill="#000" />
+      </svg>
+      <div>
+        <h2>Your phone is the remote</h2>
+        <p>Scan this to drive this TV from your phone, or <a [href]="remoteUrl" target="_blank" rel="noopener">open the remote in a new tab</a>.</p>
+      </div>
+    </section>
+
+    <section class="keys">
+      <h2>Or use the keyboard</h2>
+      <dl>
+        <dt>↑ ↓</dt><dd>Channel</dd>
+        <dt>← →</dt><dd>Volume</dd>
+        <dt>0–9</dt><dd>Tune to a channel</dd>
+        <dt>L</dt><dd>Last channel</dd>
+        <dt>M</dt><dd>Mute</dd>
+        <dt>P</dt><dd>Power</dd>
+        <dt>F</dt><dd>Full screen</dd>
+      </dl>
+    </section>
+
+    <ears-remote class="remote" />
+
+    <footer>
+      <p>
+        Angular and ASP.NET Core with SignalR; the tube is a WebGL shader. At home it runs on a mini
+        PC with an IR remote and real shows; the clips here are made for the demo.
+      </p>
+      <a href="https://github.com/natezimm/rabbit-ears" target="_blank" rel="noopener">Source on GitHub</a>
+    </footer>
+  </aside>
+</div>

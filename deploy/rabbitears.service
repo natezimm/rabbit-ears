@@ -1,0 +1,21 @@
+[Unit]
+Description=Rabbit Ears TV service
+After=network.target
+
+[Service]
+Type=simple
+User=rabbitears
+Group=rabbitears
+WorkingDirectory=/opt/rabbitears
+ExecStart=/opt/rabbitears/RabbitEars.Api
+# Settings live outside the app folder so an update never overwrites them.
+EnvironmentFile=/etc/rabbitears/box.env
+Restart=always
+RestartSec=3
+# Creates /var/lib/rabbitears, where the channel/volume/position file lives.
+StateDirectory=rabbitears
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

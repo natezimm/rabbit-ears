@@ -1,0 +1,247 @@
+:host {
+  --body: #1b1d1a;
+  --body-edge: #2a2d28;
+  --key: #3a3e38;
+  --key-edge: #20231f;
+  --label: #a9b0a3;
+  --phosphor: #3dff6e;
+  --lcd: #0b1a0d;
+
+  display: block;
+  min-height: 100dvh;
+  background: var(--body);
+  color: #e8ece4;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.remote {
+  display: grid;
+  gap: 22px;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: max(18px, env(safe-area-inset-top)) 18px max(28px, env(safe-area-inset-bottom));
+}
+
+/* The readout borrows the TV's green on-screen display. */
+.lcd {
+  padding: 14px 16px 12px;
+  border: 2px solid #050b06;
+  border-radius: 12px;
+  background: var(--lcd);
+  box-shadow: inset 0 0 22px rgb(0 0 0 / 0.75), 0 1px 0 var(--body-edge);
+  color: var(--phosphor);
+  font-family: 'VT323', ui-monospace, monospace;
+  line-height: 1;
+  text-shadow: 0 0 8px rgb(77 255 90 / 0.55);
+  transition: opacity 0.2s;
+}
+
+.lcd.dim {
+  opacity: 0.55;
+}
+
+.lcd-big {
+  overflow: hidden;
+  font-size: 34px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lcd-small {
+  min-height: 20px;
+  margin-top: 4px;
+  overflow: hidden;
+  font-size: 20px;
+  opacity: 0.8;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lcd-volume {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 18px;
+  margin-top: 10px;
+}
+
+.lcd-volume-label {
+  width: 44px;
+  font-size: 18px;
+}
+
+.lcd-volume i {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: rgb(77 255 90 / 0.28);
+}
+
+.lcd-volume i.lit {
+  height: 100%;
+  background: var(--phosphor);
+  box-shadow: 0 0 6px rgb(77 255 90 / 0.5);
+}
+
+/* Chunky rubber buttons: a darker lip underneath that the key sinks into. */
+.key {
+  display: grid;
+  place-items: center;
+  min-height: 62px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--key);
+  box-shadow: 0 5px 0 var(--key-edge), inset 0 1px 0 rgb(255 255 255 / 0.12);
+  color: #f3f5ef;
+  font: 600 26px/1 system-ui, sans-serif;
+  touch-action: manipulation;
+  transition: transform 0.05s, box-shadow 0.05s;
+}
+
+.key:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--key-edge), inset 0 1px 0 rgb(255 255 255 / 0.12);
+}
+
+.key:focus-visible {
+  outline: 3px solid var(--phosphor);
+  outline-offset: 3px;
+}
+
+.key svg {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+}
+
+.key.word {
+  font-size: 16px;
+  letter-spacing: 0.08em;
+}
+
+.top-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.top-row .key {
+  width: 76px;
+  border-radius: 50%;
+  aspect-ratio: 1;
+}
+
+/* Colour-coded like a big-button kids' remote. */
+.power {
+  --key: #d8433f;
+  --key-edge: #8a2321;
+}
+
+.mute {
+  --key: #e0a52c;
+  --key-edge: #8f6612;
+}
+
+.rockers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 26px;
+}
+
+.rocker {
+  display: grid;
+  gap: 10px;
+  text-align: center;
+}
+
+.rocker span {
+  color: var(--label);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.rocker .key {
+  min-height: 78px;
+  font-size: 34px;
+}
+
+.rocker.volume {
+  --key: #3fae52;
+  --key-edge: #226b30;
+}
+
+.rocker.channel {
+  --key: #3b82e0;
+  --key-edge: #1f4c8c;
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px 12px;
+}
+
+.guide h2 {
+  margin: 6px 0 8px;
+  color: var(--label);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.guide-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 10px;
+  border: 0;
+  border-top: 1px solid var(--body-edge);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.guide-row:active {
+  background: var(--body-edge);
+}
+
+.guide-number {
+  min-width: 44px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--lcd);
+  color: rgb(77 255 90 / 0.6);
+  font: 26px/1 'VT323', ui-monospace, monospace;
+  text-align: center;
+}
+
+.guide-row.on .guide-number {
+  color: var(--phosphor);
+  text-shadow: 0 0 8px rgb(77 255 90 / 0.55);
+}
+
+.guide-name {
+  flex: 1;
+  overflow: hidden;
+  font-size: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.guide-row.on .guide-name {
+  font-weight: 700;
+}
+
+.guide-count {
+  color: var(--label);
+  font-size: 13px;
+}
