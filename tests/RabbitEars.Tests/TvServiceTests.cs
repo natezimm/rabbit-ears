@@ -32,7 +32,7 @@ public sealed class TvServiceTests : IDisposable
         File.WriteAllText(path, "");
     }
 
-    private TvService Service(DemoOptions? demo = null)
+    private TvService Service(DemoOptions? demo = null, IEpisodeProbe? probe = null)
     {
         var options = new BoxOptions
         {
@@ -47,7 +47,8 @@ public sealed class TvServiceTests : IDisposable
             new StateFile(options, NullLogger<StateFile>.Instance),
             _hub,
             NullLogger<TvService>.Instance,
-            _clock);
+            _clock,
+            probe);
     }
 
     private TvService DemoService(int maxTvs = 100) =>
@@ -81,6 +82,39 @@ public sealed class TvServiceTests : IDisposable
 
         Assert.Empty(_hub.Sent);
         Assert.Equal((dragonTales.Revision, dragonTales.Playing), (tv.Snapshot().Revision, tv.Snapshot().Playing));
+    }
+
+    [Fact]
+    public async Task Probed_lengths_let_a_channel_roll_on_to_its_next_episode_while_away()
+    {
+        var probe = new FakeProbe(1000);
+        var tv = Service(probe: probe);
+        await tv.ProbeLengths(CancellationToken.None);
+        var first = tv.Snapshot().Playing!;
+
+        await tv.Press(t => t.ChannelUp());
+        _clock.Advance(TimeSpan.FromSeconds(1000));
+        await tv.Press(t => t.ChannelDown());
+
+        Assert.Equal(3, probe.Asked);
+        Assert.NotEqual(first.EpisodeId, tv.Snapshot().Playing!.EpisodeId);
+
+        // Lengths the television already knows are not probed again.
+        await tv.StopAsync(CancellationToken.None);
+        var again = new FakeProbe(1000);
+        await Service(probe: again).ProbeLengths(CancellationToken.None);
+        Assert.Equal(0, again.Asked);
+    }
+
+    private sealed class FakeProbe(double seconds) : IEpisodeProbe
+    {
+        public int Asked { get; private set; }
+
+        public Task<double?> Length(string path, CancellationToken cancellationToken)
+        {
+            Asked++;
+            return Task.FromResult<double?>(seconds);
+        }
     }
 
     [Fact]
