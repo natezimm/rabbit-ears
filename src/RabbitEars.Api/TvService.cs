@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using System.Threading.Channels;
 using Microsoft.AspNetCore.SignalR;
 using RabbitEars.Core;
 
@@ -37,7 +38,13 @@ public sealed partial class TvService : BackgroundService
     private readonly IHubContext<TvHub> _hub;
     private readonly ILogger<TvService> _log;
     private readonly TimeProvider _clock;
+    private readonly IEpisodeProbe? _probe;
     private readonly Dictionary<string, Room> _rooms = [];
+
+    // Episode lengths found by probing, handed to every television including ones made later.
+    private readonly Dictionary<string, double> _lengths = [];
+    private readonly Channel<bool> _rescanned = Channel.CreateBounded<bool>(
+        new BoundedChannelOptions(1) { FullMode = BoundedChannelFullMode.DropWrite });
 
     private Library _library;
     private bool _unsaved;
@@ -49,7 +56,8 @@ public sealed partial class TvService : BackgroundService
         StateFile stateFile,
         IHubContext<TvHub> hub,
         ILogger<TvService> log,
-        TimeProvider? clock = null)
+        TimeProvider? clock = null,
+        IEpisodeProbe? probe = null)
     {
         _options = options;
         _scanner = scanner;
@@ -57,6 +65,7 @@ public sealed partial class TvService : BackgroundService
         _hub = hub;
         _log = log;
         _clock = clock ?? TimeProvider.System;
+        _probe = probe;
 
         _library = scanner.Scan();
         if (!Demo)
@@ -95,6 +104,7 @@ public sealed partial class TvService : BackgroundService
             {
                 if (_rooms.Count >= _options.Demo.MaxTvs && !EvictOldestEmptyRoom()) return null;
                 room = new Room(new Television(_options.Tv, _library.Channels, clock: _clock), Now);
+                foreach (var (id, seconds) in _lengths) room.Tv.SetDuration(id, seconds);
                 _rooms[requested] = room;
             }
 
@@ -188,6 +198,49 @@ public sealed partial class TvService : BackgroundService
         {
             await Press(tv => tv.SetLineup(library.Channels), room);
         }
+        _rescanned.Writer.TryWrite(true);
+    }
+
+    /// <summary>
+    /// Find out how long each episode is that no television knows the length of
+    /// yet, so channels can keep running while nobody watches them.
+    /// </summary>
+    public async Task ProbeLengths(CancellationToken cancellationToken)
+    {
+        if (_probe is null) return;
+        KeyValuePair<string, string>[] unknown;
+        lock (_gate)
+        {
+            var home = _rooms.GetValueOrDefault(HomeRoom)?.Tv;
+            unknown = [.. _library.Files.Where(f => !_lengths.ContainsKey(f.Key) && home?.HasDuration(f.Key) != true)];
+        }
+
+        foreach (var (id, path) in unknown)
+        {
+            if (await _probe.Length(path, cancellationToken) is not { } seconds) continue;
+            lock (_gate)
+            {
+                _lengths[id] = seconds;
+                foreach (var room in _rooms.Values) room.Tv.SetDuration(id, seconds);
+                _unsaved = true;
+            }
+        }
+    }
+
+    /// <summary>Probe once at start, then again whenever a rescan may have found new episodes.</summary>
+    private async Task ProbeAfterScans(CancellationToken stoppingToken)
+    {
+        try
+        {
+            do
+            {
+                await ProbeLengths(stoppingToken);
+            }
+            while (await _rescanned.Reader.WaitToReadAsync(stoppingToken) && _rescanned.Reader.TryRead(out _));
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+        }
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -197,6 +250,7 @@ public sealed partial class TvService : BackgroundService
             : Timeout.InfiniteTimeSpan;
         var lastSave = Stopwatch.StartNew();
         var lastScan = Stopwatch.StartNew();
+        var probing = Task.Run(() => ProbeAfterScans(stoppingToken), CancellationToken.None);
 
         using var timer = new PeriodicTimer(TickInterval);
         try
@@ -222,6 +276,7 @@ public sealed partial class TvService : BackgroundService
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
         }
+        await probing;
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)

@@ -23,6 +23,12 @@ public sealed class BoxOptions
     public int RescanMinutes { get; set; } = 10;
 
     /// <summary>
+    /// The ffprobe program, used to learn each episode's length so channels can
+    /// keep running while nobody watches them. Empty turns probing off.
+    /// </summary>
+    public string Ffprobe { get; set; } = "ffprobe";
+
+    /// <summary>
     /// Run after GOODBYE when <see cref="TvSettings.PowerOffAtZeroVolume"/> is on,
     /// e.g. ["systemctl", "poweroff"]. Empty does nothing.
     /// </summary>

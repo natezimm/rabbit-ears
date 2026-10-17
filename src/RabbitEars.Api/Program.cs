@@ -11,6 +11,7 @@ options.Player.MpvSocket = Path.GetFullPath(options.Player.MpvSocket, builder.En
 builder.Services.AddSingleton(options);
 builder.Services.AddSingleton<LibraryScanner>();
 builder.Services.AddSingleton<StateFile>();
+builder.Services.AddSingleton<IEpisodeProbe, FfprobeEpisodeProbe>();
 builder.Services.AddSingleton<TvService>();
 builder.Services.AddHostedService(services => services.GetRequiredService<TvService>());
 // With mpv as the box's screen, the server drives it directly; otherwise this does nothing.
