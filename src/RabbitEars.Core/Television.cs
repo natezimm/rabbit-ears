@@ -14,6 +14,9 @@ public sealed class Television
     private const int MaxConsecutiveFailures = 5;
     private const int MaxDigits = 3;
 
+    // Enough to catch a channel up through a week away from it.
+    private const int MaxCatchUpEpisodes = 1000;
+
     private readonly TvSettings _settings;
     private readonly Random _random;
     private readonly TimeProvider _clock;
@@ -21,6 +24,9 @@ public sealed class Television
     // Tokens must not collide with ones a screen still holds from before a restart.
     private readonly string _bootId = Guid.NewGuid().ToString("N")[..8];
     private readonly Queue<PlayRecord> _recentRequests = new();
+
+    // Episode lengths in seconds, as the screen reports them while playing.
+    private readonly Dictionary<string, double> _durations = [];
 
     private List<Tuner> _tuners = [];
     private int _index;
@@ -47,12 +53,16 @@ public sealed class Television
         Volume = Math.Clamp(saved?.Volume ?? settings.InitialVolume, 0, 100);
         Muted = saved?.Muted ?? false;
         _lastChannel = saved?.LastChannel;
+        foreach (var (id, seconds) in saved?.Durations ?? [])
+        {
+            if (double.IsFinite(seconds) && seconds > 0) _durations[id] = seconds;
+        }
 
         _tuners = [.. channels.OrderBy(c => c.Number).Select(c => new Tuner(c, _random))];
         foreach (var tuner in _tuners)
         {
             if (saved?.Positions.GetValueOrDefault(tuner.Name) is { } position)
-                tuner.Restore(position);
+                tuner.Restore(position, _clock.GetUtcNow());
         }
 
         var start = _tuners.FindIndex(t => t.Name == saved?.Channel);
@@ -222,18 +232,22 @@ public sealed class Television
     }
 
     /// <summary>
-    /// Where the screen has got to. Reports for a channel that was just left
-    /// still land on that channel, which is how "resume" knows where you were.
+    /// Where the screen has got to, and how long the episode is if it knows.
+    /// Reports for a channel that was just left still land on that channel,
+    /// which is how tuning back knows where you were.
     /// </summary>
-    public void ReportPosition(string token, double seconds)
+    public void ReportPosition(string token, double seconds, double? duration = null)
     {
         if (!double.IsFinite(seconds) || seconds < 0) return;
         var request = _recentRequests.FirstOrDefault(r => r.Token == token);
         if (request is null) return;
 
+        if (duration is { } length && double.IsFinite(length) && length > 0)
+            _durations[request.EpisodeId] = length;
+
         var tuner = _tuners.Find(t => t.Name == request.Channel);
         if (tuner?.Showing?.Id != request.EpisodeId) return;
-        tuner.Position = seconds;
+        tuner.MoveTo(seconds, _clock.GetUtcNow());
         if (token == _playing?.Token) _failures = 0;
     }
 
@@ -276,13 +290,18 @@ public sealed class Television
         _message,
         [.. _tuners.Select(t => new ChannelListing(t.Number, t.Name, t.Episodes.Count, t.Showing?.Title))]);
 
-    public SavedState Save() => new(
-        _tuners.Count > 0 ? Current.Name : null,
-        _lastChannel,
-        Volume,
-        Muted,
-        _tuners.Where(t => t.Showing is not null)
-            .ToDictionary(t => t.Name, t => new SavedPosition(t.Showing!.Id, t.Position)));
+    public SavedState Save()
+    {
+        var onAir = _tuners.SelectMany(t => t.Episodes).Select(e => e.Id).ToHashSet();
+        return new(
+            _tuners.Count > 0 ? Current.Name : null,
+            _lastChannel,
+            Volume,
+            Muted,
+            _tuners.Where(t => t.Showing is not null)
+                .ToDictionary(t => t.Name, t => new SavedPosition(t.Showing!.Id, t.Position, t.PositionAt)),
+            _durations.Where(d => onAir.Contains(d.Key)).ToDictionary());
+    }
 
     // -- internals --------------------------------------------------------------
 
@@ -329,17 +348,43 @@ public sealed class Television
             return;
         }
 
-        var resume = _settings.TuneIn == TuneInMode.Resume && tuner.Showing is not null;
-        if (!resume) tuner.Draw(RandomStartOffset());
+        if (tuner.Showing is null || _settings.TuneIn == TuneInMode.Random) Draw(tuner);
+        else if (_settings.TuneIn == TuneInMode.Live) CatchUp(tuner);
         Play(tuner, reason);
+    }
+
+    /// <summary>
+    /// The channel kept broadcasting while nobody watched it: move it on by the
+    /// time that has passed, rolling through as many episodes as fitted in. An
+    /// episode whose length is not known yet is joined at the overshoot, and if
+    /// that is past its end the screen ends it and the next one rolls.
+    /// </summary>
+    private void CatchUp(Tuner tuner)
+    {
+        var now = _clock.GetUtcNow();
+        var position = tuner.Position + Math.Max(0, (now - tuner.PositionAt).TotalSeconds);
+        for (var rolled = 0; _durations.TryGetValue(tuner.Showing!.Id, out var length) && position >= length; rolled++)
+        {
+            if (rolled == MaxCatchUpEpisodes)
+            {
+                Draw(tuner);
+                return;
+            }
+            var overshoot = position - length;
+            Draw(tuner);
+            position = tuner.Position + overshoot;
+        }
+        tuner.MoveTo(position, now);
     }
 
     private void Advance()
     {
         var tuner = Current;
-        tuner.Draw(RandomStartOffset());
+        Draw(tuner);
         Play(tuner, PlayReason.Advance);
     }
+
+    private void Draw(Tuner tuner) => tuner.Draw(RandomStartOffset(), _clock.GetUtcNow());
 
     private void Play(Tuner tuner, string reason)
     {
@@ -389,7 +434,10 @@ public sealed class Television
 
     private sealed record PlayRecord(string Token, string Channel, string EpisodeId);
 
-    /// <summary>One channel's runtime state: its shuffle and what it was last showing.</summary>
+    /// <summary>
+    /// One channel's runtime state: its shuffle, what it was last showing, and
+    /// how far in it was at <see cref="PositionAt"/>.
+    /// </summary>
     private sealed class Tuner(ChannelDefinition definition, Random random)
     {
         private ShuffleDeck<Episode> _deck = new(definition.Episodes, random);
@@ -398,14 +446,21 @@ public sealed class Television
         public string Name { get; } = definition.Name;
         public IReadOnlyList<Episode> Episodes { get; private set; } = definition.Episodes;
         public Episode? Showing { get; private set; }
-        public double Position { get; set; }
+        public double Position { get; private set; }
+        public DateTimeOffset PositionAt { get; private set; }
 
         public Episode? Find(string episodeId) => Episodes.FirstOrDefault(e => e.Id == episodeId);
 
-        public void Draw(double startAt)
+        public void Draw(double startAt, DateTimeOffset now)
         {
             Showing = _deck.Next();
-            Position = startAt;
+            MoveTo(startAt, now);
+        }
+
+        public void MoveTo(double position, DateTimeOffset at)
+        {
+            Position = position;
+            PositionAt = at;
         }
 
         public void Forget()
@@ -414,10 +469,11 @@ public sealed class Television
             Position = 0;
         }
 
-        public void Restore(SavedPosition saved)
+        /// <summary>A saved position from before positions carried a time counts as just now.</summary>
+        public void Restore(SavedPosition saved, DateTimeOffset now)
         {
             Showing = Find(saved.EpisodeId);
-            Position = Showing is null ? 0 : Math.Max(0, saved.Position);
+            MoveTo(Showing is null ? 0 : Math.Max(0, saved.Position), saved.At ?? now);
         }
 
         /// <summary>Take on a rescanned definition, keeping the shuffle if the episodes are the same.</summary>
