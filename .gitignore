@@ -1,0 +1,20 @@
+# Build output
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.angular/
+**/wwwroot/
+publish/
+
+# Local state and generated test shows
+.local/
+dev-media/
+
+# Editor, tool and OS files
+.claude/
+.vs/
+.vscode/
+.idea/
+*.user
+.DS_Store

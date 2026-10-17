@@ -1,0 +1,61 @@
+<main class="remote">
+  <section class="lcd" [class.dim]="state()?.standby || !link.connected()" aria-live="polite">
+    <div class="lcd-big">{{ readout().big }}</div>
+    <div class="lcd-small">{{ readout().small }}</div>
+    <div class="lcd-volume" [attr.aria-label]="state()?.muted ? 'Muted' : 'Volume ' + (state()?.volume ?? 0)">
+      <span class="lcd-volume-label">{{ state()?.muted ? 'MUTE' : 'VOL' }}</span>
+      @for (lit of segments(); track $index) {
+        <i [class.lit]="lit"></i>
+      }
+    </div>
+  </section>
+
+  <section class="top-row">
+    <button type="button" class="key power" (click)="press(link.power)" aria-label="Power">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9M6.3 6.8a8 8 0 1 0 11.4 0" /></svg>
+    </button>
+    <button type="button" class="key mute" (click)="press(link.mute)" aria-label="Mute">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4zM16 9.5l4.5 5M20.5 9.5 16 14.5" /></svg>
+    </button>
+  </section>
+
+  <section class="rockers">
+    <div class="rocker volume">
+      <button type="button" class="key" (click)="press(link.volumeUp)" aria-label="Volume up">+</button>
+      <span>VOL</span>
+      <button type="button" class="key" (click)="press(link.volumeDown)" aria-label="Volume down">−</button>
+    </div>
+    <div class="rocker channel">
+      <button type="button" class="key" (click)="press(link.channelUp)" aria-label="Channel up">▲</button>
+      <span>CH</span>
+      <button type="button" class="key" (click)="press(link.channelDown)" aria-label="Channel down">▼</button>
+    </div>
+  </section>
+
+  <section class="keypad">
+    @for (number of keypad; track number) {
+      <button type="button" class="key" (click)="digit(number)">{{ number }}</button>
+    }
+    <button type="button" class="key word" (click)="press(link.lastChannel)">LAST</button>
+    <button type="button" class="key" (click)="digit(0)">0</button>
+    <button type="button" class="key word" (click)="press(link.confirm)">OK</button>
+  </section>
+
+  @if (state()?.channels?.length) {
+    <section class="guide">
+      <h2>Channels</h2>
+      @for (channel of state()!.channels; track channel.number) {
+        <button
+          type="button"
+          class="guide-row"
+          [class.on]="channel.number === state()!.channel?.number"
+          (click)="tune(channel.number)"
+        >
+          <span class="guide-number">{{ pad(channel.number) }}</span>
+          <span class="guide-name">{{ channel.name }}</span>
+          <span class="guide-count">{{ channel.episodes }} ep</span>
+        </button>
+      }
+    </section>
+  }
+</main>

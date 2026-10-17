@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RabbitEars.Api/RabbitEars.Api.csproj" />
+    <Project Path="src/RabbitEars.Core/RabbitEars.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RabbitEars.Tests/RabbitEars.Tests.csproj" />
+  </Folder>
+</Solution>

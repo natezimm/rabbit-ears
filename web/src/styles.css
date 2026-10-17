@@ -1,0 +1,19 @@
+/* The retro terminal face used for the on-screen display. */
+@font-face {
+  font-family: 'VT323';
+  src: url('/VT323-Regular.ttf') format('truetype');
+  font-display: block;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: #000;
+}

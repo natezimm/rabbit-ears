@@ -1,0 +1,138 @@
+:host {
+  --panel: #1b1d1a;
+  --edge: #2a2d28;
+  --text: #e8ece4;
+  --muted: #a9b0a3;
+  --phosphor: #3dff6e;
+
+  display: block;
+  min-height: 100dvh;
+  background: #000;
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Side by side on a laptop; on a phone the TV sits on top and the rest scrolls under it. */
+.demo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  height: 100dvh;
+}
+
+.screen {
+  position: relative;
+  min-height: 0;
+}
+
+/* The TV fills the whole window on the box; here it fills its half of the page. */
+.screen ears-tv-screen {
+  position: absolute;
+}
+
+.panel {
+  overflow-y: auto;
+  display: grid;
+  align-content: start;
+  /* Rows take their content's height; the panel scrolls rather than squeezing them. */
+  grid-auto-rows: max-content;
+  gap: 22px;
+  padding: 24px 22px 28px;
+  background: var(--panel);
+  border-left: 1px solid var(--edge);
+}
+
+h1 {
+  margin: 0 0 8px;
+  color: var(--phosphor);
+  font-family: 'VT323', ui-monospace, monospace;
+  font-size: 44px;
+  font-weight: normal;
+  line-height: 1;
+  text-shadow: 0 0 10px rgb(77 255 90 / 0.5);
+}
+
+h2 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--phosphor);
+}
+
+.phone {
+  display: grid;
+  grid-template-columns: 112px 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.qr {
+  width: 112px;
+  height: 112px;
+  border-radius: 6px;
+}
+
+.keys dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 14px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.keys dt {
+  color: var(--phosphor);
+  font-family: 'VT323', ui-monospace, monospace;
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.keys dd {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* The phone remote, as is; it brings its own background. */
+.remote {
+  min-height: 0;
+  border-radius: 14px;
+  border: 1px solid var(--edge);
+}
+
+footer {
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+}
+
+@media (max-width: 860px) {
+  .demo {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    height: auto;
+  }
+
+  .screen {
+    aspect-ratio: 4 / 3;
+  }
+
+  .panel {
+    overflow: visible;
+    border-left: 0;
+    border-top: 1px solid var(--edge);
+  }
+
+  /* A phone already has the remote on screen right here. */
+  .phone,
+  .keys {
+    display: none;
+  }
+}

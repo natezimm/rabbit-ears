@@ -1,0 +1,167 @@
+:host {
+  display: block;
+  position: fixed;
+  inset: 0;
+}
+
+/* The screen fills whatever box it is given: the whole window on the box, a
+   panel on the demo page. Sizes inside are measured against it, not the window. */
+.tv {
+  --osd: #3dff6e;
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  overflow: hidden;
+  background: #000;
+  cursor: none;
+  user-select: none;
+}
+
+video,
+canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* The players stay rendered (browsers are happier decoding video that is on
+   the page) but the glass covers them. */
+video {
+  object-fit: contain;
+  opacity: 0;
+}
+
+/* No WebGL: show the live player directly, with what CSS can do for a tube. */
+.flat canvas {
+  display: none;
+}
+
+.flat video.live {
+  opacity: 1;
+  border-radius: 4% / 5.5%;
+}
+
+/*
+ * On-screen display. The layout was designed on a 640x480 frame: every length
+ * below is that design's pixels as a share of the frame (cqw across, cqh down).
+ * The margins keep everything clear of the tube's rounded corners.
+ */
+.osd {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(100cqw, 100cqh * 4 / 3);
+  height: min(100cqh, 100cqw * 3 / 4);
+  container-type: size;
+  pointer-events: none;
+
+  color: var(--osd);
+  font-family: 'VT323', ui-monospace, monospace;
+  line-height: 1;
+  white-space: nowrap;
+  /* VT323 has one weight; a stroke in the same colour is the bold. */
+  -webkit-text-stroke: 0.035em var(--osd);
+  paint-order: stroke fill;
+}
+
+/* Soft phosphor bloom, with a faint dark edge so it stays legible over bright video. */
+.glow .osd {
+  text-shadow:
+    0 0 0.05em rgb(0 0 0 / 0.9),
+    0 0 0.12em var(--osd),
+    0 0 0.32em var(--osd);
+}
+
+.channel {
+  position: absolute;
+  top: 6.67cqh;
+  right: 5cqw;
+  text-align: right;
+}
+
+.channel-number {
+  font-size: 13.3cqh;
+}
+
+.channel-name {
+  margin-top: 1.25cqh;
+  font-size: 5.4cqh;
+}
+
+.message {
+  position: absolute;
+  top: 6.67cqh;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 7.5cqh;
+}
+
+.standby {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 9cqh;
+}
+
+.volume {
+  position: absolute;
+  bottom: 6.67cqh;
+  left: 50%;
+  width: 70cqw;
+  transform: translateX(-50%);
+}
+
+.volume-label {
+  margin-bottom: 1.67cqh;
+  font-size: 6.25cqh;
+}
+
+.volume-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 5.8cqh;
+}
+
+/* Each of the 25 slots is one bar wide, so the dots line up with the bars. */
+.volume-row span {
+  display: grid;
+  place-items: center;
+  width: 1.56cqw;
+  height: 100%;
+}
+
+.volume-row .bar {
+  background: var(--osd);
+}
+
+.volume-row .dot::before {
+  content: '';
+  width: 1.46cqh;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--osd);
+}
+
+.glow .volume-row .bar,
+.glow .volume-row .dot::before {
+  box-shadow: 0 0 1.2cqh color-mix(in srgb, var(--osd) 65%, transparent);
+}
+
+.hint {
+  position: absolute;
+  bottom: 22cqh;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 4.2cqh;
+  opacity: 0.85;
+}
+
+/* On the demo page the pointer is how a visitor gets sound and finds the remote. */
+:host-context(.demo) .tv {
+  cursor: auto;
+}
