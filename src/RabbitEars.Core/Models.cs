@@ -8,7 +8,14 @@ public sealed record ChannelDefinition(int Number, string Name, IReadOnlyList<Ep
 
 public enum TuneInMode
 {
-    /// <summary>Come back to a channel and it picks up where you left it.</summary>
+    /// <summary>
+    /// Channels keep broadcasting while you watch something else, like real TV:
+    /// come back after five minutes and the show is five minutes further on,
+    /// or onto the next episode.
+    /// </summary>
+    Live,
+
+    /// <summary>Come back to a channel and it picks up exactly where you left it.</summary>
     Resume,
 
     /// <summary>Every flip starts a fresh shuffled episode.</summary>
@@ -17,7 +24,7 @@ public enum TuneInMode
 
 public sealed class TvSettings
 {
-    public TuneInMode TuneIn { get; set; } = TuneInMode.Resume;
+    public TuneInMode TuneIn { get; set; } = TuneInMode.Live;
 
     /// <summary>
     /// A newly drawn episode starts a random number of seconds in, between these
@@ -84,12 +91,17 @@ public sealed record TvSnapshot(
     OsdMessage? Message,
     IReadOnlyList<ChannelListing> Channels);
 
-public sealed record SavedPosition(string EpisodeId, double Position);
+/// <param name="At">When the channel was at <paramref name="Position"/>, so it can carry on from there.</param>
+public sealed record SavedPosition(string EpisodeId, double Position, DateTimeOffset? At = null);
 
-/// <summary>The little bit of state that survives a reboot. Positions are keyed by channel name.</summary>
+/// <summary>
+/// The little bit of state that survives a reboot. Positions are keyed by
+/// channel name; durations are episode lengths in seconds, keyed by episode id.
+/// </summary>
 public sealed record SavedState(
     string? Channel,
     string? LastChannel,
     int Volume,
     bool Muted,
-    Dictionary<string, SavedPosition> Positions);
+    Dictionary<string, SavedPosition> Positions,
+    Dictionary<string, double>? Durations = null);

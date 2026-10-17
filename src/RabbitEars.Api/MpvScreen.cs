@@ -204,7 +204,7 @@ public sealed partial class MpvScreen(BoxOptions options, TvService tv, ILogger<
         var now = Now;
         if (now < _nextReport) return;
         _nextReport = now + ReportEvery;
-        if (await Position() is not ({ } token, var seconds)) return;
+        if (await Position() is not ({ } token, var seconds, var duration)) return;
 
         if (seconds == _lastPosition)
         {
@@ -218,7 +218,7 @@ public sealed partial class MpvScreen(BoxOptions options, TvService tv, ILogger<
         }
         _lastPosition = seconds;
         _stalled = 0;
-        Report(token, seconds);
+        Report(token, seconds, duration);
     }
 
     /// <summary>
@@ -254,7 +254,7 @@ public sealed partial class MpvScreen(BoxOptions options, TvService tv, ILogger<
     {
         var leavingEpisode = _showing is not null and not Bars and not Dark;
         // Say exactly where the old channel was left, so coming back resumes there.
-        if (leavingEpisode && await Position() is ({ } token, var seconds)) Report(token, seconds);
+        if (leavingEpisode && await Position() is ({ } token, var seconds, var duration)) Report(token, seconds, duration);
 
         _showing = wanted;
         _episodes.Clear();
@@ -323,21 +323,22 @@ public sealed partial class MpvScreen(BoxOptions options, TvService tv, ILogger<
         _episodes[_currentEntry] = playing.Token;
     }
 
-    /// <summary>Which episode mpv is on and how far into it, if it is playing one.</summary>
-    private async Task<(string? Token, double Seconds)> Position()
+    /// <summary>Which episode mpv is on, how far into it and how long it is, if it is playing one.</summary>
+    private async Task<(string? Token, double Seconds, double? Duration)> Position()
     {
-        if (!_episodes.TryGetValue(_currentEntry, out var token)) return (null, 0);
+        if (!_episodes.TryGetValue(_currentEntry, out var token)) return (null, 0, null);
         var entry = _currentEntry;
-        if (await Get("time-pos") is not { ValueKind: JsonValueKind.Number } position) return (null, 0);
-        // The file may have changed while the answer was on its way.
-        return entry == _currentEntry ? (token, position.GetDouble()) : (null, 0);
+        if (await Get("time-pos") is not { ValueKind: JsonValueKind.Number } position) return (null, 0, null);
+        double? duration = await Get("duration") is { ValueKind: JsonValueKind.Number } length ? length.GetDouble() : null;
+        // The file may have changed while the answers were on their way.
+        return entry == _currentEntry ? (token, position.GetDouble(), duration) : (null, 0, null);
     }
 
-    private void Report(string token, double seconds)
+    private void Report(string token, double seconds, double? duration)
     {
         _resumeToken = token;
         _resumeAt = seconds;
-        tv.ReportPosition(token, seconds);
+        tv.ReportPosition(token, seconds, duration);
     }
 
     private async Task DrawOsd()

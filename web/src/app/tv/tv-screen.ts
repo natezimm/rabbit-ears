@@ -116,7 +116,7 @@ export class TvScreen {
       this.tube = new Tube(decks, this.picture(), {
         ended: token => this.link.episodeEnded(token),
         failed: token => this.link.episodeFailed(token),
-        position: (token, seconds) => this.link.reportPosition(token, seconds),
+        position: (token, seconds, duration) => this.link.reportPosition(token, seconds, duration),
         soundBlocked: blocked => this.soundBlocked.set(blocked),
       });
       this.renderer = CrtRenderer.create(this.canvas().nativeElement, this.picture().crt);

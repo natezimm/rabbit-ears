@@ -54,5 +54,6 @@ public sealed class TvHub(TvService tv) : Hub
     // about, so a late report for a channel that was just left is harmless.
     public Task EpisodeEnded(string token) => tv.Press(t => t.EpisodeEnded(token), Room);
     public Task EpisodeFailed(string token) => tv.Press(t => t.EpisodeFailed(token), Room);
-    public void ReportPosition(string token, double seconds) => tv.ReportPosition(token, seconds, Room);
+    public void ReportPosition(string token, double seconds, double? duration) =>
+        tv.ReportPosition(token, seconds, duration, Room);
 }
