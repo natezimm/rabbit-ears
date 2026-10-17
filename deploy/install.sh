@@ -59,6 +59,12 @@ if ! command -v mpv >/dev/null; then
   apt-get install -y mpv || { apt-get update && apt-get install -y mpv; } \
     || todo+=("Install mpv for the TV: sudo apt install mpv (until then the TV is the browser page, which only plays MP4)")
 fi
+# ffprobe reads each episode's length from its header (no decoding), so a
+# channel knows when to roll on to its next episode while nobody watches it.
+if ! command -v ffprobe >/dev/null; then
+  apt-get install -y ffmpeg || { apt-get update && apt-get install -y ffmpeg; } \
+    || todo+=("Install ffmpeg so channels know their episode lengths: sudo apt install ffmpeg")
+fi
 # mpv runs as you, on the desktop; the service reaches it through a socket in
 # this folder, which is yours and the service's group's. /run is emptied at
 # every boot, so systemd makes the folder again each time.

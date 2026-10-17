@@ -115,6 +115,7 @@ joined with two underscores) and restart the service. The ones worth knowing:
 | `Picture.Crt.*` | see the file | `Curvature`, `CornerRadius`, `Vignette`, `ScanlineIntensity`. `Enabled: false` shows the plain video with no shader at all, the lightest option for a weak graphics chip. |
 | `Picture.Osd.Color` | `#3DFF6E` | The phosphor green. |
 | `Tv.InitialVolume` / `VolumeStep` | `60` / `5` | |
+| `Ffprobe` | `ffprobe` | Reads each episode's length from its file header so `Live` channels know when to roll to the next episode. Without it, lengths are learned as episodes play. |
 | `Player.Kind` | `mpv` | What draws the box's screen: `mpv` plays any format, `browser` is the `/tv` page in Chromium (MP4 and WebM only). Takes effect at the next login. |
 
 ## Put it on the mini PC
@@ -137,7 +138,7 @@ when something is off, is [docs/box-setup.md](docs/box-setup.md). In short:
    ```
 
    The installer starts the service on boot, opens the TV full screen at login,
-   installs mpv (and Chromium, if there is no browser), and stops the screen
+   installs mpv and ffmpeg (and Chromium, if there is no browser), and stops the screen
    blanking or locking. Anything it could not do itself is listed at the end.
 3. On the box, turn on **Settings > System > Users > Automatic Login**, set the
    display to 1080p, and pick the TV as the sound output.
@@ -172,6 +173,7 @@ src/RabbitEars.Api/      ASP.NET Core: one process that owns the TV
   TvService.cs             the single television; saves state, rescans, broadcasts
   TvHub.cs                 SignalR: button presses in, state out
   LibraryScanner.cs        folders -> channels
+  EpisodeProbe.cs          asks ffprobe how long each episode is
   MpvScreen.cs             the box's screen: drives mpv as tube.ts drives <video>
   MpvPlayer.cs             keeps mpv connected and feeds MpvScreen one thing at a time
   MpvOsd.cs                the green on-screen display, drawn as mpv overlay text
