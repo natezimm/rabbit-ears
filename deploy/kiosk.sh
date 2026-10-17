@@ -30,11 +30,19 @@ socket="$(sed -n 's/.*"socket":"\([^"]*\)".*/\1/p' <<<"$player")"
 
 if [[ "$kind" == mpv ]]; then
   if command -v mpv >/dev/null; then
-    # The service runs as its own user and reaches mpv through this socket.
-    # The folder it sits in belongs to the service's group, and this keeps the
-    # socket group-writable so the service can connect.
-    umask 007
+    # The service runs as its own user and reaches mpv through this socket,
+    # in a folder that belongs to the service's group. mpv makes the socket
+    # private to its own user whatever the umask, so open it to the group as
+    # soon as it exists. The old socket goes first, or it would be mistaken
+    # for the new one.
     while true; do
+      rm -f "$socket"
+      (
+        for _ in $(seq 150); do
+          if [[ -S "$socket" ]]; then chmod 660 "$socket"; break; fi
+          sleep 0.2
+        done
+      ) &
       mpv --config-dir="$here/mpv" --input-ipc-server="$socket"
       sleep 2
     done
