@@ -18,6 +18,9 @@
 
 .remote {
   display: grid;
+  /* A bare "1fr" cannot shrink below its content, so a long episode title in
+     the readout would stretch the whole page wider than the phone. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
   max-width: 420px;
   margin: 0 auto;
