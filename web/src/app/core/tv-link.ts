@@ -7,6 +7,15 @@ const RETRY_MS = 2000;
 const ROOM_KEY = 'rabbitears.room';
 
 /**
+ * A fresh room id. `randomUUID` exists only on https pages and localhost, and
+ * the box is plain http on the home network, so this asks for raw random bytes.
+ */
+function newRoom(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(6));
+  return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+/**
  * Which television this browser belongs to. Only the public demo site uses it,
  * to give every visitor a TV of their own; the box at home ignores it. A phone
  * that scans the demo's QR code arrives with the TV's room in its address.
@@ -19,7 +28,7 @@ function pickRoom(): string {
   } catch {
     // Storage can be blocked; a fresh room per visit is fine.
   }
-  room ??= crypto.randomUUID().replaceAll('-', '').slice(0, 12);
+  room ??= newRoom();
   try {
     localStorage.setItem(ROOM_KEY, room);
   } catch {
