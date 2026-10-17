@@ -37,6 +37,7 @@ ENV Urls=http://0.0.0.0:8080 \
     Box__Demo__Enabled=true \
     Box__RescanMinutes=0 \
     Box__StateDir=/tmp/rabbitears \
+    Box__Ffprobe="" \
     Box__Picture__Transition=static
 EXPOSE 8080
 USER $APP_UID

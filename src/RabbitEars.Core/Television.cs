@@ -242,13 +242,22 @@ public sealed class Television
         var request = _recentRequests.FirstOrDefault(r => r.Token == token);
         if (request is null) return;
 
-        if (duration is { } length && double.IsFinite(length) && length > 0)
-            _durations[request.EpisodeId] = length;
+        if (duration is { } length) SetDuration(request.EpisodeId, length);
 
         var tuner = _tuners.Find(t => t.Name == request.Channel);
         if (tuner?.Showing?.Id != request.EpisodeId) return;
         tuner.MoveTo(seconds, _clock.GetUtcNow());
         if (token == _playing?.Token) _failures = 0;
+    }
+
+    // -- episode lengths --------------------------------------------------------
+
+    public bool HasDuration(string episodeId) => _durations.ContainsKey(episodeId);
+
+    /// <summary>Learn an episode's length in seconds from somewhere other than the screen.</summary>
+    public void SetDuration(string episodeId, double seconds)
+    {
+        if (double.IsFinite(seconds) && seconds > 0) _durations[episodeId] = seconds;
     }
 
     // -- library changes --------------------------------------------------------
