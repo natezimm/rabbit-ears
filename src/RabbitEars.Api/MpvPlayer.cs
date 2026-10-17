@@ -36,9 +36,15 @@ public sealed class MpvPlayer(BoxOptions options, TvService tv, MpvScreen screen
                 {
                     mpv = await MpvConnection.Open(socket, message => _inbox.Writer.TryWrite(message), stoppingToken);
                 }
-                catch (SocketException)
+                catch (SocketException ex)
                 {
-                    if (!waiting) log.LogInformation("Waiting for mpv to open {Socket}.", socket);
+                    // A socket that exists but refuses us is a permissions problem, not mpv still starting.
+                    if (!waiting)
+                    {
+                        log.Log(
+                            ex.SocketErrorCode == SocketError.AccessDenied ? LogLevel.Warning : LogLevel.Information,
+                            "Waiting for mpv to open {Socket}: {Reason}", socket, ex.Message);
+                    }
                     waiting = true;
                     await Task.Delay(RetryDelay, stoppingToken);
                     continue;
