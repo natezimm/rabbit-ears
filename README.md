@@ -82,9 +82,10 @@ are fine. Channels are numbered from 2 in A-to-Z order.
 ```
 
 A folder of movies is a channel like any other: each film takes its turn in the
-shuffle. With the default `Resume` setting a movie picks up where you left it
-when you flip back, which matters more for a ninety-minute film than for a
-cartoon.
+shuffle. With the default `Live` setting every channel keeps broadcasting while
+you watch another one, like real TV: flip away for five minutes and the show is
+five minutes further on when you come back, or onto its next episode. `Resume`
+instead picks up exactly where you left it, which some prefer for films.
 
 On the box, mpv plays the files as they are: MKV, AVI, MP4, MPEG and the other
 common rip formats, with no converting. The browser TV page (the laptop and the
@@ -108,7 +109,7 @@ joined with two underscores) and restart the service. The ones worth knowing:
 
 | Setting | Default | |
 | --- | --- | --- |
-| `Tv.TuneIn` | `Resume` | `Resume`: a channel picks up where you left it. `Random`: every flip starts a fresh shuffled episode. |
+| `Tv.TuneIn` | `Live` | `Live`: channels keep running while you are away, rolling into later episodes. `Resume`: a channel picks up exactly where you left it. `Random`: every flip starts a fresh shuffled episode. |
 | `Tv.StartOffsetMin` / `Max` | `6` / `10` | A new episode starts this many seconds in, so it feels already on. |
 | `Picture.Transition` | `none` | Channel-change effect: `none`, `static` (analog snow) or `glitch`. |
 | `Picture.Crt.*` | see the file | `Curvature`, `CornerRadius`, `Vignette`, `ScanlineIntensity`. `Enabled: false` shows the plain video with no shader at all, the lightest option for a weak graphics chip. |

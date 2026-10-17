@@ -175,7 +175,7 @@ public sealed class TvServiceTests : IDisposable
     {
         var tv = DemoService();
         tv.Join("visitor-a");
-        tv.ReportPosition(tv.Snapshot("visitor-a")!.Playing!.Token, 42, "visitor-a");
+        tv.ReportPosition(tv.Snapshot("visitor-a")!.Playing!.Token, 42, room: "visitor-a");
 
         await tv.StopAsync(CancellationToken.None);
 

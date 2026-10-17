@@ -4,7 +4,8 @@ import { NowPlaying, PictureConfig } from '../core/models';
 export interface TubeListener {
   ended(token: string): void;
   failed(token: string): void;
-  position(token: string, seconds: number): void;
+  /** `duration` is the episode's length in seconds, or null while unknown. */
+  position(token: string, seconds: number, duration: number | null): void;
   /** The browser is refusing to play sound until someone presses a key. */
   soundBlocked(blocked: boolean): void;
 }
@@ -265,7 +266,8 @@ export class Tube {
 
   private reportNow(): void {
     if (this.live < 0 || !this.liveRequest) return;
-    this.listener.position(this.liveRequest.token, this.decks[this.live].currentTime);
+    const deck = this.decks[this.live];
+    this.listener.position(this.liveRequest.token, deck.currentTime, lengthOf(deck));
   }
 
   private report(): void {
@@ -282,6 +284,10 @@ export class Tube {
     }
     this.lastPosition = deck.currentTime;
     this.stalledReports = 0;
-    this.listener.position(this.liveRequest.token, deck.currentTime);
+    this.listener.position(this.liveRequest.token, deck.currentTime, lengthOf(deck));
   }
+}
+
+function lengthOf(deck: HTMLVideoElement): number | null {
+  return Number.isFinite(deck.duration) && deck.duration > 0 ? deck.duration : null;
 }

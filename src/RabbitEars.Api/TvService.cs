@@ -61,7 +61,7 @@ public sealed partial class TvService : BackgroundService
         _library = scanner.Scan();
         if (!Demo)
         {
-            _rooms[HomeRoom] = new Room(new Television(options.Tv, _library.Channels, stateFile.Load()), Now);
+            _rooms[HomeRoom] = new Room(new Television(options.Tv, _library.Channels, stateFile.Load(), clock: _clock), Now);
         }
     }
 
@@ -94,7 +94,7 @@ public sealed partial class TvService : BackgroundService
             if (!_rooms.TryGetValue(requested, out var room))
             {
                 if (_rooms.Count >= _options.Demo.MaxTvs && !EvictOldestEmptyRoom()) return null;
-                room = new Room(new Television(_options.Tv, _library.Channels), Now);
+                room = new Room(new Television(_options.Tv, _library.Channels, clock: _clock), Now);
                 _rooms[requested] = room;
             }
 
@@ -164,12 +164,12 @@ public sealed partial class TvService : BackgroundService
     }
 
     /// <summary>Frequent and uninteresting to other clients, so nothing is broadcast.</summary>
-    public void ReportPosition(string token, double seconds, string room = HomeRoom)
+    public void ReportPosition(string token, double seconds, double? duration = null, string room = HomeRoom)
     {
         lock (_gate)
         {
             if (!_rooms.TryGetValue(room, out var found)) return;
-            found.Tv.ReportPosition(token, seconds);
+            found.Tv.ReportPosition(token, seconds, duration);
             _unsaved = true;
         }
     }

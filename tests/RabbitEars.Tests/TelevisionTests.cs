@@ -11,7 +11,7 @@ public class TelevisionTests
         [Channel(2, "Arthur"), Channel(3, "Dragon Tales"), Channel(4, "Winnie the Pooh")];
 
     private static Television Tv(TvSettings? settings = null, SavedState? saved = null, FakeClock? clock = null) =>
-        new(settings ?? new TvSettings(), Lineup, saved, new Random(7), clock);
+        new(settings ?? new TvSettings(), Lineup, saved, new Random(7), clock ?? new FakeClock());
 
     [Fact]
     public void Powers_on_to_the_start_channel_already_a_few_seconds_in()
@@ -80,6 +80,86 @@ public class TelevisionTests
         var back = tv.Snapshot().Playing!;
         Assert.NotEqual(first.EpisodeId, back.EpisodeId);
         Assert.InRange(back.Start, 6, 10);
+    }
+
+    [Fact]
+    public void Live_mode_keeps_a_channel_running_while_you_watch_another()
+    {
+        var clock = new FakeClock();
+        var tv = Tv(clock: clock);
+        var arthur = tv.Snapshot().Playing!;
+        tv.ReportPosition(arthur.Token, 300, duration: 1500);
+
+        tv.ChannelUp();
+        clock.Advance(TimeSpan.FromMinutes(5));
+        tv.ChannelDown();
+
+        var back = tv.Snapshot().Playing!;
+        Assert.Equal(arthur.EpisodeId, back.EpisodeId);
+        Assert.Equal(600, back.Start);
+    }
+
+    [Fact]
+    public void Live_mode_rolls_into_later_episodes_that_aired_while_you_were_away()
+    {
+        var clock = new FakeClock();
+        var tv = Tv(clock: clock);
+        var first = tv.Snapshot().Playing!;
+        tv.ReportPosition(first.Token, 1400, duration: 1500);
+        tv.ChannelUp();
+
+        // Watch the next Arthur episode for a while to learn its length too.
+        clock.Advance(TimeSpan.FromSeconds(150));
+        tv.ChannelDown();
+        var second = tv.Snapshot().Playing!;
+        Assert.NotEqual(first.EpisodeId, second.EpisodeId);
+        Assert.InRange(second.Start, 6 + 50, 10 + 50);
+        tv.ReportPosition(second.Token, 100, duration: 1000);
+
+        tv.ChannelUp();
+        clock.Advance(TimeSpan.FromSeconds(950));
+        tv.ChannelDown();
+
+        var third = tv.Snapshot().Playing!;
+        Assert.NotEqual(second.EpisodeId, third.EpisodeId);
+        Assert.InRange(third.Start, 6 + 50, 10 + 50);
+    }
+
+    [Fact]
+    public void Live_mode_keeps_running_through_standby_and_reboots()
+    {
+        var clock = new FakeClock();
+        var tv = Tv(clock: clock);
+        var playing = tv.Snapshot().Playing!;
+        tv.ReportPosition(playing.Token, 100, duration: 1500);
+
+        tv.TogglePower();
+        clock.Advance(TimeSpan.FromSeconds(60));
+        tv.TogglePower();
+        Assert.Equal(160, tv.Snapshot().Playing!.Start);
+
+        var saved = tv.Save();
+        clock.Advance(TimeSpan.FromSeconds(240));
+        var rebooted = Tv(saved: saved, clock: clock);
+        Assert.Equal(playing.EpisodeId, rebooted.Snapshot().Playing!.EpisodeId);
+        Assert.Equal(400, rebooted.Snapshot().Playing!.Start);
+    }
+
+    [Fact]
+    public void Live_mode_joins_an_episode_of_unknown_length_at_the_time_that_passed()
+    {
+        var clock = new FakeClock();
+        var tv = Tv(clock: clock);
+        var playing = tv.Snapshot().Playing!;
+        tv.ReportPosition(playing.Token, 100);
+
+        tv.ChannelUp();
+        clock.Advance(TimeSpan.FromHours(2));
+        tv.ChannelDown();
+
+        // Past its end, so the screen ends it at once and the next one rolls.
+        Assert.Equal(playing.EpisodeId, tv.Snapshot().Playing!.EpisodeId);
+        Assert.Equal(7300, tv.Snapshot().Playing!.Start);
     }
 
     [Fact]
