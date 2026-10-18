@@ -88,3 +88,39 @@ export const DEFAULT_PICTURE: PictureConfig = {
 export interface DemoInfo {
   enabled: boolean;
 }
+export interface ChannelEdit {
+  folder: string;
+  name: string;
+  number: number | null;
+  enabled: boolean;
+  tuneIn: string | null;
+  excludedEpisodes: string[];
+  excludedSeasons: string[];
+}
+
+export interface AdminEpisode {
+  id: string;
+  title: string;
+  path: string;
+  season: string;
+}
+
+export interface AdminChannel {
+  settings: ChannelEdit;
+  episodes: AdminEpisode[];
+}
+
+export interface AdminCatalog {
+  version: string;
+  channels: AdminChannel[];
+  needsConversion: string[];
+}
+
+
+export interface DemoCredit {
+  channel: string;
+  title: string;
+  creator: string;
+  license: string;
+  sourceUrl: string;
+}

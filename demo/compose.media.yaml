@@ -1,0 +1,11 @@
+# Optional replacement for generated clips. The directory must already exist.
+# docker compose -f compose.yaml -f compose.media.yaml up -d --no-build
+services:
+  rabbit-ears:
+    volumes:
+      - type: bind
+        source: ${RABBIT_EARS_DEMO_MEDIA:?Set RABBIT_EARS_DEMO_MEDIA to the prepared media directory}
+        target: /srv/rabbitears/media
+        read_only: true
+        bind:
+          create_host_path: false
