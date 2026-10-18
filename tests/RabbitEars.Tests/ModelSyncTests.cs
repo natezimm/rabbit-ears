@@ -26,6 +26,11 @@ public sealed partial class ModelSyncTests
         ["CrtConfig"] = typeof(CrtOptions),
         ["PictureConfig"] = typeof(PictureOptions),
         ["DemoInfo"] = typeof(DemoInfo),
+        ["ChannelEdit"] = typeof(ChannelEdit),
+        ["AdminEpisode"] = typeof(AdminEpisode),
+        ["AdminChannel"] = typeof(AdminChannel),
+        ["AdminCatalog"] = typeof(AdminCatalog),
+        ["DemoCredit"] = typeof(DemoCredit),
     };
 
     private static readonly NullabilityInfoContext Nullability = new();

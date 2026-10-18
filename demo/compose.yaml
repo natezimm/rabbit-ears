@@ -8,10 +8,9 @@ services:
     build: ..
     image: rabbit-ears
     restart: unless-stopped
-    # Only the reverse proxy on this machine talks to it. Change the first
-    # number if something else already uses 8080.
+    # Only the reverse proxy talks to it. 8620 avoids other apps on the shared VM.
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:${RABBIT_EARS_DEMO_PORT:-8620}:8080"
     # It idles around 25 MB and stays under 50 MB with dozens of visitors;
     # the cap keeps it from ever crowding out the other sites.
     mem_limit: 256m

@@ -4,7 +4,9 @@ namespace RabbitEars.Core;
 public sealed record Episode(string Id, string Title);
 
 /// <summary>A show folder: the folder name is the channel name.</summary>
-public sealed record ChannelDefinition(int Number, string Name, IReadOnlyList<Episode> Episodes);
+public sealed record ChannelDefinition(
+    int Number, string Name, IReadOnlyList<Episode> Episodes,
+    string? Key = null, TuneInMode? TuneIn = null);
 
 public enum TuneInMode
 {
@@ -96,7 +98,8 @@ public sealed record SavedPosition(string EpisodeId, double Position, DateTimeOf
 
 /// <summary>
 /// The little bit of state that survives a reboot. Positions are keyed by
-/// channel name; durations are episode lengths in seconds, keyed by episode id.
+/// channel folder key (the name in older saves); durations are episode lengths
+/// in seconds, keyed by episode id.
 /// </summary>
 public sealed record SavedState(
     string? Channel,

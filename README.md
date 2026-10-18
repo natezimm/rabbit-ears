@@ -65,6 +65,11 @@ the plug.
 The phone remote at `/remote` has the same buttons plus a channel list. It and
 the TV both just draw what the box says is on, so they cannot disagree.
 
+At home, choose **Manage channels** on the remote or open `/admin` to rename,
+number, hide, and filter channels and set each channel's tune-in behavior.
+See [channel administration](docs/channel-administration.md). Metadata is saved
+separately from media folders; renaming a display label preserves playback.
+
 ## Shows and movies
 
 One folder per channel; the folder name is the channel name. Season subfolders
@@ -163,6 +168,11 @@ docker build -t rabbit-ears . && docker run --rm -p 8080:8080 rabbit-ears
 [demo/README.md](demo/README.md) has the steps for hosting it on a server
 behind nginx.
 
+The shared-VM Compose configuration uses localhost port **8620**. To replace
+generated clips with cleared real content, follow [the media preparation and
+mount guide](demo/real-media.md). The [plan](docs/channel-and-demo-plan.md)
+records both this workflow and the home channel editor.
+
 ## How it fits together
 
 ```text
@@ -198,8 +208,8 @@ be public.
 
 ## Not built yet
 
-- An admin page (rename/reorder channels, skip seasons, change settings from a
-  browser). For now channels are folders and settings are the config file.
+- An editor for global picture, volume, and system settings. Channel names,
+  numbering, eligibility and per-channel tune-in modes are already editable at `/admin`.
 - HDMI-CEC, so the TV's own remote can drive it.
 
 ## License

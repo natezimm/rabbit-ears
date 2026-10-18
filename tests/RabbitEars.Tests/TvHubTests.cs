@@ -184,4 +184,84 @@ public sealed class TvHubTests : IAsyncLifetime
 
         Assert.False(info!.Enabled);
     }
+    private static async Task<HttpResponseMessage> AdminWrite(HttpClient http, HttpMethod method, string path, object? body = null, string? origin = null)
+    {
+        using var request = new HttpRequestMessage(method, path);
+        request.Headers.Add("X-RabbitEars-Admin", "1");
+        if (origin is not null) request.Headers.Add("Origin", origin);
+        if (body is not null) request.Content = JsonContent.Create(body);
+        return await http.SendAsync(request);
+    }
+
+    [Fact]
+    public async Task Admin_save_updates_the_running_tv_and_rejects_stale_tabs_and_cross_origin_writes()
+    {
+        var http = _box.CreateClient();
+        var before = await http.GetFromJsonAsync<TvSnapshot>("/api/state");
+        var view = (await http.GetFromJsonAsync<AdminCatalog>("/api/admin/channels"))!;
+        var edit = new CatalogDocument(view.Version, view.Channels.Select(c => c.Settings.Folder == "Arthur"
+            ? c.Settings with { Name = "PBS Kids", Number = 8 } : c.Settings).ToArray());
+        Assert.Equal(HttpStatusCode.Forbidden, (await http.PutAsJsonAsync("/api/admin/channels", edit)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await AdminWrite(http, HttpMethod.Put, "/api/admin/channels", edit, "https://untrusted.example")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await AdminWrite(http, HttpMethod.Put, "/api/admin/channels", edit)).StatusCode);
+        var after = (await http.GetFromJsonAsync<TvSnapshot>("/api/state"))!;
+        Assert.Equal(new ChannelInfo(8, "PBS Kids"), after.Channel);
+        Assert.Equal(before!.Playing!.Token, after.Playing!.Token);
+        Assert.True(after.Revision > before.Revision);
+        Assert.Equal(HttpStatusCode.Conflict, (await AdminWrite(http, HttpMethod.Put, "/api/admin/channels", edit)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Admin_edit_broadcasts_to_connected_remotes_and_can_disable_every_channel()
+    {
+        var (remote, states) = await ConnectRemote();
+        await using var connection = remote;
+        var before = await Next(states, _ => true);
+        var http = _box.CreateClient();
+        var view = (await http.GetFromJsonAsync<AdminCatalog>("/api/admin/channels"))!;
+        var request = new CatalogDocument(view.Version, view.Channels.Select(c => c.Settings with { Enabled = false }).ToArray());
+        Assert.Equal(HttpStatusCode.OK, (await AdminWrite(http, HttpMethod.Put, "/api/admin/channels", request)).StatusCode);
+        var after = await Next(states, s => s.Revision > before.Revision);
+        Assert.Empty(after.Channels);
+        Assert.Null(after.Playing);
+        Assert.Equal(HttpStatusCode.NotFound, (await http.GetAsync($"/media/{before.Playing!.EpisodeId}")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await AdminWrite(http, HttpMethod.Post, "/api/admin/rescan")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Public_demo_refuses_all_channel_management_operations()
+    {
+        await using var demo = Demo();
+        var http = demo.CreateClient();
+        Assert.Equal(HttpStatusCode.NotFound, (await http.GetAsync("/api/admin/channels")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await AdminWrite(http, HttpMethod.Put, "/api/admin/channels", new CatalogDocument("none", []))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await AdminWrite(http, HttpMethod.Post, "/api/admin/rescan")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Prepared_demo_metadata_only_credits_scanned_files_and_video_supports_ranges()
+    {
+        File.WriteAllText(Path.Combine(_media, ".demo-media.json"), System.Text.Json.JsonSerializer.Serialize(new
+        {
+            version = 1,
+            videos = new[]
+            {
+                new { path = "Arthur/S01E01.mp4", title = "Episode 1", creator = "Creator", license = "Test license", sourceUrl = "https://example.com/source", duration = 120 },
+                new { path = "../../private.mp4", title = "Private", creator = "Creator", license = "Test license", sourceUrl = "https://example.com/source", duration = 120 }
+            }
+        }));
+        await using var demo = Demo();
+        var http = demo.CreateClient();
+        var credits = (await http.GetFromJsonAsync<DemoCredit[]>("/api/demo/credits"))!;
+        Assert.Equal("Episode 1", Assert.Single(credits).Title);
+        var (remote, states) = await ConnectRemote(demo, "hub/tv?room=range-test");
+        await using var connection = remote;
+        var state = await Next(states, _ => true);
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"/media/{state.Playing!.EpisodeId}");
+        request.Headers.Range = new(0, 3);
+        var response = await http.SendAsync(request);
+        Assert.Equal(HttpStatusCode.PartialContent, response.StatusCode);
+        Assert.Equal(4, (await response.Content.ReadAsByteArrayAsync()).Length);
+    }
+
 }

@@ -10,6 +10,8 @@ options.Player.MpvSocket = Path.GetFullPath(options.Player.MpvSocket, builder.En
 
 builder.Services.AddSingleton(options);
 builder.Services.AddSingleton<LibraryScanner>();
+builder.Services.AddSingleton<ChannelCatalog>();
+builder.Services.AddSingleton<DemoMedia>();
 builder.Services.AddSingleton<StateFile>();
 builder.Services.AddSingleton<IEpisodeProbe, FfprobeEpisodeProbe>();
 builder.Services.AddSingleton<TvService>();
@@ -43,6 +45,7 @@ app.MapGet("/api/state", (TvService tv, string? room) =>
         : Results.NotFound());
 app.MapGet("/api/picture", () => options.Picture);
 app.MapGet("/api/demo", () => new DemoInfo(options.Demo.Enabled));
+app.MapGet("/api/demo/credits", (TvService tv) => tv.Credits());
 // Asked by the kiosk launcher at login, to know whether to start mpv or the browser.
 app.MapGet("/api/player", () => new PlayerInfo(
     options.UsesMpv ? PlayerOptions.Mpv : PlayerOptions.Browser,
@@ -64,6 +67,7 @@ app.MapGet("/media/{id}", (string id, TvService tv) =>
         : Results.NotFound());
 
 app.MapHub<TvHub>("/hub/tv");
+app.MapChannelAdmin(options);
 app.MapFallbackToFile("index.html");
 
 app.Run();
