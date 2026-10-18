@@ -139,7 +139,7 @@ test('long names fit the editor and remote at the configured screen width', asyn
   await page.goto(`${box.url}/admin`);
   await page.getByRole('textbox', { name: 'Display name for Movies' }).fill('A'.repeat(80));
   await page.getByRole('group', { name: 'Movies', exact: true }).getByText('Choose episodes', { exact: false }).click();
-  await expect(page.getByText(longTitle, { exact: true })).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: new RegExp(`^${longTitle}`) })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
   await testInfo.attach('admin-layout', { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' });
 
