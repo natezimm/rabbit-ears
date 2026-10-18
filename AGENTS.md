@@ -16,6 +16,7 @@ dotnet test                      # all backend tests (xUnit)
 dotnet test --filter "FullyQualifiedName~TelevisionTests.Typed_digits_tune_after_a_pause"   # one test
 dotnet test --filter "FullyQualifiedName~ShuffleDeckTests"                                  # one class
 (cd web && npx ng build)         # web app only; output goes to src/RabbitEars.Api/wwwroot
+(cd web && npm run test:browser) # real app + API in Chromium, desktop and phone sizes
 ```
 
 - Open `/tv` for the television (`f` for full screen) and `/remote` for the phone
@@ -25,8 +26,11 @@ dotnet test --filter "FullyQualifiedName~ShuffleDeckTests"                      
   `/hub` to 5080.
 - The API serves the Angular build from `wwwroot`, which is git-ignored. `dotnet run`
   alone serves a stale or missing page until the web app has been built.
-- There is no linter and no frontend test suite. .NET warnings are errors
-  (`Directory.Build.props`).
+- There is no linter. Playwright tests in `web/e2e/` run the built Angular app
+  against isolated ASP.NET Core processes with temporary media/state directories.
+  Install Chromium once with `(cd web && npx playwright install chromium)`.
+  See `docs/browser-tests.md` for commands and report artifacts. .NET warnings
+  are errors (`Directory.Build.props`).
 - `/admin` manages home channel metadata in `StateDir/channels.json` through
   `ChannelCatalog`. `TvService` serializes metadata saves and rescans. Folder
   keys identify runtime/saved channels independently of display names; keep this
