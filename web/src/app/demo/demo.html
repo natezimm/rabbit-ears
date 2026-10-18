@@ -42,8 +42,17 @@
     <footer>
       <p>
         Angular and ASP.NET Core with SignalR; the tube is a WebGL shader. At home it runs on a mini
-        PC with an IR remote and real shows; the clips here are made for the demo.
+        PC with an IR remote and your own media library.
       </p>
+      @if (credits().length) {
+        <details>
+          <summary>Media credits</summary>
+          @for (credit of credits(); track credit.channel + '/' + credit.title) {
+            <p><a [href]="credit.sourceUrl" target="_blank" rel="noopener noreferrer">{{ credit.title }}</a>
+              — {{ credit.creator }} · {{ credit.license }}</p>
+          }
+        </details>
+      } @else { <p>This demo plays generated test clips.</p> }
       <a href="https://github.com/natezimm/rabbit-ears" target="_blank" rel="noopener">Source on GitHub</a>
     </footer>
   </aside>

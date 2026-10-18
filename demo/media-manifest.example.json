@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "videos": [
+    {
+      "source": "../originals/episode-01.mkv",
+      "channel": "Classic Television",
+      "title": "Episode 01",
+      "creator": "REPLACE with the credited creator",
+      "sourceUrl": "https://example.com/replace-with-source-page",
+      "license": "REPLACE with the applicable license or public-domain basis",
+      "rightsEvidence": "REPLACE with evidence permitting public streaming of this exact version, including audio"
+    }
+  ]
+}

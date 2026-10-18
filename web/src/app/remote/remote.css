@@ -248,3 +248,5 @@
   color: var(--label);
   font-size: 13px;
 }
+
+.admin-link { color: #92e8b4; text-align: center; padding: 16px; font: 14px system-ui, sans-serif; }

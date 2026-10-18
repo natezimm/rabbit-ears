@@ -1,0 +1,50 @@
+<main>
+  <header>
+    <a href="/remote">← Remote</a>
+    <p class="eyebrow">RABBIT EARS / AT HOME</p>
+    <h1>Your channel lineup</h1>
+    <p>Make room for your favorites. Changes apply to the TV as soon as you save.</p>
+  </header>
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  @if (notice()) { <p class="notice" role="status">{{ notice() }}</p> }
+  @if (available() === false) {
+    <section><h2>Managed on the home box</h2><p>The public demo has a curated lineup. Channel editing is only available on your home installation.</p><a href="/demo">Back to the demo</a></section>
+  } @else if (catalog(); as lineup) {
+    <div class="toolbar">
+      <span aria-live="polite">{{ busy() ? 'Working…' : dirty() ? 'Unsaved changes' : 'Lineup up to date' }}</span>
+      <button type="button" (click)="load()" [disabled]="busy()">{{ dirty() ? 'Discard edits & reload' : 'Reload' }}</button>
+      <button type="button" (click)="rescan()" [disabled]="busy() || dirty()" title="Save or discard edits before rescanning">Rescan folders</button>
+      <button type="button" class="primary" (click)="save()" [disabled]="busy() || !dirty()">Save lineup</button>
+    </div>
+    <p class="hint">Channel numbers determine order. Leave a number blank for automatic numbering. Names here do not rename your folders.</p>
+    @if (!lineup.channels.length) { <section><h2>No channels yet</h2><p>Add videos in show folders under your media directory, then rescan.</p></section> }
+    @for (channel of lineup.channels; track channel.settings.folder) {
+      <fieldset [disabled]="busy()">
+        <legend>{{ channel.settings.folder }}</legend>
+        <div class="fields">
+          <label>Display name<input maxlength="80" [attr.aria-label]="'Display name for ' + channel.settings.folder" [(ngModel)]="channel.settings.name" (ngModelChange)="dirty.set(true)"></label>
+          <label>Channel number<input type="number" min="1" max="999" placeholder="Auto" [(ngModel)]="channel.settings.number" (ngModelChange)="dirty.set(true)"></label>
+          <label>When tuning in<select [(ngModel)]="channel.settings.tuneIn" (ngModelChange)="dirty.set(true)"><option [ngValue]="null">Default</option><option value="Live">Live — keeps running</option><option value="Resume">Resume — where you left off</option><option value="Random">Random — fresh episode</option></select></label>
+          <label class="check"><input type="checkbox" [(ngModel)]="channel.settings.enabled" (ngModelChange)="dirty.set(true)"> On the dial</label>
+        </div>
+        <details>
+          <summary>Choose episodes · {{ channel.episodes.length }} found</summary>
+          <p class="hint">Uncheck an episode or season to skip it. Files stay on disk.</p>
+          @for (season of seasons(channel); track season) {
+            <label class="check season"><input type="checkbox" [checked]="!channel.settings.excludedSeasons.includes(season)" (change)="toggle(channel, 'excludedSeasons', season)">{{ season }}</label>
+          }
+          @for (episode of channel.episodes; track episode.id) {
+            <label class="check episode" [class.excluded]="channel.settings.excludedSeasons.includes(episode.season)">
+              <input type="checkbox" [checked]="!channel.settings.excludedEpisodes.includes(episode.id)" [disabled]="channel.settings.excludedSeasons.includes(episode.season)" (change)="toggle(channel, 'excludedEpisodes', episode.id)">
+              <span>{{ episode.title }}<small>{{ episode.path }}</small></span>
+            </label>
+          }
+        </details>
+      </fieldset>
+    }
+    @if (lineup.needsConversion.length) {
+      <section><h2>Files the browser cannot play</h2><p>Convert these to H.264/AAC MP4 for browser playback.</p><ul>@for (file of lineup.needsConversion; track file) { <li>{{ file }}</li> }</ul></section>
+    }
+  } @else if (busy()) { <p role="status">Loading your lineup…</p> }
+  @if (error() && !catalog()) { <button type="button" (click)="load()" [disabled]="busy()">Try again</button> }
+</main>

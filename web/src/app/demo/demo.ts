@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { encode } from 'uqr';
 
+import { DemoCredit } from '../core/models';
 import { TvLink } from '../core/tv-link';
 import { Remote } from '../remote/remote';
 import { TvScreen } from '../tv/tv-screen';
@@ -19,6 +20,13 @@ import { TvScreen } from '../tv/tv-screen';
 })
 export class Demo {
   private readonly link = inject(TvLink);
+  protected readonly credits = signal<DemoCredit[]>([]);
+
+  constructor() {
+    void fetch('/api/demo/credits').then(async response => {
+      if (response.ok) this.credits.set(await response.json());
+    }).catch(() => undefined);
+  }
 
   protected readonly remoteUrl = `${location.origin}/remote?room=${encodeURIComponent(this.link.room)}`;
   protected readonly qr = toPath(this.remoteUrl);

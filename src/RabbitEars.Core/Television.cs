@@ -61,11 +61,11 @@ public sealed class Television
         _tuners = [.. channels.OrderBy(c => c.Number).Select(c => new Tuner(c, _random))];
         foreach (var tuner in _tuners)
         {
-            if (saved?.Positions.GetValueOrDefault(tuner.Name) is { } position)
+            if (saved?.Positions.GetValueOrDefault(tuner.Key) is { } position)
                 tuner.Restore(position, _clock.GetUtcNow());
         }
 
-        var start = _tuners.FindIndex(t => t.Name == saved?.Channel);
+        var start = _tuners.FindIndex(t => t.Key == saved?.Channel);
         if (start < 0) start = _tuners.FindIndex(t => t.Number == settings.StartChannel);
         _index = Math.Max(start, 0);
 
@@ -95,7 +95,7 @@ public sealed class Television
     public void LastChannel()
     {
         if (!Accepting || _lastChannel is null) return;
-        var index = _tuners.FindIndex(t => t.Name == _lastChannel);
+        var index = _tuners.FindIndex(t => t.Key == _lastChannel);
         if (index >= 0 && index != _index) SwitchTo(index);
     }
 
@@ -244,7 +244,7 @@ public sealed class Television
 
         if (duration is { } length) SetDuration(request.EpisodeId, length);
 
-        var tuner = _tuners.Find(t => t.Name == request.Channel);
+        var tuner = _tuners.Find(t => t.Key == request.Channel);
         if (tuner?.Showing?.Id != request.EpisodeId) return;
         tuner.MoveTo(seconds, _clock.GetUtcNow());
         if (token == _playing?.Token) _failures = 0;
@@ -269,13 +269,13 @@ public sealed class Television
     /// </summary>
     public void SetLineup(IReadOnlyList<ChannelDefinition> channels)
     {
-        var watching = _tuners.Count > 0 ? Current.Name : null;
-        var previous = _tuners.ToDictionary(t => t.Name);
+        var watching = _tuners.Count > 0 ? Current.Key : null;
+        var previous = _tuners.ToDictionary(t => t.Key);
 
         _tuners = [.. channels.OrderBy(c => c.Number).Select(c =>
-            previous.TryGetValue(c.Name, out var old) ? old.Updated(c, _random) : new Tuner(c, _random))];
+            previous.TryGetValue(c.Key ?? c.Name, out var old) ? old.Updated(c, _random) : new Tuner(c, _random))];
 
-        var index = _tuners.FindIndex(t => t.Name == watching);
+        var index = _tuners.FindIndex(t => t.Key == watching);
         _index = Math.Max(index, 0);
 
         var stillOnAir = index >= 0 && _playing is not null && Current.Find(_playing.EpisodeId) is not null;
@@ -303,12 +303,12 @@ public sealed class Television
     {
         var onAir = _tuners.SelectMany(t => t.Episodes).Select(e => e.Id).ToHashSet();
         return new(
-            _tuners.Count > 0 ? Current.Name : null,
+            _tuners.Count > 0 ? Current.Key : null,
             _lastChannel,
             Volume,
             Muted,
             _tuners.Where(t => t.Showing is not null)
-                .ToDictionary(t => t.Name, t => new SavedPosition(t.Showing!.Id, t.Position, t.PositionAt)),
+                .ToDictionary(t => t.Key, t => new SavedPosition(t.Showing!.Id, t.Position, t.PositionAt)),
             _durations.Where(d => onAir.Contains(d.Key)).ToDictionary());
     }
 
@@ -329,7 +329,7 @@ public sealed class Television
         }
         else
         {
-            _lastChannel = Current.Name;
+            _lastChannel = Current.Key;
             _index = index;
             Tune(PlayReason.Tune);
         }
@@ -357,8 +357,9 @@ public sealed class Television
             return;
         }
 
-        if (tuner.Showing is null || _settings.TuneIn == TuneInMode.Random) Draw(tuner);
-        else if (_settings.TuneIn == TuneInMode.Live) CatchUp(tuner);
+        var mode = tuner.TuneIn ?? _settings.TuneIn;
+        if (tuner.Showing is null || mode == TuneInMode.Random) Draw(tuner);
+        else if (mode == TuneInMode.Live) CatchUp(tuner);
         Play(tuner, reason);
     }
 
@@ -401,7 +402,7 @@ public sealed class Television
         var token = $"{_bootId}-{++_requestCounter}";
         _playing = new NowPlaying(token, episode.Id, episode.Title, tuner.Position, reason);
 
-        _recentRequests.Enqueue(new PlayRecord(token, tuner.Name, episode.Id));
+        _recentRequests.Enqueue(new PlayRecord(token, tuner.Key, episode.Id));
         while (_recentRequests.Count > RememberedRequests) _recentRequests.Dequeue();
     }
 
@@ -452,7 +453,9 @@ public sealed class Television
         private ShuffleDeck<Episode> _deck = new(definition.Episodes, random);
 
         public int Number { get; private set; } = definition.Number;
-        public string Name { get; } = definition.Name;
+        public string Key { get; } = definition.Key ?? definition.Name;
+        public string Name { get; private set; } = definition.Name;
+        public TuneInMode? TuneIn { get; private set; } = definition.TuneIn;
         public IReadOnlyList<Episode> Episodes { get; private set; } = definition.Episodes;
         public Episode? Showing { get; private set; }
         public double Position { get; private set; }
@@ -489,6 +492,8 @@ public sealed class Television
         public Tuner Updated(ChannelDefinition next, Random rng)
         {
             Number = next.Number;
+            Name = next.Name;
+            TuneIn = next.TuneIn;
             if (Episodes.Select(e => e.Id).SequenceEqual(next.Episodes.Select(e => e.Id)))
                 return this;
 

@@ -33,12 +33,15 @@ public sealed partial class TvService : BackgroundService
 
     private readonly Lock _gate = new();
     private readonly BoxOptions _options;
-    private readonly LibraryScanner _scanner;
+    private readonly ChannelCatalog _catalog;
+    private readonly SemaphoreSlim _lineup = new(1, 1);
     private readonly StateFile _stateFile;
     private readonly IHubContext<TvHub> _hub;
     private readonly ILogger<TvService> _log;
     private readonly TimeProvider _clock;
     private readonly IEpisodeProbe? _probe;
+    private readonly DemoMedia _demoMedia;
+    private IReadOnlyList<DemoCredit> _credits = [];
     private readonly Dictionary<string, Room> _rooms = [];
 
     // Episode lengths found by probing, handed to every television including ones made later.
@@ -57,17 +60,21 @@ public sealed partial class TvService : BackgroundService
         IHubContext<TvHub> hub,
         ILogger<TvService> log,
         TimeProvider? clock = null,
-        IEpisodeProbe? probe = null)
+        IEpisodeProbe? probe = null,
+        ChannelCatalog? catalog = null,
+        DemoMedia? demoMedia = null)
     {
         _options = options;
-        _scanner = scanner;
+        _catalog = catalog ?? new ChannelCatalog(options, scanner, Microsoft.Extensions.Logging.Abstractions.NullLogger<ChannelCatalog>.Instance);
         _stateFile = stateFile;
         _hub = hub;
         _log = log;
         _clock = clock ?? TimeProvider.System;
         _probe = probe;
+        _demoMedia = demoMedia ?? new DemoMedia(options, Microsoft.Extensions.Logging.Abstractions.NullLogger<DemoMedia>.Instance);
 
-        _library = scanner.Scan();
+        _library = _catalog.Scan();
+        LoadDemoMetadata(_library);
         if (!Demo)
         {
             _rooms[HomeRoom] = new Room(new Television(options.Tv, _library.Channels, stateFile.Load(), clock: _clock), Now);
@@ -146,6 +153,19 @@ public sealed partial class TvService : BackgroundService
         lock (_gate) return _library.Files.GetValueOrDefault(episodeId);
     }
 
+    public IReadOnlyList<DemoCredit> Credits()
+    {
+        lock (_gate) return _credits;
+    }
+
+    private void LoadDemoMetadata(Library library)
+    {
+        var prepared = _demoMedia.Read(library);
+        var byPath = library.Files.ToDictionary(f => Path.GetRelativePath(_options.MediaRoot, f.Value).Replace('\\', '/'), f => f.Key);
+        _credits = [.. prepared.Select(v => new DemoCredit(v.Path.Split('/')[0], v.Title, v.Creator, v.License, v.SourceUrl))];
+        foreach (var video in prepared) _lengths[byPath[video.Path]] = video.Duration;
+    }
+
     public LibraryReport Report()
     {
         lock (_gate)
@@ -186,18 +206,46 @@ public sealed partial class TvService : BackgroundService
 
     public async Task Rescan()
     {
-        var library = _scanner.Scan();
-        string[] rooms;
+        await _lineup.WaitAsync();
+        try { await ApplyLibrary(_catalog.Scan()); }
+        finally { _lineup.Release(); }
+    }
+
+    public async Task<AdminCatalog> AdminView()
+    {
+        await _lineup.WaitAsync();
+        try { return _catalog.View(); }
+        finally { _lineup.Release(); }
+    }
+
+    public async Task<AdminCatalog> EditChannels(CatalogDocument request)
+    {
+        if (Demo) throw new InvalidOperationException("Demo channels are deployment-managed.");
+        await _lineup.WaitAsync();
+        try
+        {
+            await ApplyLibrary(_catalog.Save(request));
+            return _catalog.View();
+        }
+        finally { _lineup.Release(); }
+    }
+
+    private async Task ApplyLibrary(Library library)
+    {
+        List<(string Room, TvSnapshot Snapshot)> changed = [];
         lock (_gate)
         {
             _library = library;
-            rooms = [.. _rooms.Keys];
+            LoadDemoMetadata(library);
+            foreach (var (name, room) in _rooms)
+            {
+                room.Tv.SetLineup(library.Channels);
+                foreach (var (id, seconds) in _lengths) room.Tv.SetDuration(id, seconds);
+                changed.Add((name, room.Tv.Snapshot()));
+            }
+            _unsaved = true;
         }
-
-        foreach (var room in rooms)
-        {
-            await Press(tv => tv.SetLineup(library.Channels), room);
-        }
+        foreach (var (room, snapshot) in changed) await Broadcast(room, snapshot);
         _rescanned.Writer.TryWrite(true);
     }
 
