@@ -27,6 +27,15 @@ dotnet test --filter "FullyQualifiedName~ShuffleDeckTests"                      
   alone serves a stale or missing page until the web app has been built.
 - There is no linter and no frontend test suite. .NET warnings are errors
   (`Directory.Build.props`).
+- `/admin` manages home channel metadata in `StateDir/channels.json` through
+  `ChannelCatalog`. `TvService` serializes metadata saves and rescans. Folder
+  keys identify runtime/saved channels independently of display names; keep this
+  distinction intact when editing `Television`. Admin APIs are disabled in demo
+  mode and writes require the admin header and a same-origin request.
+- `scripts/prepare-demo-media.py` prepares local, cleared sources from a manifest;
+  `demo/compose.media.yaml` mounts the resulting library read-only. Prepared
+  `.demo-media.json` supplies durations and public credits. Run
+  `python3 -m unittest discover -s tests -p 'test_*.py'` with ffmpeg installed.
 - `docker build -t rabbit-ears . && docker run --rm -p 8080:8080 rabbit-ears` runs
   the public demo site (see "Demo mode" below). `demo/` has the compose file and
   nginx config for hosting it.

@@ -18,3 +18,7 @@ dev-media/
 .idea/
 *.user
 .DS_Store
+__pycache__/
+demo/media-manifest.json
+demo/.env
+demo-media/

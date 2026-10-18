@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
 import { TvLink } from '../core/tv-link';
 
@@ -13,6 +13,13 @@ const VOLUME_SEGMENTS = 20;
 })
 export class Remote {
   protected readonly link = inject(TvLink);
+  protected readonly canAdmin = signal(false);
+
+  constructor() {
+    void fetch('/api/admin/status').then(async response => {
+      if (response.ok) this.canAdmin.set((await response.json()).enabled);
+    }).catch(() => undefined);
+  }
   protected readonly state = this.link.state;
   protected readonly keypad = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
