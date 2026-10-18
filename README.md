@@ -43,6 +43,10 @@ Run the tests with:
 dotnet test
 ```
 
+Run the desktop/phone browser regression suite with `(cd web && npm run test:browser)`
+after installing Chromium. [Browser test instructions](docs/browser-tests.md)
+cover setup, individual runs, and the CI report/traces.
+
 ## The remote
 
 The TV page takes plain key presses, which is what a Flirc USB receiver sends.

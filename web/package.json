@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "ng serve --host 127.0.0.1 --port 4200",
-    "build": "ng build"
+    "build": "ng build",
+    "test:browser": "npm run build && dotnet build ../src/RabbitEars.Api -c Release && tsc -p e2e/tsconfig.json && playwright test"
   },
   "dependencies": {
     "@angular/common": "22.2.2",
@@ -23,6 +24,8 @@
     "@angular/build": "22.2.2",
     "@angular/cli": "22.2.2",
     "@angular/compiler-cli": "22.2.2",
+    "@playwright/test": "1.62.1",
+    "@types/node": "24.10.0",
     "typescript": "6.0.3"
   }
 }

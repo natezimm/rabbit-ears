@@ -80,6 +80,10 @@ Both workstreams are implemented in this change. Operator guides are
 - Angular production build passed; wire-model consistency checks passed.
 - Browser visual checks could not run: Chromium was unavailable and its download
   returned an empty archive. Phone/desktop visual QA remains to be confirmed.
+- Follow-up: `web/e2e/` now automates the admin and remote scenarios against the
+  real API at desktop and phone widths, including persistence, conflicts,
+  exclusions, rescans, demo restrictions and overflow. See `docs/browser-tests.md`.
+  CI publishes screenshots, traces, application logs and the HTML report.
 - No production/hardware deployment or actual TV episode publishing has been
   performed. Source media and verified public-streaming rights are still needed
   to replace the generated clips on the live site.
