@@ -6,11 +6,33 @@
   <aside class="panel">
     <header>
       <h1>Rabbit Ears</h1>
+      <p class="onboarding">Choose a channel · Enable sound<span class="phone-prompt"> · Scan QR for phone remote</span></p>
       <p>
         A 90s TV in the browser. Folders of shows become channels on a curved tube picture,
         and something is always already on. This TV is yours alone: nobody else can change it.
       </p>
+      <p><a href="https://github.com/natezimm/rabbit-ears" target="_blank" rel="noopener">Source</a>
+        · <a href="#media-credits">Media credits</a></p>
     </header>
+
+    <section class="lineup" aria-labelledby="lineup-title">
+      <h2 id="lineup-title">What's on / Jump to channel</h2>
+      @if (!link.connected()) {
+        <p role="status">Connecting to your TV…</p>
+      } @else if (!state()?.channels?.length) {
+        <p role="status">No channels available.</p>
+      } @else {
+        @for (channel of state()!.channels; track channel.number) {
+          <button type="button" class="channel-row"
+                  [attr.aria-pressed]="channel.number === state()!.channel?.number"
+                  (click)="link.goToChannel(channel.number)">
+            <span class="number">CH {{ channel.number.toString().padStart(2, '0') }}</span>
+            <span class="programme"><strong>{{ channel.name }}</strong>
+              <small>{{ channel.title || (channel.episodes + ' episodes') }}</small></span>
+          </button>
+        }
+      }
+    </section>
 
     <section class="phone">
       <svg class="qr" [attr.viewBox]="'0 0 ' + qr.size + ' ' + qr.size" shape-rendering="crispEdges" role="img"
@@ -20,9 +42,11 @@
       </svg>
       <div>
         <h2>Your phone is the remote</h2>
-        <p>Scan this to drive this TV from your phone, or <a [href]="remoteUrl" target="_blank" rel="noopener">open the remote in a new tab</a>.</p>
+        <p>First enable sound on this TV tab. Phone buttons cannot unlock its audio. Scan to control this TV from your phone, or <a [href]="remoteUrl" target="_blank" rel="noopener">open the remote in a new tab</a>.</p>
       </div>
     </section>
+
+    <ears-remote class="remote" />
 
     <section class="keys">
       <h2>Or use the keyboard</h2>
@@ -37,9 +61,7 @@
       </dl>
     </section>
 
-    <ears-remote class="remote" />
-
-    <footer>
+    <footer id="media-credits">
       <p>
         Angular and ASP.NET Core with SignalR; the tube is a WebGL shader. At home it runs on a mini
         PC with an IR remote and your own media library.

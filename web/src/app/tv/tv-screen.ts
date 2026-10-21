@@ -153,6 +153,9 @@ export class TvScreen {
   protected onKey(event: KeyboardEvent): void {
     this.tube?.unlockSound();
     if (event.ctrlKey || event.metaKey || event.altKey) return;
+    // Leave native activation and editing keys to the focused control.
+    if (event.target instanceof Element &&
+        event.target.closest('button, a, input, select, textarea, summary, [contenteditable]')) return;
 
     const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
     const digit = /^[0-9]$/.test(key) ? Number(key) : null;
@@ -166,6 +169,10 @@ export class TvScreen {
     if (press) press(this.link);
     else if (digit !== null) this.link.digit(digit);
     else void document.documentElement.requestFullscreen?.().catch(() => undefined);
+  }
+
+  protected enableSound(): void {
+    this.tube?.unlockSound();
   }
 
   protected onTouch(): void {

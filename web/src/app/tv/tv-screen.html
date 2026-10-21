@@ -35,8 +35,12 @@
       </div>
     }
 
-    @if (soundBlocked()) {
-      <div class="hint">PRESS ANY KEY FOR SOUND</div>
-    }
+
   </div>
+  @if (soundBlocked() && !standby()) {
+    <div class="sound-prompt">
+      <button type="button" (click)="enableSound()" aria-describedby="sound-help">Enable sound</button>
+      <p id="sound-help">Click or press a key on this TV tab. Phone controls cannot enable its sound.</p>
+    </div>
+  }
 </div>

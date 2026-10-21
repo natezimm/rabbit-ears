@@ -151,15 +151,31 @@ video {
   box-shadow: 0 0 1.2cqh color-mix(in srgb, var(--osd) 65%, transparent);
 }
 
-.hint {
+.sound-prompt {
   position: absolute;
-  bottom: 22cqh;
-  left: 0;
-  right: 0;
+  bottom: 8%;
+  left: 10%;
+  right: 10%;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgb(0 0 0 / 0.9);
+  color: #fff;
   text-align: center;
-  font-size: 4.2cqh;
-  opacity: 0.85;
+  font: 14px/1.4 system-ui, sans-serif;
+  cursor: auto;
 }
+.sound-prompt button {
+  min-height: 44px;
+  padding: 8px 18px;
+  border: 2px solid #3dff6e;
+  border-radius: 6px;
+  background: #3dff6e;
+  color: #08120a;
+  font: bold 16px system-ui, sans-serif;
+  cursor: pointer;
+}
+.sound-prompt button:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+.sound-prompt p { margin: 8px 0 0; }
 
 /* On the demo page the pointer is how a visitor gets sound and finds the remote. */
 :host-context(.demo) .tv {
