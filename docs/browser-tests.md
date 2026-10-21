@@ -19,9 +19,10 @@ npm run test:browser
 
 On Linux, use `npx playwright install --with-deps chromium` if browser system
 libraries are missing. `test:browser` builds the web app and Release API,
-type-checks the tests, and runs both browser projects. ffmpeg and mpv are not
-needed: fixtures use placeholder media files, disable probing, and select the
-browser player. These tests cover management and remote behavior, not decoding.
+type-checks the tests, and runs both browser projects. Install ffmpeg for demo
+fixtures: they generate a small H.264/AAC video locally, without downloading
+media. Management tests still use placeholder files. All fixtures disable
+probing and select the browser player; mpv is not required.
 
 To limit a run or see the browser:
 
@@ -53,6 +54,12 @@ Each scenario runs at both screen widths:
 - Show the public-demo unavailable state, omit the management link from its
   remote, and verify read/write management requests return 404.
 
+Demo onboarding also covers real generated video playback, blocked audio and
+sound activation, server mute, keyboard activation/shortcuts, direct channel
+selection, phone-first room control, room isolation, unavailable connections,
+and desktop/phone layout. Audio denial is simulated at the media play API until a trusted local gesture;
+decoding and playback still use the real generated video. Layout screenshots are attached for both widths.
+
 Unexpected page errors fail the test. There are no fixed sleeps or automatic
 retries; state changes are awaited through visible UI or real responses.
 
@@ -65,5 +72,5 @@ screenshots, video, trace and application log attachments. Open the HTML report
 or run `npx playwright show-trace <path/to/trace.zip>` to inspect a failure.
 
 This catches behavioral regressions and horizontal overflow. It does not claim
-Safari/Firefox coverage, pixel-perfect screenshot comparisons, video decoding,
+Safari/Firefox coverage, pixel-perfect screenshot comparisons, all media codecs,
 or testing the actual IR remote and mini PC hardware.

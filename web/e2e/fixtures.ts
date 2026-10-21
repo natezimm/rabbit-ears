@@ -1,6 +1,6 @@
-import { spawn, type ChildProcess } from 'node:child_process';
+import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -93,12 +93,23 @@ export const test = base.extend<{ box: TestBox; demoMode: boolean; runtimeErrors
     const root = await mkdtemp(join(tmpdir(), 'rabbit-ears-browser-'));
     const box = new TestBox(root, playwright, demoMode);
     try {
+      if (demoMode) {
+        // Real generated footage exercises video decoding and audio restrictions.
+        execFileSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'testsrc2=size=160x120:rate=15',
+          '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=44100', '-t', '30',
+          '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-movflags', '+faststart',
+          join(root, 'fixture.mp4')]);
+      }
       for (const path of [
         'Arthur/Season 1/First episode.mp4',
         'Arthur/Season 2/Second episode.mp4',
         `Movies/${longTitle}.mp4`,
         'Old Rips/Needs converting.mkv',
-      ]) await box.addMedia(path);
+      ]) {
+        await box.addMedia(path);
+        if (demoMode && path.endsWith('.mp4'))
+          await copyFile(join(root, 'fixture.mp4'), join(box.mediaRoot, path));
+      }
       await box.start();
       await use(box);
     } finally {
