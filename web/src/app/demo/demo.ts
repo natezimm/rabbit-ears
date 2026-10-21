@@ -19,7 +19,8 @@ import { TvScreen } from '../tv/tv-screen';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Demo {
-  private readonly link = inject(TvLink);
+  protected readonly link = inject(TvLink);
+  protected readonly state = this.link.state;
   protected readonly credits = signal<DemoCredit[]>([]);
 
   constructor() {

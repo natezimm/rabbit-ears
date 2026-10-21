@@ -131,6 +131,8 @@ export class Tube {
     this.blocked = false;
     this.listener.soundBlocked(false);
     this.applySound();
+    // Unmuting can pause autoplay; retry play inside the actual user gesture.
+    if (this.live >= 0 && this.effect === 'none') void this.start(this.decks[this.live]);
   }
 
   dispose(): void {
@@ -221,6 +223,8 @@ export class Tube {
     try {
       await deck.play();
     } catch (error) {
+      // A superseded deck must not change the current TV's audio prompt.
+      if (this.live < 0 || this.decks[this.live] !== deck) return;
       // AbortError just means a newer request got in first.
       if (!(error instanceof DOMException) || error.name !== 'NotAllowedError') return;
       // No key has been pressed yet, so the browser will not play sound. Play
