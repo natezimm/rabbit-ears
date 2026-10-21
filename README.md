@@ -177,6 +177,9 @@ generated clips with cleared real content, follow [the media preparation and
 mount guide](demo/real-media.md). The [plan](docs/channel-and-demo-plan.md)
 records both this workflow and the home channel editor.
 
+See the [portfolio completion plan](docs/portfolio-completion-plan.md) for the
+remaining demo, media, hardware, and documentation work and acceptance criteria.
+
 ## How it fits together
 
 ```text
