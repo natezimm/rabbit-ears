@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Prepare cleared, local source videos for the public demo. Never downloads media."""
 import argparse
+from datetime import date
 import hashlib
 import json
 import math
@@ -20,10 +21,28 @@ def segment(value):
     return value
 
 
+def http_url(value):
+    parsed = urlparse(value) if isinstance(value, str) else None
+    return bool(parsed and parsed.scheme in ('http', 'https') and parsed.netloc
+                and not any(c.isspace() for c in value))
+
+
+def approved(item):
+    if item.get('approvedForPublicDemo') is not True:
+        raise ValueError('Every version 2 clip requires explicit approvedForPublicDemo: true.')
+    for field in ('reviewedBy', 'reviewedAt'):
+        if not isinstance(item.get(field), str) or not item[field].strip():
+            raise ValueError(f'{field} is required for version 2 approval.')
+    try:
+        date.fromisoformat(item['reviewedAt'])
+    except ValueError as error:
+        raise ValueError('reviewedAt must be an ISO date (YYYY-MM-DD).') from error
+
+
 def validate(manifest, output):
     document = json.loads(manifest.read_text())
-    if document.get('version') != 1 or not isinstance(document.get('videos'), list) or not document['videos']:
-        raise ValueError('Manifest must have version 1 and a nonempty videos array.')
+    if document.get('version') not in (1, 2) or not isinstance(document.get('videos'), list) or not document['videos']:
+        raise ValueError('Manifest must have version 1 or 2 and a nonempty videos array.')
     videos, destinations = [], set()
     for item in document['videos']:
         channel, title = segment(item['channel']), segment(item['title'])
@@ -34,8 +53,21 @@ def validate(manifest, output):
         for field in ('source', 'creator', 'license', 'sourceUrl', 'rightsEvidence'):
             if not isinstance(item.get(field), str) or not item[field].strip():
                 raise ValueError(f'{relative}: {field} is required.')
-        if urlparse(item['sourceUrl']).scheme not in ('http', 'https'):
+        if not http_url(item['sourceUrl']):
             raise ValueError(f'{relative}: sourceUrl must be an HTTP(S) source page.')
+        if document['version'] == 2:
+            approved(item)
+            for field in ('licenseUrl', 'modifications', 'attribution'):
+                value = item.get(field)
+                if value is not None and (not isinstance(value, str) or not value.strip()):
+                    raise ValueError(f'{relative}: {field} must be nonempty text.')
+            if item.get('licenseUrl') is not None and not http_url(item['licenseUrl']):
+                raise ValueError(f'{relative}: licenseUrl must be HTTP(S).')
+            if not isinstance(item.get('modifications'), str) or not item['modifications'].strip():
+                raise ValueError(f'{relative}: modifications must describe edits/transcoding.')
+            year = item.get('year')
+            if year is not None and (type(year) is not int or year < 1800 or year > date.today().year):
+                raise ValueError(f'{relative}: year must be a plausible release year.')
         source = (manifest.parent / item['source']).resolve()
         if not source.is_file():
             raise ValueError(f'Source file not found: {source}')
@@ -46,7 +78,7 @@ def validate(manifest, output):
         if not target.resolve().is_relative_to(output):
             raise ValueError(f'Destination escapes output directory: {relative}')
         videos.append((item, source, relative))
-    return videos
+    return document['version'], videos
 
 
 def fingerprint(source):
@@ -73,7 +105,7 @@ def atomic_json(path, value):
 
 
 def prepare(manifest, output):
-    videos = validate(manifest, output)
+    version, videos = validate(manifest, output)
     for command in ('ffmpeg', 'ffprobe'):
         if not shutil.which(command):
             raise ValueError(f'{command} is required.')
@@ -111,12 +143,19 @@ def prepare(manifest, output):
             finally:
                 temporary.unlink(missing_ok=True)
             print(f'Prepared: {relative}')
-        credits.append({
+        credit = {
             'path': relative, 'title': item['title'], 'creator': item['creator'],
             'license': item['license'], 'sourceUrl': item['sourceUrl'], 'duration': seconds,
             'sourceSha256': digest, 'encoding': 1,
-        })
-    atomic_json(metadata, {'version': 1, 'videos': credits})
+        }
+        if version == 2:
+            credit.update({
+                'approvedForPublicDemo': True,
+                'licenseUrl': item.get('licenseUrl'), 'modifications': item['modifications'],
+                'year': item.get('year'), 'attribution': item.get('attribution'),
+            })
+        credits.append(credit)
+    atomic_json(metadata, {'version': version, 'videos': credits})
     print(f'{len(credits)} videos ready in {output}. Deploy this directory only after preparation succeeds.')
 
 
