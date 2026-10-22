@@ -86,8 +86,8 @@ def stage_inventory(root):
     return data, channels
 
 
-def read_response(base, path, headers=None):
-    request = Request(urljoin(base.rstrip('/') + '/', path.lstrip('/')), headers=headers or {})
+def read_response(base, path, headers=None, method='GET'):
+    request = Request(urljoin(base.rstrip('/') + '/', path.lstrip('/')), headers=headers or {}, method=method)
     try:
         with urlopen(request, timeout=10) as response:
             return response.status, dict(response.headers), response.read()
@@ -125,8 +125,8 @@ def verify_release(base, media_root=None, expect_channels=None, expect_clips=Non
                 f'Expected {expect_clips} clips, got {library["episodes"]}.')
     require(read_response(base, '/api/admin/channels')[0] == 404,
             'Public demo unexpectedly exposes channel administration.')
-    require(read_response(base, '/api/rescan', {'Accept': 'application/json'})[0] in (404, 405),
-            'Public demo unexpectedly exposes GET rescan.')
+    require(read_response(base, '/api/rescan', {'Accept': 'application/json'}, method='POST')[0] == 404,
+            'Public demo unexpectedly permits POST rescan.')
     require(read_response(base, '/media/0000000000000000')[0] == 404,
             'An unregistered media identifier unexpectedly resolves.')
 
