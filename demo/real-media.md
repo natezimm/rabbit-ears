@@ -36,14 +36,20 @@ an evidence string is not automatic permission. Version 1 manifests remain usabl
 provide an approval check. The public Compose media override requires version 2:
 legacy prepared libraries must be reviewed and rebuilt before that mount is used. See [media rights review](../docs/media-rights.md).
 
-The tool never downloads media. It encodes 480p-or-smaller H.264/AAC MP4s,
+The tool never downloads media. It supports optional `clipStartSeconds` and
+`clipDurationSeconds` for precise excerpts and `framing: "preserve"` (default)
+or `"letterbox-4:3"`. Clip ranges must fit the source duration; a zero
+start is permitted, but durations must be positive. The full geometry/QA rules
+are documented in [media-preparation.md](../docs/media-preparation.md).
+
+It encodes 480p-or-smaller H.264/AAC MP4s,
 limits video bitrate to about 1 Mbit/s, and puts the MP4 index first for seeking.
 It records durations so Live channels can advance across unseen episodes without
 installing ffprobe in the running container. It also writes `.demo-media.json`
 with public source/creator/license credits. Private rights evidence, reviewer identity, review date and original
 source paths are not published. Version 2 metadata adds approval flags, license
 links, modification notices, optional year and attribution. Re-running skips unchanged source content;
-changed sources are encoded again. Failed output is not promoted to a finished
+changed sources, crop/letterbox settings, trim ranges or encoder versions trigger re-encoding. Each prepared entry includes a codec/geometry/duration QA report. Failed output is not promoted to a finished
 MP4, and metadata is only published after the full run succeeds.
 
 Use a clean output directory when changing the selected lineup. Stale files are
