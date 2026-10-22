@@ -107,6 +107,9 @@ test('shows a connection message when the TV cannot be reached', async ({ page, 
 
 test('HTTP range seeking decodes real H.264/AAC media before and after channel changes', async ({ page, box }) => {
   await page.goto(`${box.url}/demo?room=codec-check`);
+  // A new demo room is registered by the SignalR handshake, not by page navigation.
+  // Wait for the server-authoritative guide before probing this room's API state.
+  await expect(page.locator('.lineup').getByRole('button', { name: /CH 02 Arthur/ })).toBeVisible();
   const initial = await box.api.get('/api/state?room=codec-check');
   expect(initial.ok()).toBeTruthy();
   const state = await initial.json();
