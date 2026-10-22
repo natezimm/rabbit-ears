@@ -104,3 +104,26 @@ test('shows a connection message when the TV cannot be reached', async ({ page, 
   await expect(page.locator('.lineup').getByRole('status')).toHaveText('Connecting to your TV…');
   await expect(page.locator('.lineup button')).toHaveCount(0);
 });
+
+test('HTTP range seeking decodes real H.264/AAC media before and after channel changes', async ({ page, box }) => {
+  await page.goto(`${box.url}/demo?room=codec-check`);
+  const initial = await box.api.get('/api/state?room=codec-check');
+  expect(initial.ok()).toBeTruthy();
+  const state = await initial.json();
+  expect(state.playing?.episodeId).toBeTruthy();
+  const range = await box.api.get(`/media/${state.playing.episodeId}`, {
+    headers: { Range: 'bytes=0-63' },
+  });
+  expect(range.status()).toBe(206);
+  expect(range.headers()['content-range']).toMatch(/^bytes 0-63\/\d+$/);
+  expect((await range.body()).length).toBe(64);
+  const video = page.locator('video.live');
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) =>
+    element.readyState >= 2 && element.videoWidth > 0 && !element.paused)).toBeTruthy();
+  await video.evaluate((element: HTMLVideoElement) => { element.currentTime = 10; });
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.currentTime)).toBeGreaterThan(8);
+  await page.locator('.lineup').getByRole('button', { name: /CH 03 Movies/ }).click();
+  await expect(page.locator('.lcd-big')).toContainText('CH 03');
+  await expect.poll(() => video.evaluateAll((videos: HTMLVideoElement[]) =>
+    videos.some(v => v.videoWidth > 0 && v.readyState >= 2 && !v.paused))).toBeTruthy();
+});
