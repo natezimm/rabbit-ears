@@ -107,6 +107,16 @@ def nasa_sts1_fallbacks():
                 or not parsed.path.lower().endswith((".mp4", ".webm"))):
             continue
         candidates.append(href)
+    if not candidates:
+        # Diagnostics are public NASA asset host names and extensions ONLY.
+        # Never print private contents, tokens, query strings or media payload.
+        print("NASA_STS1_ASSET_DIAGNOSTICS=" + json.dumps({
+            "totalItems": len(raw),
+            "renditions": [{
+                "host": urlparse(item.get("href", "")).hostname,
+                "extension": Path(urlparse(item.get("href", "")).path).suffix.lower(),
+            } for item in raw[:20] if isinstance(item, dict)],
+        }), flush=True)
     # Smaller pre-generated NASA transcodes first; original footage stays private
     # and even a successful technical inspection requires human rights review.
     def preference(href):
