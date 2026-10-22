@@ -17,6 +17,7 @@ import time
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from urllib.parse import urlparse
 
 SOURCES = (
     {
@@ -84,6 +85,71 @@ def download(source, destination):
             if attempt < 2:
                 time.sleep(2 * (attempt + 1))
     raise RuntimeError(f"{source['id']}: source download unavailable: {last_error}")
+
+
+def nasa_sts1_fallbacks():
+    """Find only video renditions of NASA's explicitly selected Kennedy asset.
+
+    The API supplies actual file URLs; never guess, and don't crawl arbitrary NASA
+    search results. Reject anything not hosted by NASA's own media asset server.
+    """
+    asset = "KSC-20210325-MH-JRS01_0001-STS-1_File_Footage_for_40th_Anniversary"
+    url = "https://images-api.nasa.gov/asset/" + asset
+    request = Request(url, headers={"User-Agent": "RabbitEarsSourceAudit/1.0"})
+    with urlopen(request, timeout=30) as response:
+        manifest = json.load(response)
+    raw = manifest.get("collection", {}).get("items", [])
+    candidates = []
+    for item in raw:
+        href = item.get("href", "") if isinstance(item, dict) else ""
+        parsed = urlparse(href)
+        if (parsed.scheme != "https" or parsed.hostname != "images-assets.nasa.gov"
+                or not parsed.path.lower().endswith((".mp4", ".webm"))):
+            continue
+        candidates.append(href)
+    # Smaller pre-generated NASA transcodes first; original footage stays private
+    # and even a successful technical inspection requires human rights review.
+    def preference(href):
+        name = href.rsplit("/", 1)[-1].lower()
+        for i, level in enumerate(("~small", "~medium", "~large", "~orig")):
+            if level in name:
+                return i
+        return 4
+    return [{
+        **SOURCES[0],
+        "title": "STS-1 original 1981 footage, NASA Kennedy's 2021 archival release",
+        "source_page": "https://images.nasa.gov/details-" + asset,
+        "url": href,
+        "filename": "NASA_STS1_" + str(index) + (".webm" if href.endswith(".webm") else ".mp4"),
+        "limit_bytes": 125_000_000,
+    } for index, href in enumerate(sorted(candidates, key=preference))]
+
+
+def fetch_source(source, scratch):
+    """Use original source, then official NASA archive if Wikimedia rate-limits us."""
+    path = scratch / source["filename"]
+    try:
+        size, digest, mime = download(source, path)
+        return source, path, size, digest, mime
+    except RuntimeError as first_error:
+        if source["id"] != "S1-STS1":
+            raise
+        print("STS-1 Wikimedia source unavailable; looking for a NASA-hosted rendition.", flush=True)
+        try:
+            alternatives = nasa_sts1_fallbacks()
+        except (ValueError, KeyError, OSError, URLError, HTTPError) as error:
+            raise RuntimeError(f"STS-1 primary: {first_error}; NASA archive unavailable: {error}") from error
+        if not alternatives:
+            raise RuntimeError(f"STS-1 primary: {first_error}; NASA archive lists no supported rendition.")
+        errors = [str(first_error)]
+        for alternate in alternatives:
+            alt_path = scratch / alternate["filename"]
+            try:
+                size, digest, mime = download(alternate, alt_path)
+                return alternate, alt_path, size, digest, mime
+            except RuntimeError as error:
+                errors.append(str(error))
+        raise RuntimeError("STS-1 unavailable via pinned sources: " + "; ".join(errors))
 
 
 def inspect(source, path, size, sha, mime):
@@ -162,11 +228,11 @@ def main():
     with tempfile.TemporaryDirectory(prefix="rabbit-ears-nasa-review-") as directory:
         scratch = Path(directory)
         for source in SOURCES:
-            filename = scratch / source["filename"]
+            filename = None
             try:
                 print("Inspecting " + source["id"] + " (ephemeral download, no media artifact)", flush=True)
-                size, digest, mime = download(source, filename)
-                result = inspect(source, filename, size, digest, mime)
+                actual_source, filename, size, digest, mime = fetch_source(source, scratch)
+                result = inspect(actual_source, filename, size, digest, mime)
                 results.append(result)
                 print("NASA_AUDIT_RESULT=" + json.dumps(result, sort_keys=True), flush=True)
             except (RuntimeError, ValueError, KeyError, subprocess.CalledProcessError,
@@ -174,7 +240,8 @@ def main():
                 failures.append({"id": source["id"], "error": str(error)})
                 print("NASA_AUDIT_ERROR=" + json.dumps(failures[-1]), flush=True)
             finally:
-                filename.unlink(missing_ok=True)
+                if filename is not None:
+                    filename.unlink(missing_ok=True)
     report = {
         "schemaVersion": 1,
         "purpose": "Temporary file-level provenance / codec inspection, not copyright approval",
