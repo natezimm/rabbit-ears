@@ -79,7 +79,7 @@ public sealed class DemoMediaTests : IDisposable
 
     [Theory]
     [InlineData("{ bad json")]
-    [InlineData("{\\"version\\":2,\\"videos\\":[{\\"path\\":\\"Cartoons/video.mp4\\",\\"approvedForPublicDemo\\":false}]}")]
+    [InlineData("""{"version":2,"videos":[{"path":"Cartoons/video.mp4","approvedForPublicDemo":false}]}""")]
     public void Mounted_demo_fails_closed_with_invalid_or_unapproved_metadata(string metadata)
     {
         Directory.CreateDirectory(Path.Combine(_root, "Cartoons"));
