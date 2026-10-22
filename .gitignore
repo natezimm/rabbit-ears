@@ -20,6 +20,8 @@ dev-media/
 .DS_Store
 __pycache__/
 demo/media-manifest.json
+demo/rights-ledger.json
+demo/private/
 demo/.env
 demo-media/
 web/playwright-report/

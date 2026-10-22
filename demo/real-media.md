@@ -18,6 +18,11 @@ The example manifest is a template, not a cleared selection of shows.
    source page URL, creator credit, license and supporting rights evidence.
    `channel` is the show folder and `title` is the output file's name without
    an extension. Names can contain spaces; slashes and hidden names are rejected.
+   For version 2, a human review must explicitly set `approvedForPublicDemo: true`
+   with `reviewedBy`, `reviewedAt` (YYYY-MM-DD), and an accurate
+   `modifications` notice. The checked-in example is intentionally unapproved.
+   Optional public attribution fields include `licenseUrl`, `year`, and
+   `attribution`. Keep private rights evidence and decisions outside Git.
 3. From the repository, validate and then prepare:
 
    ```bash
@@ -25,12 +30,19 @@ The example manifest is a template, not a cleared selection of shows.
    python3 scripts/prepare-demo-media.py /path/to/media-manifest.json /path/to/prepared-demo
    ```
 
+**Publishing gate:** New public releases must use a **version 2** manifest.
+Version 2 refuses all unapproved entries instead of silently skipping them;
+an evidence string is not automatic permission. Version 1 manifests remain usable locally for migration, but do **not**
+provide an approval check. The public Compose media override requires version 2:
+legacy prepared libraries must be reviewed and rebuilt before that mount is used. See [media rights review](../docs/media-rights.md).
+
 The tool never downloads media. It encodes 480p-or-smaller H.264/AAC MP4s,
 limits video bitrate to about 1 Mbit/s, and puts the MP4 index first for seeking.
 It records durations so Live channels can advance across unseen episodes without
 installing ffprobe in the running container. It also writes `.demo-media.json`
-with public source/creator/license credits. Private rights evidence and original
-source paths are not published. Re-running skips unchanged source content;
+with public source/creator/license credits. Private rights evidence, reviewer identity, review date and original
+source paths are not published. Version 2 metadata adds approval flags, license
+links, modification notices, optional year and attribution. Re-running skips unchanged source content;
 changed sources are encoded again. Failed output is not promoted to a finished
 MP4, and metadata is only published after the full run succeeds.
 
@@ -64,7 +76,8 @@ curl -fsS http://127.0.0.1:8620/api/demo/credits
 ```
 
 Use **both compose files for future updates**. The bind mount replaces the
-generated library read-only. The server scans it at startup; no public rescan
+generated library read-only. In version 2, only explicitly approved files listed
+in prepared metadata are discoverable or streamable; unexpected files are excluded. The server scans it at startup; no public rescan
 or admin write endpoint is enabled. To change the library, prepare/copy a new
 release directory, change the `.env` path, and recreate the container. Keep the
 old directory for rollback. To restore generated clips, run
