@@ -32,9 +32,9 @@ The example manifest is a template, not a cleared selection of shows.
 
 **Publishing gate:** New public releases must use a **version 2** manifest.
 Version 2 refuses all unapproved entries instead of silently skipping them;
-an evidence string is not automatic permission. Version 1 manifests and existing
-version 1 prepared libraries remain compatible for migration, but do **not**
-provide an approval check. See [media rights review](../docs/media-rights.md).
+an evidence string is not automatic permission. Version 1 manifests remain usable locally for migration, but do **not**
+provide an approval check. The public Compose media override requires version 2:
+legacy prepared libraries must be reviewed and rebuilt before that mount is used. See [media rights review](../docs/media-rights.md).
 
 The tool never downloads media. It encodes 480p-or-smaller H.264/AAC MP4s,
 limits video bitrate to about 1 Mbit/s, and puts the MP4 index first for seeking.
