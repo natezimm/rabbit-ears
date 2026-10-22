@@ -99,23 +99,31 @@ public sealed class LibraryScanner(BoxOptions options, ILogger<LibraryScanner> l
     {
         if (!options.Demo.Enabled) return null;
         var metadata = Path.Combine(root, ".demo-media.json");
-        if (!File.Exists(metadata)) return null;
+        if (!File.Exists(metadata)) return options.Demo.RequireApprovedMedia ? new(StringComparer.Ordinal) : null;
         try
         {
             using var doc = JsonDocument.Parse(File.ReadAllText(metadata));
             var data = doc.RootElement;
             int version = data.GetProperty("version").GetInt32();
-            if (version == 1) return null; // Legacy prepared library: migrate before publishing new releases.
+            if (version == 1) return options.Demo.RequireApprovedMedia ? new(StringComparer.Ordinal) : null; // Legacy offline compatibility.
             if (version != 2) throw new JsonException("Unsupported prepared media version.");
             var allow = new HashSet<string>(StringComparer.Ordinal);
             foreach (var video in data.GetProperty("videos").EnumerateArray())
             {
                 var path = video.GetProperty("path").GetString();
+                var sourceUrl = video.GetProperty("sourceUrl").GetString();
+                var licenseUrl = video.TryGetProperty("licenseUrl", out var licenseValue) && licenseValue.ValueKind != JsonValueKind.Null
+                    ? licenseValue.GetString() : null;
+                var seconds = video.GetProperty("duration").GetDouble();
                 if (video.GetProperty("approvedForPublicDemo").ValueKind != JsonValueKind.True
                     || string.IsNullOrEmpty(path) || !allow.Add(path)
-                    || path.StartsWith('.') || path.StartsWith('/')
-                    || path.Split('/').Any(part => part is "" or "." or ".."))
-                    throw new JsonException("Invalid approved media path.");
+                    || path.StartsWith('.') || path.StartsWith('/') || !path.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase)
+                    || path.Split('/').Any(part => part is "" or "." or "..")
+                    || !double.IsFinite(seconds) || seconds <= 0
+                    || !ValidUrl(sourceUrl) || (licenseUrl is not null && !ValidUrl(licenseUrl))
+                    || new[] { "title", "creator", "license", "modifications" }.Any(field =>
+                        string.IsNullOrWhiteSpace(video.GetProperty(field).GetString())))
+                    throw new JsonException("Invalid approved media entry.");
             }
             return allow;
         }
@@ -125,6 +133,9 @@ public sealed class LibraryScanner(BoxOptions options, ILogger<LibraryScanner> l
             return new HashSet<string>(StringComparer.Ordinal);
         }
     }
+
+    private static bool ValidUrl(string? value) =>
+        Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https";
 
     private static bool IsHidden(string path) => Path.GetFileName(path).StartsWith('.');
 
