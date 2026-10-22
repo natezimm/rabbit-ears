@@ -76,6 +76,9 @@ public sealed class DemoOptions
 {
     public bool Enabled { get; set; }
 
+    /// <summary>Require approved v2 metadata for mounted public media; generated clips do not need it.</summary>
+    public bool RequireApprovedMedia { get; set; }
+
     /// <summary>Televisions on at once; past this the one left unwatched longest is switched off.</summary>
     public int MaxTvs { get; set; } = 100;
 
