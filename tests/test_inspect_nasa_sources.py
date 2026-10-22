@@ -74,6 +74,27 @@ class NasaInspectionTests(unittest.TestCase):
             inspection.inspect(self.fixture, self.path, self.path.stat().st_size,
                                "placeholder-sha", "audio/mp4")
 
+    def test_nasa_fallback_selects_only_official_asset_renditions(self):
+        import io
+        import json
+
+        official = "https://images-assets.nasa.gov/video/KSC-TEST/STS1~small.mp4"
+        original = "https://images-assets.nasa.gov/video/KSC-TEST/STS1~orig.mp4"
+        malicious = "https://external.example/video.mp4"
+        manifest = {
+            "collection": {
+                "items": [{"href": original}, {"href": official}, {"href": malicious},
+                          {"href": "https://images-assets.nasa.gov/metadata.json"}],
+            },
+        }
+        payload = io.BytesIO(json.dumps(manifest).encode())
+        with patch.object(inspection, "urlopen", return_value=payload):
+            candidates = inspection.nasa_sts1_fallbacks()
+        self.assertEqual([c["url"] for c in candidates], [official, original])
+        self.assertTrue(all(c["approvedForPublicDemo"] is False for c in candidates
+                            if "approvedForPublicDemo" in c))
+        self.assertEqual(candidates[0]["limit_bytes"], 125_000_000)
+
     def test_download_enforces_content_type_and_size(self):
         class FakeResponse:
             def __init__(self, mime, payload):
