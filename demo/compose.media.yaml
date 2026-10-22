@@ -2,6 +2,8 @@
 # docker compose -f compose.yaml -f compose.media.yaml up -d --no-build
 services:
   rabbit-ears:
+    environment:
+      Box__Demo__RequireApprovedMedia: 'true'
     volumes:
       - type: bind
         source: ${RABBIT_EARS_DEMO_MEDIA:?Set RABBIT_EARS_DEMO_MEDIA to the prepared media directory}

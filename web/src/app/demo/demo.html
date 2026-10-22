@@ -70,8 +70,13 @@
         <details>
           <summary>Media credits</summary>
           @for (credit of credits(); track credit.channel + '/' + credit.title) {
-            <p><a [href]="credit.sourceUrl" target="_blank" rel="noopener noreferrer">{{ credit.title }}</a>
-              — {{ credit.creator }} · {{ credit.license }}</p>
+            <div class="media-credit">
+              <strong>{{ credit.channel }} · {{ credit.title }}@if (credit.year) { ({{ credit.year }})}</strong>
+              <span>By {{ credit.creator }} · <a [href]="credit.sourceUrl" target="_blank" rel="noopener noreferrer">Original source</a></span>
+              <span>{{ credit.license }}@if (credit.licenseUrl) { · <a [href]="credit.licenseUrl" target="_blank" rel="noopener noreferrer">License details</a>}</span>
+              @if (credit.attribution) { <span>{{ credit.attribution }}</span> }
+              @if (credit.modifications) { <span>Changes: {{ credit.modifications }}</span> }
+            </div>
           }
         </details>
       } @else { <p>This demo plays generated test clips.</p> }

@@ -168,3 +168,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
 @media (max-width: 860px) {
   .phone-prompt { display: none; }
 }
+
+.media-credit { display: grid; gap: 3px; padding: 10px 0; border-bottom: 1px solid var(--edge); }
+.media-credit strong { font-size: 14px; color: var(--text); }
+.media-credit span { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }

@@ -123,4 +123,8 @@ export interface DemoCredit {
   creator: string;
   license: string;
   sourceUrl: string;
+  licenseUrl: string | null;
+  modifications: string | null;
+  year: number | null;
+  attribution: string | null;
 }
