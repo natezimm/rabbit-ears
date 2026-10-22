@@ -162,7 +162,8 @@ public sealed partial class TvService : BackgroundService
     {
         var prepared = _demoMedia.Read(library);
         var byPath = library.Files.ToDictionary(f => Path.GetRelativePath(_options.MediaRoot, f.Value).Replace('\\', '/'), f => f.Key);
-        _credits = [.. prepared.Select(v => new DemoCredit(v.Path.Split('/')[0], v.Title, v.Creator, v.License, v.SourceUrl))];
+        _credits = [.. prepared.Select(v => new DemoCredit(v.Path.Split('/')[0], v.Title, v.Creator, v.License, v.SourceUrl, v.LicenseUrl, v.Modifications, v.Year, v.Attribution))
+            .OrderBy(c => c.Channel, StringComparer.OrdinalIgnoreCase).ThenBy(c => c.Title, StringComparer.OrdinalIgnoreCase)];
         foreach (var video in prepared) _lengths[byPath[video.Path]] = video.Duration;
     }
 
