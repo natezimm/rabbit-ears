@@ -33,7 +33,7 @@ Transfer the complete prepared directory (including dotfiles) into a new VM dire
 On the VM, before switching the container:
 
 ```bash
-python3 scripts/verify-demo-release.py --help   # available after repository update
+python3 ../scripts/verify-demo-release.py --help   # available after repository update
 ls -la /srv/rabbitears-demo/releases/library-2026-10-a/
 ```
 
@@ -68,7 +68,7 @@ This recreates the container when the mount changes, but leaves nginx, other app
 With `RABBIT_EARS_DEMO_MEDIA` pointing to the **active** release:
 
 ```bash
-python3 scripts/verify-demo-release.py \
+python3 ../scripts/verify-demo-release.py \
   --base-url http://127.0.0.1:8620 \
   --media-root "$RABBIT_EARS_DEMO_MEDIA" \
   --expect-channels 5 \
@@ -85,16 +85,16 @@ If any critical check fails, stop using the new library and **restore the previo
 
 ```bash
 docker compose -f compose.yaml -f compose.media.yaml up -d --no-build --force-recreate
-python3 scripts/verify-demo-release.py \
+python3 ../scripts/verify-demo-release.py \
   --base-url http://127.0.0.1:8620 \
   --media-root /path/to/previous/approved/library
 ```
 
-To fall all the way back to the generated **unlicensed test-pattern** default, explicitly omit the media override and recreate the container:
+To fall all the way back to the generated **synthetic test-pattern** default, explicitly omit the media override and recreate the container:
 
 ```bash
 docker compose -f compose.yaml up -d --no-build --force-recreate
-python3 scripts/verify-demo-release.py --base-url http://127.0.0.1:8620
+python3 ../scripts/verify-demo-release.py --base-url http://127.0.0.1:8620
 ```
 
 The generated-only fallback must not require a mounted prepared library. Verify the actual image/port/proxy after rollback; do not delete either release until all checks pass.
