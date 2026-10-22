@@ -3,7 +3,7 @@
 The public demo runs the [`Dockerfile`](../Dockerfile) at the repository root:
 the whole app in one container, in demo mode, with clips generated at build
 time. Every visitor gets a TV of their own and nothing is saved, so it needs no
-volume and no settings. CI builds and smoke-tests the image on every change.
+volume and no settings. CI builds and smoke-tests the image on every change, including a disposable\nread-only mount containing an approved **generated** fixture. No third-party\nvideo is downloaded or added to the image.
 
 ## Run it on a server
 
@@ -45,7 +45,7 @@ and update nginx's upstream to match. The container still listens on 8080.
 preparation, read-only library mount, credits, and rollback. No application
 rebuild is needed to replace media once this version is installed. When using
 the media override, include both Compose files in update commands as documented
-there. The [implementation plan](../docs/channel-and-demo-plan.md) covers this
+there. Use the [release checklist](release-checklist.md) to stage a new immutable\nlibrary, run the [release verifier](../scripts/verify-demo-release.py) and roll back\nwithout disturbing the other apps on the VM. The [implementation plan](../docs/channel-and-demo-plan.md) covers this
 and the home channel editor.
 
 ## Size
