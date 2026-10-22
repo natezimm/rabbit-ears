@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "videos": [
     {
       "source": "../originals/episode-01.mkv",
@@ -7,8 +7,15 @@
       "title": "Episode 01",
       "creator": "REPLACE with the credited creator",
       "sourceUrl": "https://example.com/replace-with-source-page",
-      "license": "REPLACE with the applicable license or public-domain basis",
-      "rightsEvidence": "REPLACE with evidence permitting public streaming of this exact version, including audio"
+      "license": "REPLACE with verified public-domain basis or license",
+      "licenseUrl": "https://example.com/rights-page",
+      "modifications": "Transcoded to H.264/AAC; document any excerpting or cropping when applicable",
+      "year": 1930,
+      "attribution": "REPLACE with required attribution, or omit if none applies",
+      "rightsEvidence": "REPLACE with private evidence for the exact video and soundtrack, streaming territories, and edits",
+      "approvedForPublicDemo": false,
+      "reviewedBy": "REPLACE with reviewer name",
+      "reviewedAt": "2026-10-22"
     }
   ]
 }
