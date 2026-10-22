@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using RabbitEars.Core;
 
 namespace RabbitEars.Api;
@@ -40,6 +41,9 @@ public sealed class LibraryScanner(BoxOptions options, ILogger<LibraryScanner> l
             return Library.Empty;
         }
 
+        // Version 2 public-demo libraries are allowlisted, not merely credited.
+        // When metadata exists but is corrupt, fail closed. Generated fallback has no metadata.
+        var approvedPaths = DemoApprovedPaths(root);
         var playable = new HashSet<string>(options.VideoExtensions, StringComparer.OrdinalIgnoreCase);
         if (options.UsesMpv) playable.UnionWith(OtherVideo);
         var channels = new List<ChannelDefinition>();
@@ -64,6 +68,7 @@ public sealed class LibraryScanner(BoxOptions options, ILogger<LibraryScanner> l
             {
                 var extension = Path.GetExtension(path);
                 var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
+                if (approvedPaths is not null && !approvedPaths.Contains(relative)) continue;
                 if (playable.Contains(extension))
                 {
                     var id = IdFor(relative);
@@ -88,6 +93,37 @@ public sealed class LibraryScanner(BoxOptions options, ILogger<LibraryScanner> l
             "Scanned {Root}: {Channels} channels, {Episodes} episodes, {Unplayable} files need converting.",
             root, channels.Count, files.Count, needsConversion.Count);
         return new Library(channels, files, needsConversion);
+    }
+
+    private HashSet<string>? DemoApprovedPaths(string root)
+    {
+        if (!options.Demo.Enabled) return null;
+        var metadata = Path.Combine(root, ".demo-media.json");
+        if (!File.Exists(metadata)) return null;
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(metadata));
+            var data = doc.RootElement;
+            int version = data.GetProperty("version").GetInt32();
+            if (version == 1) return null; // Legacy prepared library: migrate before publishing new releases.
+            if (version != 2) throw new JsonException("Unsupported prepared media version.");
+            var allow = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var video in data.GetProperty("videos").EnumerateArray())
+            {
+                var path = video.GetProperty("path").GetString();
+                if (video.GetProperty("approvedForPublicDemo").ValueKind != JsonValueKind.True
+                    || string.IsNullOrEmpty(path) || !allow.Add(path)
+                    || path.StartsWith('.') || path.StartsWith('/')
+                    || path.Split('/').Any(part => part is "" or "." or ".."))
+                    throw new JsonException("Invalid approved media path.");
+            }
+            return allow;
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or InvalidOperationException or KeyNotFoundException)
+        {
+            log.LogError(ex, "Invalid public demo media metadata: blocking all media in this mount.");
+            return new HashSet<string>(StringComparer.Ordinal);
+        }
     }
 
     private static bool IsHidden(string path) => Path.GetFileName(path).StartsWith('.');
