@@ -30,7 +30,7 @@ The repository provides **no automatic copyright determination**. Internet Archi
 ## Compatibility and enforcement
 
 - **Version 1 private manifest**: still accepted by the preparation script for repeatability; it has no approval gate and should **not** be used for a new public release.
-- **Version 1 prepared metadata**: still readable at runtime to avoid breaking an already mounted library. Migrate to version 2, and review every old item before publishing a new release.
+- **Version 1 prepared metadata**: readable only without the strict mounted-media flag (for legacy migration); the public Compose media override explicitly requires version 2. Review and migrate old items before deployment.
 - **Version 2 private manifest**: every entry must be explicitly approved, with reviewer/date and modification text. Any pending or rejected entry causes validation and preparation to fail. No partial publish.
 - **Version 2 prepared metadata**: only files with an approved entry can enter the demo channel scanner, be served by `/media/{id}`, or appear in credits. Missing, malformed, or unsupported metadata fails closed (empty public lineup). Extra files in the mount are ignored, not served.
 - **Generated fallback library**: built by `scripts/make-dev-media.sh` without a prepared manifest; remains usable for development, CI, and rollback.
