@@ -20,7 +20,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Install FFmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+        run: |
+          # The runner's apt mirror sometimes stalls; give up on a slow attempt and try again
+          # rather than holding the job until its timeout.
+          for attempt in 1 2 3; do
+            sudo timeout 150 apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 update \
+              && sudo timeout 240 apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 install -y ffmpeg \
+              && exit 0
+          done
+          exit 1
       - name: Validate inspection script without internet
         run: python3 -m unittest discover -s tests -p 'test_inspect_nasa_sources.py'
       - name: Fetch, hash, probe and decode only two allowlisted NASA media files
