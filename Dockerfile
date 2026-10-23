@@ -5,7 +5,7 @@
 #   docker build -t rabbit-ears .
 #   docker run --rm -p 8080:8080 rabbit-ears     then open http://localhost:8080
 
-FROM node:24-bookworm-slim AS web
+FROM node:25-bookworm-slim AS web
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci --no-audit --no-fund
