@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { encode } from 'uqr';
 
 import { DemoCredit } from '../core/models';
@@ -22,6 +22,9 @@ export class Demo {
   protected readonly link = inject(TvLink);
   protected readonly state = this.link.state;
   protected readonly credits = signal<DemoCredit[]>([]);
+  protected readonly privatePreview = computed(() =>
+    this.credits().some(credit => credit.license.includes('UNREVIEWED')));
+
 
   constructor() {
     void fetch('/api/demo/credits').then(async response => {
