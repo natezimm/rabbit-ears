@@ -22,7 +22,7 @@ on the real box yet, so expect a snag or two in steps 2 and 4.
 
 - [ ] Name the box `rabbitears`, so the `rabbitears.local` addresses in this
       checklist work as written. Ubuntu picks a name like
-      `nathan-zimmerman.AL34`, and a name with a dot in it is not what the
+      `desktop-user.ABC123`, and a name with a dot in it is not what the
       network announces, so the laptop cannot find it.
 
   ```bash
@@ -35,12 +35,12 @@ on the real box yet, so expect a snag or two in steps 2 and 4.
   echo "$(whoami)@$(hostname).local"
   ```
 
-**You should see** something like `nathan@rabbitears.local`. That is your
+**You should see** something like `YOU@rabbitears.local`. That is your
 `YOU@rabbitears.local`.
 
 - [ ] On the laptop, check it can reach the box: `ping -c 3 rabbitears.local`.
       If it cannot, use the box's number address instead (on the box,
-      `hostname -I` prints it), for example `nathan@192.168.1.40`.
+      `hostname -I` prints it), then connect with `YOU@<box-ip>`.
 
 ## 2. Send the app over and install it
 
