@@ -12,6 +12,8 @@
 
 All three Internet Archive item pages currently represent an item-level **U.S. public-domain certification**. That is a meaningful lead, **not** a worldwide guarantee and not evidence that every embedded musical composition or separately protected performance is cleared. An archive designation also does not automatically settle trademark, publicity, or endorsement claims. See [Prelinger FAQ](https://www.panix.com/~footage/prelarch.html) and the archive item pages for source-specific notices.
 
+Technical verification before manual review is available through [the ephemeral commercial reel audit](archive-reel-audit.md), which downloads these two specific files only to produce metadata on their audio/video streams, scene-change candidates and silence windows. It does not grant rights or publish footage.
+
 ## How to run the new PRIVATE review workflow
 
 Install FFmpeg on the Mac (`brew install ffmpeg`) and download **A1 and A2** through their source pages above. Do not convert or replace the original recording's sound. Put the originals somewhere private **outside the Git checkout**, e.g. `~/Movies/RabbitEars/Originals/`.
