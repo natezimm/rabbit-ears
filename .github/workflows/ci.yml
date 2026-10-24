@@ -1,17 +1,19 @@
 name: CI
 
 on:
-  # Each change is tested once, on its pull request; merging to main does not test it again.
+  # Pull requests are tested, and main is tested again after each merge.
+  push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
-# A newer push to the same pull request replaces its older run.
+# A newer push to the same pull request replaces its older run. Runs on main always finish.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   backend:
