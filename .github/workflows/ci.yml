@@ -13,9 +13,12 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Jobs are pinned to Ubuntu 24.04 rather than ubuntu-latest, which is moving to a newer image.
+# Jobs that installed ffmpeg on it intermittently hung in apt, and wheelhouse found Playwright
+# could not install Chromium there. Move the pin when both are known to work on the new image.
 jobs:
   backend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
@@ -25,7 +28,7 @@ jobs:
       - run: dotnet test
 
   web:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
       run:
@@ -75,7 +78,7 @@ jobs:
           retention-days: 7
 
   media-preparation:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
@@ -92,7 +95,7 @@ jobs:
 
   # The demo site's container, built the way the server builds it.
   demo-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
