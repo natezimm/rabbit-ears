@@ -15,7 +15,7 @@ For **each specific file**, record:
 - Attribution text, canonical license URL if available, required notices, any adaptation/share-alike requirements, and planned excerpts/edits.
 - Reviewer's identity, date, result (`pending`, `approved`, `rejected`), unresolved risks and safer alternatives. Only mark approved after every relevant question has been resolved.
 
-The repository provides **no automatic copyright determination**. Internet Archive hosting, an old release date, or possession of a copy do not by themselves grant streaming rights. Prefer clearly sourced worldwide public-domain/CC0/CC BY recordings and official NASA material with third-party material excluded. Do not assume CC BY-NC permits promotional use; don't trim CC BY-ND material without separate permission. Ask qualified counsel about unresolved territorial and derivative-rights questions.
+The repository provides **no automatic copyright determination**. Internet Archive hosting, an old release date, or possession of a copy do not by themselves grant streaming rights. Prefer clearly sourced worldwide public-domain/CC0/CC BY recordings and fully licensed archive sound films with the original soundtrack explicitly included. Do not assume CC BY-NC permits promotional use; don't trim CC BY-ND material without separate permission. Ask qualified counsel about unresolved territorial and derivative-rights questions.
 
 ## Two-stage approval gate
 
@@ -56,5 +56,5 @@ The public demo's expandable **Media credits** section is generated from the pre
 
 - [Creative Commons attribution guidance](https://wiki.creativecommons.org/wiki/Recommended_practices_for_attribution)
 - [Creative Commons license types](https://creativecommons.org/cc-licenses/)
-- [NASA image and media usage](https://www.nasa.gov/nasa-brand-center/images-and-media/)
+- [Prelinger Archives FAQ](https://www.panix.com/~footage/prelarch.html)
 - [Duke public-domain resources](https://cspd.law.duke.edu/publicdomainday/)
