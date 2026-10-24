@@ -101,6 +101,13 @@ class CommercialReviewTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "outside"):
                 review.make_review("classic-tv", review.REPO_ROOT / "README.md", self.workspace)
 
+    def test_one_command_launcher_has_valid_bash_syntax(self):
+        launcher = PATH.parents[1] / "scripts/run-commercial-review.sh"
+        subprocess.run(["bash", "-n", str(launcher)], check=True)
+        text = launcher.read_text()
+        self.assertIn("shasum -a 256", text)
+        self.assertIn("prepare-commercial-review.py", text)
+
     def test_outside_source_window_rejected(self):
         self.fixture()
         with self.add_synthetic_catalog():
