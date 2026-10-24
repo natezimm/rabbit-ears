@@ -46,7 +46,7 @@ Verified on `main` at planning time:
 ### A1. Establish the permission gate (must precede publishing media)
 
 - [ ] Maintain a **private `media-manifest.json` and rights evidence ledger** outside Git. Track each **specific file/rendition** rather than just movie titles. Fields: canonical title, release year, source page, direct file source, producer/creator, file hash, rights basis, evidence links/screenshots, soundtrack/music rights, restorations or colorization, any added subtitles/logos, international territory suitability, permitted edits/excerpts, license URL, attribution requirements, reviewer, review date, decision (`approved`/`pending`/`rejected`), notes.
-- [ ] Prefer (1) demonstrably original U.S. public-domain copies whose online streaming and applicable territories have been reviewed, (2) explicit worldwide public streaming licenses including adaptation where clipping is intended, and (3) official government media with verified third-party rights exclusions.
+- [ ] Prefer (1) demonstrably original U.S. public-domain copies whose online streaming and applicable territories have been reviewed, (2) explicit worldwide public streaming licenses including adaptation where clipping is intended, and (3) explicitly permissioned archival footage with documented rights to reuse both the picture and sound.
 - [ ] Treat 1931–1977 unrenewed/no-notice claims as requiring specific evidence. A 1936 cartoon is **not** public domain merely because it is old. Do not assume Internet Archive hosting or YouTube availability grants redistribution rights.
 - [ ] Check underlying songs, newly recorded scores, restored/added material, announcers, third-party broadcast clips, and uploader claims. Avoid modern remastered, colorized, or rescored copies unless separately licensed or proven free of protected additions.
 - [ ] Treat `NC`, `ND`, or `SA` conditions carefully. Prefer PD/CC0/CC BY for edited public promotional demos. Do not treat a job-seeking portfolio as automatically noncommercial. If CC BY-SA is selected, evaluate the adaptation and share-alike obligations. For CC BY-ND, don't publish edited/adapted excerpts unless permission separately permits them.
@@ -58,7 +58,6 @@ Recommended primary reading:
 - Duke Public Domain Day 2024 — https://cspd.law.duke.edu/publicdomainday/2024
 - Duke Public Domain Day 2026 — https://cspd.law.duke.edu/publicdomainday/2026
 - LOC *Night of the Living Dead* catalog — https://www.loc.gov/item/91783945/night-of-the-living-dead-1968/
-- NASA image/media rules — https://www.nasa.gov/nasa-brand-center/images-and-media/
 - Prelinger/Internet Archive reuse FAQ — https://archivesupport.zendesk.com/hc/en-us/articles/360004715031-Prelinger-Archive
 - Creative Commons attribution guidance — https://wiki.creativecommons.org/index.php?title=Recommended_practices_for_attribution
 - Creative Commons license categories — https://creativecommons.org/cc-licenses/
@@ -70,8 +69,8 @@ Recommended primary reading:
 | **CH 02 — Saturday Cartoons** | Lively black-and-white and color 4:3 shorts | *Steamboat Willie* (1928 original), *Popeye the Sailor Meets Sindbad the Sailor* (1936), one 1930 Betty Boop-era original | *Steamboat Willie*'s 1928 original is US PD; confirm exact media rendition. Popeye and Betty Boop copy/edition/audio need file-level review |
 | **CH 03 — Comedy Classics** | Slapstick/sitcom-like late-night TV | *Soup to Nuts* (1930 original), *Disorder in the Court* (1936 original) | 1930 originals entered US PD in 2026. Verify *Disorder* status, exact copies, and any added music |
 | **CH 04 — Late Night Movies** | Black-and-white features and creature feature | *Night of the Living Dead* (1968 original black-and-white), *The General* (1926 original) | Use original versions; investigate any restoration/new musical score; consider content sensitivity of horror scenes |
-| **CH 05 — Space Channel** | Vintage 1980s/1990s NASA broadcast feel | Two distinct official NASA Shuttle/Mission Control excerpts | Prefer official NASA-hosted media without third-party broadcast/music inserts; do not imply endorsement |
-| **CH 06 — Retro Commercials** | Period commercials and public-service/educational films | Three individually verified Prelinger items | Check actual item-level license; archive membership alone is not permission |
+| **CH 05 — Retro Learning** | Nostalgic educational and how-it-works films | Two independently verified Prelinger-era instructional films (to be selected) | Prefer complete original soundtrack with a documented reuse basis; do not invent or strip sound to work around unclear rights |
+| **CH 06 — Retro Commercials** | Period television/screen commercials with original sound | Short selections from *Classic Television Commercials (Part I)* and *1955 Chevrolet Screen Ads*; third selection only if cleared | The specific archive items list U.S. public domain, but review every chosen ad's music/jingle, performers, branding, edition and territories before release |
 
 Aim for **3 + 2 + 2 + 2 + 3 = 12** total clips, roughly **2–4 minutes each**, balancing engaging opening frames, varied audio, and natural channel rollover. For each channel select a primary and a backup work before preparation. Title and channel names should evoke the period without borrowing another network's brand or suggesting sponsorship.
 
@@ -80,7 +79,7 @@ Aim for **3 + 2 + 2 + 2 + 3 = 12** total clips, roughly **2–4 minutes each**, 
 - [ ] Prefer **native 4:3 or 1.37:1** transfers and animated/high-motion scenes that make the CRT shader immediately visible. Keep original picture geometry; no horizontal stretching. For 16:9 sources, letterbox or choose a shot-by-shot documented crop rather than blind center crop.
 - [ ] Clip selection should not start in silence or show long production cards. Existing start offsets of 6–10 seconds must not skip the interesting part; test this per excerpt. Use 1–2 shorter test clips to confirm auto-advance in CI, without shrinking all public footage.
 - [ ] Keep source/editorial credits out of the surfable video if that improves continuity **only when on-page/public attribution fulfills the license**. For edits, explicitly state `excerpted`, `transcoded`, `cropped`, etc. Retain any source notices that the license requires to remain in the work.
-- [ ] Avoid copyrighted station/network logos, modern soundtracks, and added sample music unless rights have been separately reviewed.
+- [ ] **Every final clip must have audible, appropriately cleared audio**: dialogue, original narration, music, or sound effects. If a soundtrack cannot be cleared, replace the clip instead of silently muting it. Avoid station/network logos or added sample music without source-specific permission.
 
 **A acceptance:** Public rights ledger reviewed for every clip, exact SHA/source retained, safe alternate available for each uncertain candidate, 5-channel intended order settled, approval recorded before any external copy is served.
 
