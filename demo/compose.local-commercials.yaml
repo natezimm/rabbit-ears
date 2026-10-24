@@ -5,6 +5,8 @@ services:
   rabbit-ears:
     build: ..
     image: rabbit-ears-local-commercial-review
+    # Match the Mac file owner so private 0700 review directories stay readable.
+    user: "${RABBIT_EARS_LOCAL_UID:?}:${RABBIT_EARS_LOCAL_GID:?}"
     restart: "no"
     ports:
       - "127.0.0.1:8760:8080"
