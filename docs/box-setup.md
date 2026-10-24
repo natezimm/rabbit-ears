@@ -40,7 +40,7 @@ on the real box yet, so expect a snag or two in steps 2 and 4.
 
 - [ ] On the laptop, check it can reach the box: `ping -c 3 rabbitears.local`.
       If it cannot, use the box's number address instead (on the box,
-      `hostname -I` prints it), for example `YOU@192.0.2.40`.
+      `hostname -I` prints it), then connect with `YOU@<box-ip>`.
 
 ## 2. Send the app over and install it
 

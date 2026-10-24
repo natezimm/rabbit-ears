@@ -22,7 +22,10 @@ __pycache__/
 demo/media-manifest.json
 demo/rights-ledger.json
 demo/private/
-demo/.env
+# Local environment files; deploy/box.env is a tracked, credential-free template.
+.env
+.env.*
+!.env.example
 demo-media/
 web/playwright-report/
 web/test-results/
