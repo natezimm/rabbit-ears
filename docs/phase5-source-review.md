@@ -14,6 +14,8 @@ All three Internet Archive item pages currently represent an item-level **U.S. p
 
 Technical verification before manual review is available through [the ephemeral commercial reel audit](archive-reel-audit.md), which downloads these two specific files only to produce metadata on their audio/video streams, scene-change candidates and silence windows. It does not grant rights or publish footage.
 
+**Working local TV preview:** [Watch the unapproved sound-on candidate clips on CH 06, localhost only](local-commercials-preview.md). This does not clear, publish or deploy any media.
+
 ## October 24 source verification (GitHub Actions [run #40057053268](https://github.com/natezimm/rabbit-ears/actions/runs/40057053268))
 
 Both selected 320×240 H.264/AAC stereo source renditions downloaded and fully decoded successfully. Technical evidence pinned to exact local filenames:
