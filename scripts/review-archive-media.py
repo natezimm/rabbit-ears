@@ -134,7 +134,7 @@ def prepare(item_id, source_path, workspace, expected_sha=None):
         # Preserve audio: never add silence or mute original recordings. No publishing.
         ffmpeg_artifact(source, target / "review-with-sound.mp4", [
             "-map", "0:v:0", "-map", "0:a:0",
-            "-vf", "scale=w='trunc(iw*min(1,480/ih)/2)*2':h='trunc(ih*min(1,480/ih)/2)*2',setsar=1",
+            "-vf", "scale=-2:480:force_original_aspect_ratio=decrease,setsar=1",
             "-c:v", "libx264", "-threads", "2", "-preset", "veryfast",
             "-crf", "28", "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-b:a", "128k", "-ac", "2",
