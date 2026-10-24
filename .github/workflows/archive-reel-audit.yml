@@ -1,0 +1,31 @@
+name: Archive Commercial Reel Audit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-sound-reels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install FFmpeg
+        run: |
+          if ! command -v ffprobe >/dev/null || ! command -v ffmpeg >/dev/null; then
+            sudo apt-get update && sudo apt-get install -y ffmpeg
+          fi
+      - name: Offline synthetic audio and video tests
+        run: python3 -m unittest discover -s tests -p 'test_probe_archive_reels.py'
+      - name: Temporary archive downloads and media metadata only
+        run: python3 scripts/probe-archive-reels.py --download --report archive-reel-audit.json
+      - name: Upload metadata JSON only, never video/audio/frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: archive-reel-metadata
+          path: archive-reel-audit.json
+          if-no-files-found: warn
+          retention-days: 7
