@@ -1,0 +1,26 @@
+# STANDALONE, LOCALHOST-ONLY preview. NOT for GCP, nginx, or public deployment.
+# Usage: scripts/start-local-commercials.sh (from a Mac checkout).
+# Separate project name + port ensure the normal demo and prod port 8620 are untouched.
+services:
+  rabbit-ears:
+    build: ..
+    image: rabbit-ears-local-commercial-review
+    restart: "no"
+    ports:
+      - "127.0.0.1:8760:8080"
+    environment:
+      # First (and only) channel is CH 06. The media is private review content.
+      Box__FirstChannelNumber: "6"
+      Box__Demo__Enabled: "true"
+      # WARNING: This legacy local mode does not approve media.
+      # Public compose.media.yaml still requires approved v2 metadata.
+      Box__Demo__RequireApprovedMedia: "false"
+      Box__Picture__Transition: "static"
+    volumes:
+      - type: bind
+        source: ${RABBIT_EARS_LOCAL_MEDIA:?The private staged library path is required}
+        target: /srv/rabbitears/media
+        read_only: true
+        bind:
+          create_host_path: false
+    mem_limit: 256m
