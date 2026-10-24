@@ -38,7 +38,13 @@ Use `scripts/prepare-commercial-review.py` with the exact source files. It SHA-2
 
 **Do not treat a scene-change timestamp as an ad boundary.** The full source and all proposed preview soundtracks require human viewing/listening plus license, embedded music, performer, brand, and territory review before they may be published.
 
-Run from the Rabbit Ears checkout after obtaining the two exact files in a directory outside the repository (and after merging the preview PR):
+**Recommended: one-command Mac workflow after merging the preview PR.** From the Rabbit Ears checkout, run the following. The launcher downloads only the two audited files via HTTPS if absent, verifies size and SHA-256, builds sound-on previews privately outside Git, and opens both review pages. Requires FFmpeg (`brew install ffmpeg`).
+
+```bash
+bash scripts/run-commercial-review.sh
+```
+
+If you prefer manual downloads or are unable to access the archive through curl, place the exact source files in the Originals folder yourself and run these equivalent commands:
 
 ```bash
 mkdir -p "$HOME/Movies/RabbitEars/Originals" "$HOME/Movies/RabbitEars/CommercialReview"
