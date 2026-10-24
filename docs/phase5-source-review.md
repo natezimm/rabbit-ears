@@ -1,6 +1,6 @@
 # Phase 5 — audio-first archival commercials: source research
 
-**Status: candidates only.** No commercial has been downloaded, previewed in full, approved, encoded for deployment, or published. The previous Space Channel experiment has been dropped. Every final Rabbit Ears clip must have audible, specifically cleared sound.
+**Status: source files technically inspected in ephemeral CI on October 24, 2026, but no commercial watched/listened to in full, approved, encoded for deployment, or published.** The previous Space Channel experiment has been dropped. Every final Rabbit Ears clip must have audible, specifically cleared sound.
 
 ## First source reels (one locally selected excerpt at a time)
 
@@ -13,6 +13,53 @@
 All three Internet Archive item pages currently represent an item-level **U.S. public-domain certification**. That is a meaningful lead, **not** a worldwide guarantee and not evidence that every embedded musical composition or separately protected performance is cleared. An archive designation also does not automatically settle trademark, publicity, or endorsement claims. See [Prelinger FAQ](https://www.panix.com/~footage/prelarch.html) and the archive item pages for source-specific notices.
 
 Technical verification before manual review is available through [the ephemeral commercial reel audit](archive-reel-audit.md), which downloads these two specific files only to produce metadata on their audio/video streams, scene-change candidates and silence windows. It does not grant rights or publish footage.
+
+## October 24 source verification (GitHub Actions [run #40057053268](https://github.com/natezimm/rabbit-ears/actions/runs/40057053268))
+
+Both selected 320×240 H.264/AAC stereo source renditions downloaded and fully decoded successfully. Technical evidence pinned to exact local filenames:
+
+| Item | Bytes | Duration | SHA-256 |
+| --- | ---: | ---: | --- |
+| Classic TV | 38,145,570 | 536.503s | `d7d2cf8b1e75a7abde8d150cac768f19123f82b4453e0ba1914667734aca497e` |
+| Chevrolet | 37,344,324 | 527.327s | `60fcbb2496c602bf7f8a0b5fe4efb25a0e2acd9f93488081c46ca6fe9cce5b2a` |
+
+The GitHub Action discarded the actual recordings and uploaded only metadata. Source audio streams **exist and decode**; that alone does not establish audible content quality or reuse permissions.
+
+### Private sound-on scouting previews — proposed windows, not approved edits
+
+Use `scripts/prepare-commercial-review.py` with the exact source files. It SHA-256-checks the video, retains and checks audible source sound, prepares H.264/AAC local previews and pending rights records, and **never exports a public media manifest**.
+
+| Reel | Scouting label | File-relative window | Editorial status |
+| --- | --- | --- | --- |
+| Classic TV | Remington | 2:30–3:54 | Broad exploratory window; shotlist places the ad nearby; verify exact boundaries |
+| Classic TV | Mum deodorant | 4:20–5:45 | Broad exploratory window; verify beginning, end, soundtrack and adjacent spots |
+| Chevrolet | Opening reel | 0:00–1:04 | Unknown individual ad boundaries; compare visuals and audio |
+| Chevrolet | Middle reel | 4:10–5:38 | Unknown individual ad boundaries; compare visuals and audio |
+
+**Do not treat a scene-change timestamp as an ad boundary.** The full source and all proposed preview soundtracks require human viewing/listening plus license, embedded music, performer, brand, and territory review before they may be published.
+
+Run from the Rabbit Ears checkout after obtaining the two exact files in a directory outside the repository (and after merging the preview PR):
+
+```bash
+mkdir -p "$HOME/Movies/RabbitEars/Originals" "$HOME/Movies/RabbitEars/CommercialReview"
+chmod 700 "$HOME/Movies/RabbitEars/CommercialReview"
+
+python3 scripts/prepare-commercial-review.py \
+  --item classic-tv \
+  --source "$HOME/Movies/RabbitEars/Originals/ClassicT1948_512kb.mp4" \
+  --workspace "$HOME/Movies/RabbitEars/CommercialReview"
+
+python3 scripts/prepare-commercial-review.py \
+  --item chevrolet-1955 \
+  --source "$HOME/Movies/RabbitEars/Originals/1955Chev1955_512kb.mp4" \
+  --workspace "$HOME/Movies/RabbitEars/CommercialReview"
+
+open "$HOME/Movies/RabbitEars/CommercialReview/classic-tv/index.html"
+open "$HOME/Movies/RabbitEars/CommercialReview/chevrolet-1955/index.html"
+```
+
+Do not rename source files. A new output directory is required for reruns to preserve existing rights-review notes. Generated content remains outside Git, and every `rights-review.json` stays pending (`approvedForPublicDemo: false`). 
+
 
 ## How to run the new PRIVATE review workflow
 
