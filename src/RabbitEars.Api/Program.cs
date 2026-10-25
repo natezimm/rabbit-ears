@@ -20,8 +20,11 @@ builder.Services.AddHostedService(services => services.GetRequiredService<TvServ
 builder.Services.AddSingleton<MpvScreen>();
 builder.Services.AddHostedService<MpvPlayer>();
 builder.Services.AddSignalR();
+builder.Services.AddClientRateLimit(options.RateLimit);
 
 var app = builder.Build();
+
+app.UseClientRateLimit(options.RateLimit);
 
 // A visitor to the public demo arrives at the bare address; show them the TV, not the remote.
 if (options.Demo.Enabled)
