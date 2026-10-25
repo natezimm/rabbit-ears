@@ -177,8 +177,10 @@ generated clips with cleared real content, follow [the media preparation and
 mount guide](demo/real-media.md). The [plan](docs/channel-and-demo-plan.md)
 records both this workflow and the home channel editor.
 
-See the [portfolio completion plan](docs/portfolio-completion-plan.md) for the
-remaining demo, media, hardware, and documentation work and acceptance criteria.
+Public-demo source selection is limited to footage produced in **1980 or later**,
+with a clear transfer and audible original sound. The production year refers to
+the underlying footage, not a later upload or restoration. Review the exact
+video and soundtrack before publication; see [media rights](docs/media-rights.md).
 
 ## How it fits together
 

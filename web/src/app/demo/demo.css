@@ -172,13 +172,3 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
 .media-credit { display: grid; gap: 3px; padding: 10px 0; border-bottom: 1px solid var(--edge); }
 .media-credit strong { font-size: 14px; color: var(--text); }
 .media-credit span { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
-
-/* Appears only when the local media catalog explicitly says UNREVIEWED. */
-.private-preview {
-  padding: 10px 12px;
-  border: 1px solid #aa894d;
-  border-radius: 6px;
-  color: #f3dfab;
-  background: #342b1b;
-  font-weight: 600;
-}

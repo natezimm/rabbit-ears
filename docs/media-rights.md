@@ -2,6 +2,14 @@
 
 No film, cartoon, audio track, or archive clip is approved merely by being named in the project roadmap. The person preparing a release is responsible for verifying **the exact downloaded file**, not just the original work's title or year. This document is a workflow, not a legal opinion.
 
+## Public-demo source criteria
+
+Select footage produced in **1980 or later**. A later upload, restoration, or
+compilation does not make earlier footage eligible. Confirm picture quality
+and audible original sound before preparing excerpts; reject grainy or
+unsuitable transfers. These are editorial requirements in addition to the
+rights review below. No replacement titles or lineup are selected.
+
 ## Private inventory (never commit)
 
 Keep original media, a `media-manifest.json`, a rights ledger, and documentary evidence outside Git, such as a private encrypted folder. The version 2 manifest is the machine-checked publishing gate; the rights ledger contains the full human rationale. The repository ignores `demo/private/`, `demo/rights-ledger.json`, and `demo/media-manifest.json`, but safest is to keep all private material outside the checkout.
@@ -15,7 +23,7 @@ For **each specific file**, record:
 - Attribution text, canonical license URL if available, required notices, any adaptation/share-alike requirements, and planned excerpts/edits.
 - Reviewer's identity, date, result (`pending`, `approved`, `rejected`), unresolved risks and safer alternatives. Only mark approved after every relevant question has been resolved.
 
-The repository provides **no automatic copyright determination**. Internet Archive hosting, an old release date, or possession of a copy do not by themselves grant streaming rights. Prefer clearly sourced worldwide public-domain/CC0/CC BY recordings and fully licensed archive sound films with the original soundtrack explicitly included. Do not assume CC BY-NC permits promotional use; don't trim CC BY-ND material without separate permission. Ask qualified counsel about unresolved territorial and derivative-rights questions.
+The repository provides **no automatic copyright determination**. Internet Archive hosting, an old release date, or possession of a copy do not by themselves grant streaming rights. Prefer clearly sourced worldwide public-domain/CC0/CC BY recordings and fully licensed recordings from 1980 onward with the original soundtrack explicitly included. Do not assume CC BY-NC permits promotional use; don't trim CC BY-ND material without separate permission. Ask qualified counsel about unresolved territorial and derivative-rights questions.
 
 ## Two-stage approval gate
 
@@ -56,5 +64,3 @@ The public demo's expandable **Media credits** section is generated from the pre
 
 - [Creative Commons attribution guidance](https://wiki.creativecommons.org/wiki/Recommended_practices_for_attribution)
 - [Creative Commons license types](https://creativecommons.org/cc-licenses/)
-- [Prelinger Archives FAQ](https://www.panix.com/~footage/prelarch.html)
-- [Duke public-domain resources](https://cspd.law.duke.edu/publicdomainday/)

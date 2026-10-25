@@ -1,5 +1,9 @@
 # Replace the generated demo clips with real videos
 
+Public-demo footage must have been produced in **1980 or later**, with a clear
+picture and audible original sound. Check the underlying footage date rather
+than its upload or restoration date. See [source criteria](../docs/media-rights.md).
+
 The public demo already runs through nginx on host port **8620**, forwarding
 to container port 8080. The optional media mount does not change that routing.
 

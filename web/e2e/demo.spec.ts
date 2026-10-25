@@ -130,24 +130,3 @@ test('HTTP range seeking decodes real H.264/AAC media before and after channel c
   await expect.poll(() => video.evaluateAll((videos: HTMLVideoElement[]) =>
     videos.some(v => v.videoWidth > 0 && v.readyState >= 2 && !v.paused))).toBeTruthy();
 });
-
-test('local unapproved sound-film previews display a clear publication warning', async ({ page, box }) => {
-  await page.route('**/api/demo/credits', route => route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify([{
-      channel: 'Retro Commercials',
-      title: 'Synthetic scout only',
-      creator: 'Test fixture',
-      license: 'UNREVIEWED — PRIVATE LOCAL PLAYBACK ONLY',
-      sourceUrl: 'https://example.com/source',
-      licenseUrl: null,
-      modifications: null,
-      year: null,
-      attribution: null,
-    }]),
-  }));
-  await page.goto(`${box.url}/demo`);
-  await expect(page.getByRole('status').filter({ hasText: 'LOCAL REVIEW ONLY' })).toBeVisible();
-  await expect(page.getByText('archival audio and footage are unapproved for public streaming.')).toBeVisible();
-});

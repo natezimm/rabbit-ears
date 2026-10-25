@@ -3,7 +3,7 @@
   "videos": [
     {
       "source": "../originals/episode-01.mkv",
-      "channel": "Classic Television",
+      "channel": "Television",
       "title": "Episode 01",
       "creator": "REPLACE with the credited creator",
       "sourceUrl": "https://example.com/replace-with-source-page",
@@ -13,7 +13,7 @@
       "clipDurationSeconds": 120,
       "framing": "preserve",
       "modifications": "Transcoded to H.264/AAC; document any excerpting or cropping when applicable",
-      "year": 1930,
+      "year": 1990,
       "attribution": "REPLACE with required attribution, or omit if none applies",
       "rightsEvidence": "REPLACE with private evidence for the exact video and soundtrack, streaming territories, and edits",
       "approvedForPublicDemo": false,

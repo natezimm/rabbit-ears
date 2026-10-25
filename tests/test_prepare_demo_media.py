@@ -51,7 +51,7 @@ class PrepareDemoMediaTests(unittest.TestCase):
                         '-i', 'testsrc2=size=160x120:rate=10', '-t', '1', '-c:v', 'libx264',
                         '-threads', '1', str(self.source)], check=True)
         self.approved_v2()
-        self.video.update(licenseUrl='https://example.com/rights', year=1930,
+        self.video.update(licenseUrl='https://example.com/rights', year=1990,
                           attribution='Original creator; licensed copy')
         self.manifest.write_text(json.dumps(dict(version=2, videos=[self.video])))
         prepare.prepare(self.manifest, self.output)

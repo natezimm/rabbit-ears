@@ -59,7 +59,7 @@ public sealed class DemoMediaTests : IDisposable
             videos = new[] { new {
                 path = "Cartoons/approved.mp4", title = "Approved", creator = "Creator",
                 license = "Verified public use", sourceUrl = "https://example.com/source",
-                licenseUrl = "https://example.com/license", modifications = "Transcoded", year = 1930,
+                licenseUrl = "https://example.com/license", modifications = "Transcoded", year = 1990,
                 attribution = "Courtesy original creator", approvedForPublicDemo = true, duration = 120.0
             } }
         }));
@@ -71,7 +71,7 @@ public sealed class DemoMediaTests : IDisposable
 
         var payload = JsonSerializer.Serialize(new DemoCredit("Cartoons", "Approved", "Creator",
             "Verified public use", "https://example.com/source", "https://example.com/license",
-            "Transcoded", 1930, "Courtesy original creator"), JsonSerializerOptions.Web);
+            "Transcoded", 1990, "Courtesy original creator"), JsonSerializerOptions.Web);
         Assert.DoesNotContain("reviewedBy", payload);
         Assert.DoesNotContain("rightsEvidence", payload);
         Assert.Contains("licenseUrl", payload);

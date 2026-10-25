@@ -41,6 +41,9 @@ and update nginx's upstream to match. The container still listens on 8080.
 
 ## Use real content
 
+Select footage produced in **1980 or later**, with clear picture quality and
+audible original sound. Verify the exact video and soundtrack before release.
+
 [real-media.md](real-media.md) covers the source/rights manifest, laptop-side
 preparation, read-only library mount, credits, and rollback. No application
 rebuild is needed to replace media once this version is installed. When using
@@ -60,22 +63,6 @@ Building is the heavy part: the Angular and .NET builds can briefly want a
 gigabyte or more. On a small VM that already runs other sites, add swap first
 if it has none (`sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile &&
 sudo mkswap /swapfile && sudo swapon /swapfile`).
-
-## Try actual vintage commercials with their original sound (local only)
-
-On a Mac with Docker Desktop and FFmpeg installed, from the repository root:
-
-```bash
-bash scripts/start-local-commercials.sh
-```
-
-The launcher verifies and downloads the two exact archived reels if missing, prepares four **unapproved sound-on** video previews outside Git, and opens the actual Rabbit Ears TV at **http://127.0.0.1:8760/demo** with **CH 06 — Retro Commercials**. Click **Enable sound** to listen. This is a localhost-only preview, **not a public streaming release**; titles, musical rights and exact ad boundaries still need full review. See [complete private demo instructions](../docs/local-commercials-preview.md).
-
-To stop without affecting the real website or regular Docker project:
-
-```bash
-bash scripts/stop-local-commercials.sh
-```
 
 ## Try it locally
 
