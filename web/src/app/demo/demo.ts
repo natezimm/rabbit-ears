@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { encode } from 'uqr';
 
 import { DemoCredit } from '../core/models';
@@ -28,15 +28,6 @@ export class Demo {
   protected readonly vcrNote = signal<string | null>(null);
 
   constructor() {
-    // Blob URLs die with the page, so tapes left on this TV by an earlier visit
-    // cannot play any more: take them out once connected, unless new ones are in.
-    let wasConnected = false;
-    effect(() => {
-      const connected = this.link.connected();
-      if (connected && !wasConnected && !this.tapes.loaded()) this.link.ejectTapes();
-      wasConnected = connected;
-    });
-
     void fetch('/api/demo/credits').then(async response => {
       if (response.ok) this.credits.set(await response.json());
     }).catch(() => undefined);

@@ -78,7 +78,7 @@ export class TvLink {
   mute = () => this.send('Mute');
   power = () => this.send('Power');
 
-  loadTapes = (shelves: TapeShelf[]) => this.send('LoadTapes', shelves);
+  loadTapes = (shelves: TapeShelf[], tune: boolean) => this.send('LoadTapes', shelves, tune);
   ejectTapes = () => this.send('EjectTapes');
 
   episodeEnded = (token: string) => this.send('EpisodeEnded', token);

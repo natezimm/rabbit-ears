@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, effect, inject, signal } from '@angular/core';
 
 import { Tape, TapeShelf } from './models';
 import { TvLink } from './tv-link';
@@ -7,9 +7,11 @@ import { TvLink } from './tv-link';
 const TAPE_PREFIX = 'tape-';
 // Mirror the server's limits so a big folder is trimmed here instead of refused there.
 const MAX_SHELVES = 30;
-const MAX_TAPES = 1000;
+const MAX_TAPES = 500;
 const MAX_NAME = 80;
-const MAX_TITLE = 160;
+const MAX_TITLE = 120;
+/** The box takes hub messages up to 32 KB; stay clear of that with room for the envelope. */
+const MAX_MESSAGE_BYTES = 28_000;
 const VIDEO_EXTENSIONS = /\.(mp4|m4v|webm|mkv|mov|ogv)$/i;
 
 /** A file and the folders it was found in, outermost first, relative to what was dropped or picked. */
@@ -35,8 +37,21 @@ export interface TapeSummary {
 export class TapeDeck {
   private readonly link = inject(TvLink);
   private urls = new Map<string, string>();
+  private shelves: TapeShelf[] = [];
 
   readonly loaded = signal<TapeSummary | null>(null);
+
+  constructor() {
+    // The box takes the tapes out when the connection that loaded them drops,
+    // since only this tab can play them. After a reconnect, put them back
+    // without changing the channel.
+    let wasConnected = this.link.connected();
+    effect(() => {
+      const connected = this.link.connected();
+      if (connected && !wasConnected && this.shelves.length) this.link.loadTapes(this.shelves, false);
+      wasConnected = connected;
+    });
+  }
 
   /** Where the TV should load an episode from, or null for a tape this tab no longer has. */
   source(episodeId: string): string | null {
@@ -50,27 +65,31 @@ export class TapeDeck {
     const shelves = shelve(videos);
     if (shelves.length === 0) return null;
 
-    const urls = new Map<string, string>();
-    const sent: TapeShelf[] = shelves.map(shelf => ({
+    const files = new Map<string, File>();
+    const sent = fitMessage(shelves.map(shelf => ({
       name: shelf.name,
       tapes: shelf.files.map(file => {
         const tape: Tape = { id: newId(), title: clip(file.name.replace(/\.[^.]+$/, ''), MAX_TITLE) };
-        urls.set(tape.id, URL.createObjectURL(file));
+        files.set(tape.id, file);
         return tape;
       }),
-    }));
+    })));
 
     this.release();
-    this.urls = urls;
+    for (const shelf of sent) {
+      for (const tape of shelf.tapes) this.urls.set(tape.id, URL.createObjectURL(files.get(tape.id)!));
+    }
+    this.shelves = sent;
     const tapes = sent.reduce((sum, shelf) => sum + shelf.tapes.length, 0);
     const summary = { channels: sent.length, tapes, skipped: found.length - tapes };
     this.loaded.set(summary);
-    this.link.loadTapes(sent);
+    this.link.loadTapes(sent, true);
     return summary;
   }
 
   eject(): void {
     this.release();
+    this.shelves = [];
     this.loaded.set(null);
     this.link.ejectTapes();
   }
@@ -170,6 +189,18 @@ export function shelve(videos: FoundFile[]): Shelf[] {
     room -= files.length;
     return files.length ? [{ ...shelf, files }] : [];
   });
+}
+
+/** Drop tapes from the end until the whole list fits in one hub message. */
+function fitMessage(shelves: TapeShelf[]): TapeShelf[] {
+  const encoder = new TextEncoder();
+  const size = () => encoder.encode(JSON.stringify(shelves)).length;
+  while (shelves.length && size() > MAX_MESSAGE_BYTES) {
+    const last = shelves[shelves.length - 1];
+    last.tapes.pop();
+    if (!last.tapes.length) shelves.pop();
+  }
+  return shelves;
 }
 
 function clip(text: string, max: number): string {

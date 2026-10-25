@@ -33,10 +33,15 @@ public sealed class TvHub(TvService tv) : Hub
         await base.OnConnectedAsync();
     }
 
-    public override Task OnDisconnectedAsync(Exception? exception)
+    public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        if (Context.Items.ContainsKey(RoomKey)) tv.Leave(Room);
-        return base.OnDisconnectedAsync(exception);
+        if (Context.Items.ContainsKey(RoomKey))
+        {
+            // Its tapes' files lived in that tab, so nothing can play them now.
+            await tv.EjectTapes(Room, Context.ConnectionId);
+            tv.Leave(Room);
+        }
+        await base.OnDisconnectedAsync(exception);
     }
 
     public Task ChannelUp() => tv.Press(t => t.ChannelUp(), Room);
@@ -51,8 +56,8 @@ public sealed class TvHub(TvService tv) : Hub
     public Task Mute() => tv.Press(t => t.ToggleMute(), Room);
     public Task Power() => tv.Press(t => t.TogglePower(), Room);
 
-    // A demo visitor's own videos, played by their browser. Ignored at home.
-    public Task LoadTapes(TapeShelf[] shelves) => tv.LoadTapes(shelves, Room);
+    // A demo visitor's own videos, played by the browser that sent them. Ignored at home.
+    public Task LoadTapes(TapeShelf[] shelves, bool tune) => tv.LoadTapes(shelves, Room, Context.ConnectionId, tune);
     public Task EjectTapes() => tv.EjectTapes(Room);
 
     // Reports from the TV screen. The token says which play request they are

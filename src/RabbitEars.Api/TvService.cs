@@ -206,11 +206,12 @@ public sealed partial class TvService : BackgroundService
     }
 
     /// <summary>
-    /// Put a visitor's own videos on their demo TV as extra channels and tune to
-    /// the first of them. Replaces any tapes loaded before. Ignored at home and
-    /// for anything malformed.
+    /// Put a visitor's own videos on their demo TV as extra channels, tuning to
+    /// the first of them if asked. Replaces any tapes loaded before. Only the
+    /// <paramref name="owner"/> connection can play them, so they come out
+    /// again when it goes. Ignored at home and for anything malformed.
     /// </summary>
-    public Task LoadTapes(IReadOnlyList<TapeShelf>? shelves, string room)
+    public Task LoadTapes(IReadOnlyList<TapeShelf>? shelves, string room, string owner, bool tune = true)
     {
         if (!Demo) return Task.CompletedTask;
         TvSnapshot snapshot;
@@ -219,23 +220,30 @@ public sealed partial class TvService : BackgroundService
             if (!_rooms.TryGetValue(room, out var found)
                 || Tapes.Channels(_library.Channels, shelves) is not { } tapes) return Task.CompletedTask;
             found.Tapes = shelves!;
+            found.TapeOwner = owner;
             found.LastActive = Now;
             found.Tv.SetLineup([.. _library.Channels, .. tapes]);
-            found.Tv.GoToChannel(tapes[0].Number);
+            if (tune) found.Tv.GoToChannel(tapes[0].Number);
             snapshot = found.Tv.Snapshot();
         }
         return Broadcast(room, snapshot);
     }
 
-    /// <summary>Take the visitor's tapes out again, leaving only the broadcast channels.</summary>
-    public Task EjectTapes(string room)
+    /// <summary>
+    /// Take the visitor's tapes out again, leaving only the broadcast channels.
+    /// With an <paramref name="owner"/>, only if that connection loaded them:
+    /// another tab or the phone leaving must not pull them from under the TV.
+    /// </summary>
+    public Task EjectTapes(string room, string? owner = null)
     {
         if (!Demo) return Task.CompletedTask;
         TvSnapshot snapshot;
         lock (_gate)
         {
             if (!_rooms.TryGetValue(room, out var found) || found.Tapes.Count == 0) return Task.CompletedTask;
+            if (owner is not null && owner != found.TapeOwner) return Task.CompletedTask;
             found.Tapes = [];
+            found.TapeOwner = null;
             found.LastActive = Now;
             found.Tv.SetLineup(_library.Channels);
             snapshot = found.Tv.Snapshot();
@@ -489,5 +497,8 @@ public sealed partial class TvService : BackgroundService
 
         /// <summary>The visitor's own videos, kept so a new lineup can renumber them after it.</summary>
         public IReadOnlyList<TapeShelf> Tapes { get; set; } = [];
+
+        /// <summary>The connection whose browser holds the tapes' files.</summary>
+        public string? TapeOwner { get; set; }
     }
 }

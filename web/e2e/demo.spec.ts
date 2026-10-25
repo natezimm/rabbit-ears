@@ -154,6 +154,13 @@ test('videos put in the VCR play from this browser on their own channel, and eje
   ).toBeTruthy();
   expect(uploads.filter(url => !url.includes('/hub/'))).toEqual([]);
 
+  // Another tab on the same TV must not take the tapes away from this one.
+  const second = await page.context().newPage();
+  await second.goto(`${box.url}/demo?room=vcr-room`);
+  await expect(second.getByRole('button', { name: /CH 00 VCR/ })).toBeVisible();
+  await second.close();
+  await expect(vcr).toHaveAttribute('aria-pressed', 'true');
+
   await page.getByRole('button', { name: 'Eject' }).click();
   await expect(vcr).toHaveCount(0);
   await expect(guide.locator('button[aria-pressed="true"]')).not.toContainText('CH 00');
