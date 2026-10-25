@@ -11,6 +11,11 @@ services:
     # Only the reverse proxy talks to it. 8620 avoids other apps on the shared VM.
     ports:
       - "127.0.0.1:${RABBIT_EARS_DEMO_PORT:-8620}:8080"
+    # Only nginx can reach it, and nginx sets X-Forwarded-For itself, so rate
+    # limits may count visitors by that header. A container anyone can reach
+    # directly must not trust it, or a visitor could claim any address.
+    environment:
+      Box__RateLimit__TrustForwardedFor: "true"
     # It idles around 25 MB and stays under 50 MB with dozens of visitors;
     # the cap keeps it from ever crowding out the other sites.
     mem_limit: 256m

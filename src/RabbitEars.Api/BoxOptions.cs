@@ -42,6 +42,8 @@ public sealed class BoxOptions
 
     public DemoOptions Demo { get; set; } = new();
 
+    public RateLimitOptions RateLimit { get; set; } = new();
+
     /// <summary>
     /// True when mpv draws the picture on the box. The public demo has no box
     /// screen, so it is always the browser there.
@@ -84,6 +86,28 @@ public sealed class DemoOptions
 
     /// <summary>How long a television nobody is watching stays on, so a reload comes back to it.</summary>
     public double IdleMinutes { get; set; } = 15;
+}
+
+/// <summary>
+/// How many requests each client address may make. The defaults leave room for
+/// several phones and TV pages at home; the public demo sets tighter ones.
+/// </summary>
+public sealed class RateLimitOptions
+{
+    /// <summary>Allowance regained each second. 0 turns limiting off.</summary>
+    public double RequestsPerSecond { get; set; } = 50;
+
+    /// <summary>Requests a client may make at once before it has to wait.</summary>
+    public int Burst { get; set; } = 500;
+
+    /// <summary>
+    /// Count clients by the X-Forwarded-For header rather than the connection.
+    /// Only for a box that can be reached solely through a reverse proxy which
+    /// sets that header itself, like the public demo behind nginx.
+    /// </summary>
+    public bool TrustForwardedFor { get; set; }
+
+    public bool Enabled => RequestsPerSecond > 0;
 }
 
 /// <summary>What the web app asks to learn whether it is on a public demo site.</summary>

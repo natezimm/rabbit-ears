@@ -138,6 +138,10 @@ serves only files the scanner found, with range requests.
 **Configuration** is the `Box` section of `appsettings.json`. Development points
 the media root at `dev-media/` and state at `.local/dev-state/`. On the box,
 settings are overridden in `/etc/rabbitears/box.env` using `Box__Section__Name`.
+`Box:RateLimit` caps requests and hub calls per client address (`ClientRateLimit.cs`,
+429 with `Retry-After`); loopback is exempt so the box's own screen is never
+throttled. The demo container sets a tighter limit; `demo/compose.yaml`, where
+only nginx reaches it, also trusts nginx's `X-Forwarded-For`.
 
 ## Project rules
 
