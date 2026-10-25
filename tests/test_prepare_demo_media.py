@@ -29,7 +29,7 @@ class PrepareDemoMediaTests(unittest.TestCase):
 
     def approved_v2(self):
         self.video.update(modifications='Transcoded without cropping', reviewedBy='QA reviewer',
-                          reviewedAt='2026-10-22', approvedForPublicDemo=True)
+                          reviewedAt='2026-10-22', approvedForPublicDemo=True, year=1990)
         return dict(version=2, videos=[self.video])
 
     def test_v2_rejects_unapproved_and_incomplete_review(self):
@@ -46,10 +46,53 @@ class PrepareDemoMediaTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     prepare.validate(self.manifest, self.output)
 
+    def test_v2_requires_1980_through_1999_footage_year(self):
+        self.approved_v2()
+        for year in (None, 1955, 1979, 2000, 2008, 2012, 2026, True, '1990'):
+            with self.subTest(year=year):
+                self.manifest.write_text(json.dumps(dict(version=2, videos=[self.video | {'year': year}])))
+                with self.assertRaisesRegex(ValueError, '1980–1999'):
+                    prepare.validate(self.manifest, self.output)
+        for year in (1980, 1999):
+            self.video['year'] = year
+            self.manifest.write_text(json.dumps(dict(version=2, videos=[self.video])))
+            prepare.validate(self.manifest, self.output)
+
+    def test_v2_rejects_missing_audio_without_publishing(self):
+        self.make_video(audio=False)
+        self.manifest.write_text(json.dumps(self.approved_v2()))
+        with self.assertRaisesRegex(ValueError, 'requires original audio'):
+            prepare.prepare(self.manifest, self.output)
+        self.assertFalse((self.output / '.demo-media.json').exists())
+        self.assertEqual([], list(self.output.rglob('*.mp4')))
+
+    def test_v2_checks_sound_in_selected_excerpt_and_cleans_failure(self):
+        # The source has sound, but the chosen beginning is silent.
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 'lavfi',
+                        '-i', 'testsrc2=size=160x120:rate=15', '-f', 'lavfi',
+                        '-i', 'sine=frequency=440:sample_rate=44100',
+                        '-af', 'adelay=2000:all=1', '-t', '4', '-c:v', 'libx264',
+                        '-threads', '1', '-c:a', 'aac', str(self.source)], check=True)
+        self.approved_v2()
+        self.video.update(clipStartSeconds=0, clipDurationSeconds=1)
+        self.manifest.write_text(json.dumps(dict(version=2, videos=[self.video])))
+        with self.assertRaisesRegex(ValueError, 'no audible sound'):
+            prepare.prepare(self.manifest, self.output)
+        self.assertFalse((self.output / '.demo-media.json').exists())
+        self.assertEqual([], list(self.output.rglob('*.partial')))
+        self.assertEqual([], list(self.output.rglob('*.mp4')))
+        self.video['clipStartSeconds'] = 2.5
+        self.manifest.write_text(json.dumps(dict(version=2, videos=[self.video])))
+        prepare.prepare(self.manifest, self.output)
+        target = self.output / 'Test channel/Episode 1.mp4'
+        first_write = target.stat().st_mtime_ns
+        prepare.prepare(self.manifest, self.output)
+        self.assertEqual(first_write, target.stat().st_mtime_ns)
+        qa = json.loads((self.output / '.demo-media.json').read_text())['videos'][0]['qa']
+        self.assertGreater(qa['audioPeakDbfs'], -50)
+
     def test_v2_publishes_attribution_but_never_private_rights_notes(self):
-        subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-f', 'lavfi',
-                        '-i', 'testsrc2=size=160x120:rate=10', '-t', '1', '-c:v', 'libx264',
-                        '-threads', '1', str(self.source)], check=True)
+        self.make_video(length=1)
         self.approved_v2()
         self.video.update(licenseUrl='https://example.com/rights', year=1990,
                           attribution='Original creator; licensed copy')

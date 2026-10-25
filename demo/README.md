@@ -41,7 +41,7 @@ and update nginx's upstream to match. The container still listens on 8080.
 
 ## Use real content
 
-Select footage produced in **1980 or later**, with clear picture quality and
+Select footage produced in **1980–1999 (inclusive)**, with clear picture quality and
 audible original sound. Verify the exact video and soundtrack before release.
 
 [real-media.md](real-media.md) covers the source/rights manifest, laptop-side

@@ -1,6 +1,6 @@
 # Replace the generated demo clips with real videos
 
-Public-demo footage must have been produced in **1980 or later**, with a clear
+Public-demo footage must have been produced in **1980–1999 (inclusive)**, with a clear
 picture and audible original sound. Check the underlying footage date rather
 than its upload or restoration date. See [source criteria](../docs/media-rights.md).
 
@@ -25,8 +25,8 @@ The example manifest is a template, not a cleared selection of shows.
    For version 2, a human review must explicitly set `approvedForPublicDemo: true`
    with `reviewedBy`, `reviewedAt` (YYYY-MM-DD), and an accurate
    `modifications` notice. The checked-in example is intentionally unapproved.
-   Optional public attribution fields include `licenseUrl`, `year`, and
-   `attribution`. Keep private rights evidence and decisions outside Git.
+   Supply `year` (1980–1999, based on underlying footage). Optional public
+   attribution fields include `licenseUrl` and `attribution`. Keep private rights evidence and decisions outside Git.
 3. From the repository, validate and then prepare:
 
    ```bash
@@ -46,7 +46,9 @@ or `"letterbox-4:3"`. Clip ranges must fit the source duration; a zero
 start is permitted, but durations must be positive. The full geometry/QA rules
 are documented in [media-preparation.md](../docs/media-preparation.md).
 
-It encodes 480p-or-smaller H.264/AAC MP4s,
+Version 2 rejects missing audio and excerpts whose decoded peak does not exceed
+-50 dBFS. Listening and picture review are still required. It encodes
+480p-or-smaller H.264/AAC MP4s,
 limits video bitrate to about 1 Mbit/s, and puts the MP4 index first for seeking.
 It records durations so Live channels can advance across unseen episodes without
 installing ffprobe in the running container. It also writes `.demo-media.json`
