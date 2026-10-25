@@ -40,8 +40,7 @@ ENV Urls=http://0.0.0.0:8080 \
     Box__Ffprobe="" \
     Box__Picture__Transition=static \
     Box__RateLimit__RequestsPerSecond=10 \
-    Box__RateLimit__Burst=200 \
-    Box__RateLimit__TrustForwardedFor=true
+    Box__RateLimit__Burst=200
 EXPOSE 8080
 USER $APP_UID
 ENTRYPOINT ["dotnet", "RabbitEars.Api.dll"]
