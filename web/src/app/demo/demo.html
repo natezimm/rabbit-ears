@@ -1,5 +1,5 @@
-<div class="demo">
-  <section class="screen" aria-label="The television">
+<div class="demo" (dragover)="onDragOver($event)" (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
+  <section class="screen" aria-label="The television" [class.dragging]="dragging()">
     <ears-tv-screen />
   </section>
 
@@ -31,6 +31,30 @@
               <small>{{ channel.title || (channel.episodes + ' episodes') }}</small></span>
           </button>
         }
+      }
+    </section>
+
+    <section class="vcr" aria-labelledby="vcr-title">
+      <h2 id="vcr-title">VCR: play your own videos</h2>
+      <p>Drop videos or a folder of shows on the TV, or choose them here. They play from your computer and are never uploaded.
+        A folder of show folders becomes one channel per show; loose files go on CH 00.</p>
+      <div class="vcr-buttons">
+        <label class="vcr-button">Insert tapes
+          <input type="file" accept="video/*,.mkv" multiple (change)="onPick($event)" />
+        </label>
+        <label class="vcr-button">Load a folder
+          <input type="file" webkitdirectory multiple (change)="onPick($event)" />
+        </label>
+        @if (tapes.loaded()) {
+          <button type="button" class="vcr-button" (click)="tapes.eject()">Eject</button>
+        }
+      </div>
+      @if (tapes.loaded(); as loaded) {
+        <p role="status">{{ loaded.tapes }} {{ loaded.tapes === 1 ? 'video' : 'videos' }} on {{ loaded.channels }}
+          {{ loaded.channels === 1 ? 'channel' : 'channels' }}@if (loaded.skipped) {; {{ loaded.skipped }} other files skipped}.
+          Formats your browser can't play are skipped on air.</p>
+      } @else if (vcrNote(); as note) {
+        <p role="status">{{ note }}</p>
       }
     </section>
 

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
+using RabbitEars.Core;
 
 namespace RabbitEars.Api;
 
@@ -49,6 +50,10 @@ public sealed class TvHub(TvService tv) : Hub
     public Task VolumeDown() => tv.Press(t => t.VolumeDown(), Room);
     public Task Mute() => tv.Press(t => t.ToggleMute(), Room);
     public Task Power() => tv.Press(t => t.TogglePower(), Room);
+
+    // A demo visitor's own videos, played by their browser. Ignored at home.
+    public Task LoadTapes(TapeShelf[] shelves) => tv.LoadTapes(shelves, Room);
+    public Task EjectTapes() => tv.EjectTapes(Room);
 
     // Reports from the TV screen. The token says which play request they are
     // about, so a late report for a channel that was just left is harmless.

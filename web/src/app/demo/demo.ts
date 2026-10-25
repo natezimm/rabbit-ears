@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { encode } from 'uqr';
 
 import { DemoCredit } from '../core/models';
+import { FoundFile, TapeDeck, fromDrop, fromPicker } from '../core/tape-deck';
 import { TvLink } from '../core/tv-link';
 import { Remote } from '../remote/remote';
 import { TvScreen } from '../tv/tv-screen';
@@ -22,11 +23,48 @@ export class Demo {
   protected readonly link = inject(TvLink);
   protected readonly state = this.link.state;
   protected readonly credits = signal<DemoCredit[]>([]);
+  protected readonly tapes = inject(TapeDeck);
+  protected readonly dragging = signal(false);
+  protected readonly vcrNote = signal<string | null>(null);
 
   constructor() {
+    // Blob URLs die with the page, so tapes left on this TV by an earlier visit
+    // cannot play any more: take them out once connected, unless new ones are in.
+    let wasConnected = false;
+    effect(() => {
+      const connected = this.link.connected();
+      if (connected && !wasConnected && !this.tapes.loaded()) this.link.ejectTapes();
+      wasConnected = connected;
+    });
+
     void fetch('/api/demo/credits').then(async response => {
       if (response.ok) this.credits.set(await response.json());
     }).catch(() => undefined);
+  }
+
+  protected onDragOver(event: DragEvent): void {
+    if (!event.dataTransfer?.types.includes('Files')) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+    this.dragging.set(true);
+  }
+
+  protected async onDrop(event: DragEvent): Promise<void> {
+    if (!event.dataTransfer?.types.includes('Files')) return;
+    event.preventDefault();
+    this.dragging.set(false);
+    this.insert(await fromDrop(event.dataTransfer.items));
+  }
+
+  protected onPick(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files?.length) this.insert(fromPicker(input.files));
+    // Picking the same files again should load them again.
+    input.value = '';
+  }
+
+  private insert(found: FoundFile[]): void {
+    this.vcrNote.set(this.tapes.insert(found) ? null : 'No videos there. Try MP4 or WebM files.');
   }
 
   protected readonly remoteUrl = `${location.origin}/remote?room=${encodeURIComponent(this.link.room)}`;

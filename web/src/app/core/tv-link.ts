@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel } from '@microsoft/signalr';
 
-import { TvSnapshot } from './models';
+import { TapeShelf, TvSnapshot } from './models';
 
 const RETRY_MS = 2000;
 const ROOM_KEY = 'rabbitears.room';
@@ -77,6 +77,9 @@ export class TvLink {
   volumeDown = () => this.send('VolumeDown');
   mute = () => this.send('Mute');
   power = () => this.send('Power');
+
+  loadTapes = (shelves: TapeShelf[]) => this.send('LoadTapes', shelves);
+  ejectTapes = () => this.send('EjectTapes');
 
   episodeEnded = (token: string) => this.send('EpisodeEnded', token);
   episodeFailed = (token: string) => this.send('EpisodeFailed', token);

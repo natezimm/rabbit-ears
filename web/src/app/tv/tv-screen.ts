@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 
 import { ChannelInfo, DEFAULT_PICTURE, PictureConfig, TvSnapshot } from '../core/models';
+import { TapeDeck } from '../core/tape-deck';
 import { TvLink } from '../core/tv-link';
 import { CrtRenderer, ScreenMode } from './crt-renderer';
 import { Tube } from './tube';
@@ -64,6 +65,7 @@ const KEYS: Record<string, (link: TvLink) => void> = {
 })
 export class TvScreen {
   private readonly link = inject(TvLink);
+  private readonly tapes = inject(TapeDeck);
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('glass');
   private readonly deckA = viewChild.required<ElementRef<HTMLVideoElement>>('deckA');
   private readonly deckB = viewChild.required<ElementRef<HTMLVideoElement>>('deckB');
@@ -118,7 +120,7 @@ export class TvScreen {
         failed: token => this.link.episodeFailed(token),
         position: (token, seconds, duration) => this.link.reportPosition(token, seconds, duration),
         soundBlocked: blocked => this.soundBlocked.set(blocked),
-      });
+      }, id => this.tapes.source(id));
       this.renderer = CrtRenderer.create(this.canvas().nativeElement, this.picture().crt);
       this.webgl.set(this.renderer !== null);
       this.ready.set(true);

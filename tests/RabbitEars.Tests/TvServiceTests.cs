@@ -191,6 +191,39 @@ public sealed class TvServiceTests : IDisposable
         Assert.Equal("visitor-a", Assert.Single(_hub.Sent).Group);
     }
 
+    [Fact]
+    public async Task Tapes_become_channels_on_that_visitors_tv_only_and_eject_takes_them_out()
+    {
+        var tv = DemoService();
+        tv.Join("visitor-a");
+        tv.Join("visitor-b");
+
+        await tv.LoadTapes([new TapeShelf(null, [new Tape("0000000a", "Home movie")])], "visitor-a");
+
+        var a = tv.Snapshot("visitor-a")!;
+        Assert.Equal(new ChannelInfo(0, "VCR"), a.Channel);
+        Assert.Equal("tape-0000000a", a.Playing!.EpisodeId);
+        Assert.Equal(3, a.Channels.Count);
+        Assert.Equal(2, tv.Snapshot("visitor-b")!.Channels.Count);
+
+        await tv.EjectTapes("visitor-a");
+
+        Assert.Equal(2, tv.Snapshot("visitor-a")!.Channels.Count);
+        Assert.NotEqual(0, tv.Snapshot("visitor-a")!.Channel!.Number);
+    }
+
+    [Fact]
+    public async Task At_home_tapes_are_ignored()
+    {
+        var tv = Service();
+        tv.Join(null);
+
+        await tv.LoadTapes([new TapeShelf(null, [new Tape("0000000a", "Home movie")])], TvService.HomeRoom);
+
+        Assert.Equal(2, tv.Snapshot().Channels.Count);
+        Assert.Empty(_hub.Sent);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
