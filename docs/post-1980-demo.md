@@ -25,6 +25,36 @@ be measured from downloaded bytes before scheduling. An archive license label
 is a starting point, not an automatic exact-file approval. Do not promise five
 stations before five suitable recordings have passed review.
 
+## Downloaded-file spot checks
+
+On October 25, 2026, the three FAA/Forest Service MP4s above were downloaded
+and probed. All contain H.264 video at 320×240 and AAC audio. Measured durations
+are 1109.075742, 1455.955956 and 1776.609943 seconds respectively. Six frames
+per recording were inspected (2, 15, 60, 180, 360 seconds and one minute before
+the end). This is a spot check, not a full watch-through or soundtrack review.
+
+- **Video Teletraining:** sampled frames show color conference-room footage,
+  period title graphics, training slides and early computer animation.
+- **Wake Turbulence Avoidance:** sampled frames show color cockpit/airport footage
+  and period computer animation. End credits name Boeing, McDonnell Douglas and
+  other partners; verify the reuse basis for their contributions before release.
+- **An Ax to Grind:** workshop/presenter frames are color, but the introduction
+  includes historical black-and-white imagery. Exclude historical inserts and
+  resolve the exact edition date before selecting an excerpt.
+
+Decoded audio from 03:00–03:30 has peak levels of -4.5, -2.1 and -0.2 dBFS
+respectively. This establishes non-silence in those samples only; it does not
+establish speech intelligibility, original soundtrack provenance or clearance.
+No media has been deployed or approved by these checks.
+
+Downloaded-source SHA-256 values (for reproducing the review):
+
+| Recording | SHA-256 |
+| --- | --- |
+| teletraining | `b4a89aa4495363035aca65b729bf77dd9df3b8763543ca121ca6e1c608c84c8e` |
+| aviation | `a64e66fb17bd3b754556f5412038cef88103bd734a51f4cb283f32d2bbcc81ca` |
+| outdoors | `a34d184d02420513d79c1a47867aa32b148d0039a6826fdb15efef22c05ae868` |
+
 ## Excluded or held sources
 
 - **Big Buck Bunny / Tears of Steel:** outside 1980–1999. Removed from the
