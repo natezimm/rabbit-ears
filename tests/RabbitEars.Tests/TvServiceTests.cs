@@ -211,6 +211,66 @@ public sealed class TvServiceTests : IDisposable
         Assert.Equal("visitor-a", Assert.Single(_hub.Sent).Group);
     }
 
+    [Fact]
+    public async Task Tapes_become_channels_on_that_visitors_tv_only_and_eject_takes_them_out()
+    {
+        var tv = DemoService();
+        tv.Join("visitor-a");
+        tv.Join("visitor-b");
+
+        await tv.LoadTapes([new TapeShelf(null, [new Tape("0000000a", "Home movie")])], "visitor-a", "tab-1");
+
+        var a = tv.Snapshot("visitor-a")!;
+        Assert.Equal(new ChannelInfo(0, "VCR"), a.Channel);
+        Assert.Equal("tape-0000000a", a.Playing!.EpisodeId);
+        Assert.Equal(3, a.Channels.Count);
+        Assert.Equal(2, tv.Snapshot("visitor-b")!.Channels.Count);
+
+        await tv.EjectTapes("visitor-a");
+
+        Assert.Equal(2, tv.Snapshot("visitor-a")!.Channels.Count);
+        Assert.NotEqual(0, tv.Snapshot("visitor-a")!.Channel!.Number);
+    }
+
+    [Fact]
+    public async Task Tapes_come_out_when_the_tab_holding_them_leaves_but_not_when_another_client_does()
+    {
+        var tv = DemoService();
+        tv.Join("visitor-a");
+        await tv.LoadTapes([new TapeShelf("Cheers", [new Tape("0000000a", "Pilot")])], "visitor-a", "tab-1");
+
+        await tv.EjectTapes("visitor-a", "phone");
+        Assert.Equal(3, tv.Snapshot("visitor-a")!.Channels.Count);
+
+        await tv.EjectTapes("visitor-a", "tab-1");
+        Assert.Equal(2, tv.Snapshot("visitor-a")!.Channels.Count);
+    }
+
+    [Fact]
+    public async Task Reloading_tapes_without_tuning_keeps_the_channel_being_watched()
+    {
+        var tv = DemoService();
+        tv.Join("visitor-a");
+        var shelves = new[] { new TapeShelf("Cheers", [new Tape("0000000a", "Pilot")]) };
+
+        await tv.LoadTapes(shelves, "visitor-a", "tab-1", tune: false);
+
+        Assert.Equal(new ChannelInfo(2, "Arthur"), tv.Snapshot("visitor-a")!.Channel);
+        Assert.Equal(3, tv.Snapshot("visitor-a")!.Channels.Count);
+    }
+
+    [Fact]
+    public async Task At_home_tapes_are_ignored()
+    {
+        var tv = Service();
+        tv.Join(null);
+
+        await tv.LoadTapes([new TapeShelf(null, [new Tape("0000000a", "Home movie")])], TvService.HomeRoom, "tab-1");
+
+        Assert.Equal(2, tv.Snapshot().Channels.Count);
+        Assert.Empty(_hub.Sent);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]

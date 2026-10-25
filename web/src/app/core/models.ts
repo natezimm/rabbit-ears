@@ -47,6 +47,19 @@ export interface TvSnapshot {
   channels: ChannelListing[];
 }
 
+/** One of a demo visitor's own videos; the file never leaves their browser. */
+export interface Tape {
+  /** Lowercase hex made up by the browser; the episode id is `tape-` + this. */
+  id: string;
+  title: string;
+}
+
+/** Tapes from one folder. No name means loose files, which go on the VCR. */
+export interface TapeShelf {
+  name: string | null;
+  tapes: Tape[];
+}
+
 export interface CrtConfig {
   enabled: boolean;
   curvature: number;

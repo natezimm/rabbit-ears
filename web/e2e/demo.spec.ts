@@ -1,4 +1,6 @@
 import { test, expect } from './fixtures';
+import { copyFile, mkdir, readFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 
 test.use({ demoMode: true });
 
@@ -129,4 +131,55 @@ test('HTTP range seeking decodes real H.264/AAC media before and after channel c
   await expect(page.locator('.lcd-big')).toContainText('CH 03');
   await expect.poll(() => video.evaluateAll((videos: HTMLVideoElement[]) =>
     videos.some(v => v.videoWidth > 0 && v.readyState >= 2 && !v.paused))).toBeTruthy();
+});
+
+test('videos put in the VCR play from this browser on their own channel, and eject takes them out', async ({ page, box }) => {
+  await page.goto(`${box.url}/demo?room=vcr-room`);
+  const guide = page.getByRole('region', { name: "What's on / Jump to channel" });
+  await expect(guide.getByRole('button', { name: /CH 02 Arthur/ })).toBeVisible();
+
+  const uploads: string[] = [];
+  page.on('request', request => { if (request.method() !== 'GET' || request.url().includes('Home')) uploads.push(request.url()); });
+  await page.locator('input[type=file]:not([webkitdirectory])').setInputFiles({
+    name: 'Home movie.mp4',
+    mimeType: 'video/mp4',
+    buffer: await readFile(join(box.root, 'fixture.mp4')),
+  });
+
+  const vcr = guide.getByRole('button', { name: /CH 00 VCR/ });
+  await expect(vcr).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('status').filter({ hasText: '1 video on 1 channel' })).toBeVisible();
+  await expect.poll(() => page.locator('video.live').evaluateAll(videos =>
+    videos.some(video => (video as HTMLVideoElement).src.startsWith('blob:') && (video as HTMLVideoElement).videoWidth > 0))
+  ).toBeTruthy();
+  expect(uploads.filter(url => !url.includes('/hub/'))).toEqual([]);
+
+  // Another tab on the same TV must not take the tapes away from this one.
+  const second = await page.context().newPage();
+  await second.goto(`${box.url}/demo?room=vcr-room`);
+  await expect(second.getByRole('button', { name: /CH 00 VCR/ })).toBeVisible();
+  await second.close();
+  await expect(vcr).toHaveAttribute('aria-pressed', 'true');
+
+  await page.getByRole('button', { name: 'Eject' }).click();
+  await expect(vcr).toHaveCount(0);
+  await expect(guide.locator('button[aria-pressed="true"]')).not.toContainText('CH 00');
+});
+
+test('a folder of show folders loads as one channel per show, with loose files on the VCR', async ({ page, box }) => {
+  const shows = join(box.root, 'Shows');
+  for (const path of ['Cheers/Season 1/Pilot.mp4', 'Cheers/Season 2/Next.mp4', 'Home videos/Beach.mp4', 'Loose.mp4', 'notes.txt']) {
+    await mkdir(dirname(join(shows, path)), { recursive: true });
+    await copyFile(join(box.root, 'fixture.mp4'), join(shows, path));
+  }
+  await page.goto(`${box.url}/demo?room=folder-room`);
+  const guide = page.getByRole('region', { name: "What's on / Jump to channel" });
+  await expect(guide.getByRole('button', { name: /CH 02 Arthur/ })).toBeVisible();
+
+  await page.locator('input[webkitdirectory]').setInputFiles(shows);
+
+  await expect(guide.getByRole('button', { name: /CH 00 VCR/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(guide.getByRole('button', { name: /Cheers.*2 episodes/ })).toBeVisible();
+  await expect(guide.getByRole('button', { name: /Home videos.*1 episode/ })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: '4 videos on 3 channels; 1 other files skipped' })).toBeVisible();
 });

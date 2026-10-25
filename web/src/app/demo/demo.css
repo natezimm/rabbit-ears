@@ -172,3 +172,30 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
 .media-credit { display: grid; gap: 3px; padding: 10px 0; border-bottom: 1px solid var(--edge); }
 .media-credit strong { font-size: 14px; color: var(--text); }
 .media-credit span { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+
+/* The VCR: real file inputs, dressed as buttons, so keyboard and screen readers get the native picker. */
+.vcr { display: grid; gap: 10px; }
+.vcr-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.vcr-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: #111410;
+  color: var(--text);
+  font: 20px/1 'VT323', ui-monospace, monospace;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.vcr-button:hover { background: #252b23; }
+.vcr-button:focus-within { outline: 3px solid var(--phosphor); outline-offset: 3px; }
+.vcr-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.screen.dragging { outline: 3px dashed var(--phosphor); outline-offset: -3px; }

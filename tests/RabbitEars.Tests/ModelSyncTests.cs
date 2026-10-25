@@ -31,6 +31,8 @@ public sealed partial class ModelSyncTests
         ["AdminChannel"] = typeof(AdminChannel),
         ["AdminCatalog"] = typeof(AdminCatalog),
         ["DemoCredit"] = typeof(DemoCredit),
+        ["Tape"] = typeof(Tape),
+        ["TapeShelf"] = typeof(TapeShelf),
     };
 
     private static readonly NullabilityInfoContext Nullability = new();

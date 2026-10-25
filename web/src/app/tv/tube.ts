@@ -52,10 +52,16 @@ export class Tube {
   private stalledReports = 0;
   private readonly reporter: number;
 
+  /**
+   * `source` says where an episode's video comes from: the box for its own
+   * files, or a blob URL for a tape the visitor loaded. Null means this
+   * browser cannot play it.
+   */
   constructor(
     private readonly decks: readonly HTMLVideoElement[],
     private picture: PictureConfig,
     private readonly listener: TubeListener,
+    private readonly source: (episodeId: string) => string | null = id => `/media/${id}`,
   ) {
     for (const deck of decks) {
       deck.muted = true;
@@ -194,8 +200,14 @@ export class Tube {
       deck.addEventListener(event, tryCut, { signal });
     }
 
+    const src = this.source(request.episodeId);
+    if (src === null) {
+      // Leave the failure until after this call, as a failed load would.
+      queueMicrotask(fail);
+      return;
+    }
     deck.muted = true;
-    deck.src = `/media/${request.episodeId}`;
+    deck.src = src;
     deck.load();
   }
 
