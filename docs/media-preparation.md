@@ -19,12 +19,12 @@ For example, a reviewed file might have `"clipStartSeconds": 36.25`, `"clipDurat
 - The script uses source pixel dimensions **and the sample-aspect ratio** to calculate the actual visible picture shape. It does not stretch 4:3, anamorphic, or widescreen transfers.
 - `preserve` converts to square pixels and keeps the original display aspect ratio. The output height does not exceed 480 or the source height. Width and height are rounded to even numbers for H.264.
 - `letterbox-4:3` scales to fit a 640×480 frame, with bars added where needed. It never discards part of the picture and should not be confused with cropping. Never describe black bars as a native 4:3 source.
-- The exact output is H.264 via libx264, 8-bit yuv420p, with AAC stereo when audio is present, a nominal 1 Mbit/s video ceiling, and `+faststart` for browser seeking. A silent input remains silent.
+- The exact output is H.264 via libx264, 8-bit yuv420p, with AAC stereo, a nominal 1 Mbit/s video ceiling, and `+faststart` for browser seeking. Version 2 rejects sources without audio and excerpts whose decoded peak does not exceed -50 dBFS. Version 1 retains silent-input support for local migration.
 - Trim positions are decoded rather than relying on a fast keyframe-only input seek. Each selected range must fit inside the probed source; outputs shorter than 0.25 seconds are rejected. Format durations can differ by a frame, so measured output is accepted within 0.3 seconds of the requested duration.
 
 ### QA, cache, and publication safety
 
-Each prepared clip is probed and checked for dimensions, square pixels, video codec/pixel format, optional AAC, duration tolerance and placement of the MP4 index before video bytes. The public `.demo-media.json` includes measured duration and a `qa` object with width/height, codecs, pixel format, sample aspect ratio and bitrate. That metadata feeds the existing real-time channel scheduler.
+Each prepared clip is probed and checked for dimensions, square pixels, video codec/pixel format, AAC, duration tolerance and placement of the MP4 index before video bytes. The public `.demo-media.json` includes measured duration and a `qa` object with width/height, codecs, pixel format, sample aspect ratio and bitrate. Version 2 also records `audioPeakDbfs` after decoding the entire selected excerpt, including on cache hits. This detects absent/near-silent tracks, not original sound, intelligibility or sustained loudness; listen to every excerpt. That metadata feeds the existing real-time channel scheduler.
 
 The preparation fingerprint includes SHA-256 of the source, actual start/duration, framing, output geometry, FFmpeg version, and an encoding-settings version. Editing any of those triggers a re-encode. An identical rerun skips encoding but **rechecks** the existing file. Attribution-only changes update public metadata without needlessly re-encoding.
 

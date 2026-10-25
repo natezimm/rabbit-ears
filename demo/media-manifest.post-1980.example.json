@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "videos": [
+    {
+      "source": "originals/bbb_sunflower_1080p_30fps_normal.mp4",
+      "channel": "Cartoon 13",
+      "title": "Big Buck Bunny - meadow excerpt",
+      "creator": "Blender Foundation",
+      "year": 2008,
+      "sourceUrl": "https://peach.blender.org/",
+      "license": "CC BY 3.0 - confirm exact movie edition before approval",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "clipStartSeconds": 90,
+      "clipDurationSeconds": 60,
+      "framing": "letterbox-4:3",
+      "attribution": "Big Buck Bunny, Blender Foundation / peach.blender.org; add exact Sunflower edition credits after review",
+      "modifications": "60-second excerpt; scaled and letterboxed into 640x480 without cropping; transcoded to H.264/AAC stereo using the original movie mix.",
+      "rightsEvidence": "PENDING: record exact-edition video and embedded soundtrack permission, source SHA-256, attribution, territory and edits after review.",
+      "approvedForPublicDemo": false,
+      "reviewedBy": "",
+      "reviewedAt": ""
+    },
+    {
+      "source": "originals/tears_of_steel_720p.mov",
+      "channel": "Omni Sci-Fi Theater",
+      "title": "Tears of Steel - city excerpt",
+      "creator": "Blender Foundation",
+      "year": 2012,
+      "sourceUrl": "https://mango.blender.org/",
+      "license": "CC BY 3.0 - confirm exact movie edition before approval",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "clipStartSeconds": 120,
+      "clipDurationSeconds": 60,
+      "framing": "letterbox-4:3",
+      "attribution": "Tears of Steel, (CC) Blender Foundation | mango.blender.org",
+      "modifications": "60-second excerpt; scaled and letterboxed into 640x480 without cropping; transcoded to H.264/AAC stereo using the original movie mix.",
+      "rightsEvidence": "PENDING: record exact-edition video and embedded soundtrack permission, source SHA-256, attribution, territory and edits after review.",
+      "approvedForPublicDemo": false,
+      "reviewedBy": "",
+      "reviewedAt": ""
+    }
+  ]
+}

@@ -55,6 +55,26 @@ public sealed class TvServiceTests : IDisposable
         Service(new DemoOptions { Enabled = true, MaxTvs = maxTvs, IdleMinutes = 15 });
 
     [Fact]
+    public async Task New_demo_rooms_use_known_lengths_on_their_first_snapshot_and_keep_controls_isolated()
+    {
+        var service = Service(new DemoOptions { Enabled = true }, new FakeProbe(1000));
+        await service.ProbeLengths(CancellationToken.None);
+        service.Join("visitor-a");
+        await service.Press(t => t.ChannelUp(), "visitor-a");
+        _clock.Advance(TimeSpan.FromSeconds(234.5));
+        service.Join("visitor-b");
+        await service.Press(t => t.ChannelDown(), "visitor-a");
+        var a = service.Snapshot("visitor-a")!.Playing!;
+        var b = service.Snapshot("visitor-b")!.Playing!;
+        Assert.Equal((a.EpisodeId, a.Start), (b.EpisodeId, b.Start));
+        var expected = (_clock.GetUtcNow() - DateTimeOffset.UnixEpoch).TotalSeconds % 1000;
+        Assert.Equal(expected, b.Start);
+        await service.Press(t => t.ToggleMute(), "visitor-a");
+        Assert.True(service.Snapshot("visitor-a")!.Muted);
+        Assert.False(service.Snapshot("visitor-b")!.Muted);
+    }
+
+    [Fact]
     public async Task A_press_that_changes_the_tv_sends_the_new_snapshot_to_everyone()
     {
         var tv = Service();

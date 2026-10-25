@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -14,7 +15,7 @@ from urllib.parse import urlparse
 
 
 # Changes to encoding filters, codec parameters or QA expectations must bump this.
-ENCODING_VERSION = 2
+ENCODING_VERSION = 3
 VIDEO_HEIGHT = 480
 FRAMINGS = ('preserve', 'letterbox-4:3')
 
@@ -92,8 +93,8 @@ def validate(manifest, output):
             if not isinstance(item.get('modifications'), str) or not item['modifications'].strip():
                 raise ValueError(f'{relative}: modifications must describe edits/transcoding.')
             year = item.get('year')
-            if year is not None and (type(year) is not int or year < 1800 or year > date.today().year):
-                raise ValueError(f'{relative}: year must be a plausible release year.')
+            if type(year) is not int or year < 1980 or year > date.today().year:
+                raise ValueError(f'{relative}: year must identify footage produced in 1980 or later.')
         edits(item)
         source = (manifest.parent / item['source']).resolve()
         if not source.is_file():
@@ -245,6 +246,22 @@ def atomic_json(path, value):
     os.replace(temporary, path)
 
 
+def inspect_audio(path):
+    """Reject absent/near-silent sound in the actual excerpt, including cached files.
+
+    A level check cannot distinguish original sound from hiss or establish rights;
+    listening to the selected excerpt remains part of the human review.
+    """
+    result = subprocess.run(
+        ['ffmpeg', '-hide_banner', '-nostdin', '-i', str(path), '-map', '0:a:0',
+         '-vn', '-af', 'volumedetect', '-f', 'null', '-'],
+        check=True, capture_output=True, text=True)
+    levels = re.findall(r'max_volume:\s*(-?\d+(?:\.\d+)?) dB', result.stderr)
+    if not levels or float(levels[-1]) <= -50:
+        raise ValueError(f'Public demo excerpt has no audible sound (peak must exceed -50 dBFS): {path}')
+    return {'audioPeakDbfs': float(levels[-1])}
+
+
 def prepare(manifest, output):
     version, videos = validate(manifest, output)
     for command in ('ffmpeg', 'ffprobe'):
@@ -268,6 +285,8 @@ def prepare(manifest, output):
         source_info = probe(source)
         source_video = video_stream(source_info, source)
         source_audio = any(stream.get('codec_type') == 'audio' for stream in source_info['streams'])
+        if version == 2 and not source_audio:
+            raise ValueError(f'Public demo source requires original audio: {source}')
         start, length, framing = trim(source_info, item, source)
         width, height, framing_filter = dimensions(source_video, framing)
         aspect = width / height
@@ -275,6 +294,8 @@ def prepare(manifest, output):
         prior = previous.get(relative, {})
         if target.exists() and prior.get('preparationSha256') == cache_key and prior.get('encoding') == ENCODING_VERSION:
             qa = inspect_output(target, length, aspect, source_audio)
+            if version == 2:
+                qa.update(inspect_audio(target))
             print(f'Already prepared: {relative}')
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -296,6 +317,8 @@ def prepare(manifest, output):
                 ]
                 subprocess.run(command, check=True)
                 qa = inspect_output(temporary, length, aspect, source_audio)
+                if version == 2:
+                    qa.update(inspect_audio(temporary))
                 os.replace(temporary, target)
             finally:
                 temporary.unlink(missing_ok=True)

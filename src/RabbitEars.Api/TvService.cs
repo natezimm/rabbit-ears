@@ -110,8 +110,8 @@ public sealed partial class TvService : BackgroundService
             if (!_rooms.TryGetValue(requested, out var room))
             {
                 if (_rooms.Count >= _options.Demo.MaxTvs && !EvictOldestEmptyRoom()) return null;
-                room = new Room(new Television(_options.Tv, _library.Channels, clock: _clock), Now);
-                foreach (var (id, seconds) in _lengths) room.Tv.SetDuration(id, seconds);
+                room = new Room(new Television(_options.Tv, _library.Channels, clock: _clock,
+                    synchronizedBroadcast: _options.Demo.SynchronizedBroadcast, durations: _lengths), Now);
                 _rooms[requested] = room;
             }
 

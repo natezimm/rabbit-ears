@@ -20,6 +20,7 @@ public sealed class Television
     private readonly TvSettings _settings;
     private readonly Random _random;
     private readonly TimeProvider _clock;
+    private readonly bool _synchronizedBroadcast;
 
     // Tokens must not collide with ones a screen still holds from before a restart.
     private readonly string _bootId = Guid.NewGuid().ToString("N")[..8];
@@ -44,11 +45,14 @@ public sealed class Television
         IReadOnlyList<ChannelDefinition> channels,
         SavedState? saved = null,
         Random? random = null,
-        TimeProvider? clock = null)
+        TimeProvider? clock = null,
+        bool synchronizedBroadcast = false,
+        IReadOnlyDictionary<string, double>? durations = null)
     {
         _settings = settings;
         _random = random ?? Random.Shared;
         _clock = clock ?? TimeProvider.System;
+        _synchronizedBroadcast = synchronizedBroadcast;
 
         Volume = Math.Clamp(saved?.Volume ?? settings.InitialVolume, 0, 100);
         Muted = saved?.Muted ?? false;
@@ -57,6 +61,8 @@ public sealed class Television
         {
             if (double.IsFinite(seconds) && seconds > 0) _durations[id] = seconds;
         }
+        foreach (var (id, seconds) in durations ?? new Dictionary<string, double>())
+            SetDuration(id, seconds);
 
         _tuners = [.. channels.OrderBy(c => c.Number).Select(c => new Tuner(c, _random))];
         foreach (var tuner in _tuners)
@@ -242,10 +248,19 @@ public sealed class Television
         var request = _recentRequests.FirstOrDefault(r => r.Token == token);
         if (request is null) return;
 
-        if (duration is { } length) SetDuration(request.EpisodeId, length);
+        // Prepared/probed durations define the demo schedule for every room.
+        // Browser rounding must not produce a different playlist length per visitor.
+        if (duration is { } length && (!_synchronizedBroadcast || !HasDuration(request.EpisodeId)))
+            SetDuration(request.EpisodeId, length);
 
         var tuner = _tuners.Find(t => t.Key == request.Channel);
         if (tuner?.Showing?.Id != request.EpisodeId) return;
+        // A slow browser must not move the shared station's broadcast clock.
+        if (UsesBroadcast(tuner))
+        {
+            if (token == _playing?.Token) _failures = 0;
+            return;
+        }
         tuner.MoveTo(seconds, _clock.GetUtcNow());
         if (token == _playing?.Token) _failures = 0;
     }
@@ -358,8 +373,11 @@ public sealed class Television
         }
 
         var mode = tuner.TuneIn ?? _settings.TuneIn;
-        if (tuner.Showing is null || mode == TuneInMode.Random) Draw(tuner);
-        else if (mode == TuneInMode.Live) CatchUp(tuner);
+        if (!TuneBroadcast(tuner))
+        {
+            if (tuner.Showing is null || mode == TuneInMode.Random) Draw(tuner);
+            else if (mode == TuneInMode.Live) CatchUp(tuner);
+        }
         Play(tuner, reason);
     }
 
@@ -390,8 +408,38 @@ public sealed class Television
     private void Advance()
     {
         var tuner = Current;
-        Draw(tuner);
+        if (!TuneBroadcast(tuner)) Draw(tuner);
         Play(tuner, PlayReason.Advance);
+    }
+
+    private bool UsesBroadcast(Tuner tuner) =>
+        _synchronizedBroadcast && (tuner.TuneIn ?? _settings.TuneIn) == TuneInMode.Live
+        && tuner.Episodes.Count > 0 && tuner.Episodes.All(e => _durations.ContainsKey(e.Id))
+        && double.IsFinite(tuner.Episodes.Sum(e => _durations[e.Id]));
+
+    /// <summary>
+    /// Every demo room tunes into the same repeating playlist at the current UTC
+    /// instant. Sorting by stable file id makes the schedule independent of room
+    /// creation time, random shuffle and filesystem enumeration order.
+    /// </summary>
+    private bool TuneBroadcast(Tuner tuner)
+    {
+        if (!UsesBroadcast(tuner)) return false;
+        var total = tuner.Episodes.Sum(e => _durations[e.Id]);
+        var now = _clock.GetUtcNow();
+        var position = (now - DateTimeOffset.UnixEpoch).TotalSeconds % total;
+        if (position < 0) position += total;
+        foreach (var episode in tuner.Episodes.OrderBy(e => e.Id, StringComparer.Ordinal))
+        {
+            var length = _durations[episode.Id];
+            if (position < length)
+            {
+                tuner.Broadcast(episode, position, now);
+                return true;
+            }
+            position -= length;
+        }
+        return false;
     }
 
     private void Draw(Tuner tuner) => tuner.Draw(RandomStartOffset(), _clock.GetUtcNow());
@@ -473,6 +521,12 @@ public sealed class Television
         {
             Position = position;
             PositionAt = at;
+        }
+
+        public void Broadcast(Episode episode, double position, DateTimeOffset at)
+        {
+            Showing = episode;
+            MoveTo(position, at);
         }
 
         public void Forget()

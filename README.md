@@ -180,7 +180,14 @@ records both this workflow and the home channel editor.
 Public-demo source selection is limited to footage produced in **1980 or later**,
 with a clear transfer and audible original sound. The production year refers to
 the underlying footage, not a later upload or restoration. Review the exact
-video and soundtrack before publication; see [media rights](docs/media-rights.md).
+video and soundtrack before publication; see [media rights](docs/media-rights.md)
+and the [post-1980 lineup and broadcast plan](docs/post-1980-demo.md).
+
+Demo Live channels with known durations use a repeating, UTC-anchored playlist:
+new visitors and returning viewers join the same scheduled program position.
+Channel, volume, mute and power controls remain isolated per visitor room.
+`Box__Demo__SynchronizedBroadcast=false` restores the per-room shuffle. Home
+playback is unchanged.
 
 ## How it fits together
 
