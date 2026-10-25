@@ -93,8 +93,8 @@ def validate(manifest, output):
             if not isinstance(item.get('modifications'), str) or not item['modifications'].strip():
                 raise ValueError(f'{relative}: modifications must describe edits/transcoding.')
             year = item.get('year')
-            if type(year) is not int or year < 1980 or year > date.today().year:
-                raise ValueError(f'{relative}: year must identify footage produced in 1980 or later.')
+            if type(year) is not int or year < 1980 or year > 1999:
+                raise ValueError(f'{relative}: year must identify footage produced in 1980–1999 (inclusive).')
         edits(item)
         source = (manifest.parent / item['source']).resolve()
         if not source.is_file():

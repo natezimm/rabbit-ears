@@ -4,11 +4,11 @@ No film, cartoon, audio track, or archive clip is approved merely by being named
 
 ## Public-demo source criteria
 
-Select footage produced in **1980 or later**. A later upload, restoration, or
+Select footage produced in **1980–1999 (inclusive)**. A later upload, restoration, or
 compilation does not make earlier footage eligible. Confirm picture quality
 and audible original sound before preparing excerpts; reject grainy or
 unsuitable transfers. These are editorial requirements in addition to the
-rights review below. The [post-1980 demo plan](post-1980-demo.md) records source checks and candidate status; it does not approve a public release.
+rights review below. The [1980–1999 demo plan](post-1980-demo.md) records source checks and candidate status; it does not approve a public release.
 
 ## Private inventory (never commit)
 
@@ -23,7 +23,7 @@ For **each specific file**, record:
 - Attribution text, canonical license URL if available, required notices, any adaptation/share-alike requirements, and planned excerpts/edits.
 - Reviewer's identity, date, result (`pending`, `approved`, `rejected`), unresolved risks and safer alternatives. Only mark approved after every relevant question has been resolved.
 
-The repository provides **no automatic copyright determination**. Internet Archive hosting, an old release date, or possession of a copy do not by themselves grant streaming rights. Prefer clearly sourced worldwide public-domain/CC0/CC BY recordings and fully licensed recordings from 1980 onward with the original soundtrack explicitly included. Do not assume CC BY-NC permits promotional use; don't trim CC BY-ND material without separate permission. Ask qualified counsel about unresolved territorial and derivative-rights questions.
+The repository provides **no automatic copyright determination**. Internet Archive hosting, an old release date, or possession of a copy do not by themselves grant streaming rights. Prefer clearly sourced worldwide public-domain/CC0/CC BY recordings and fully licensed recordings from 1980–1999 with the original soundtrack explicitly included. Do not assume CC BY-NC permits promotional use; don't trim CC BY-ND material without separate permission. Ask qualified counsel about unresolved territorial and derivative-rights questions.
 
 ## Two-stage approval gate
 
@@ -33,7 +33,7 @@ The repository provides **no automatic copyright determination**. Internet Archi
 4. Use a **new, clean output directory** per release. Inspect `.demo-media.json` for public-only fields, verify files and hashes, and inspect the credits page. Preserve evidence locally and never copy the private manifest or originals onto the public server.
 5. Only then use the versioned, read-only Compose mount procedure in `demo/real-media.md`. Do not change the public demo's port 8620 or include external media inside the Docker image.
 
-`year` is mandatory for new version 2 preparation and must be 1980 through the current year. It must describe the underlying footage, not simply a compilation date. `licenseUrl` (when applicable) and `attribution` are optional public fields. `modifications` is mandatory on version 2 and should disclose the actual conversion/edits. `rightsEvidence`, `reviewedBy`, `reviewedAt`, original `source` paths and private notes **must never appear** in public prepared metadata or the `/api/demo/credits` response. The server only exposes metadata fields explicitly declared in the public credit model.
+`year` is mandatory for new version 2 preparation and must be 1980 through 1999. It must describe the underlying footage, not simply a compilation date. `licenseUrl` (when applicable) and `attribution` are optional public fields. `modifications` is mandatory on version 2 and should disclose the actual conversion/edits. `rightsEvidence`, `reviewedBy`, `reviewedAt`, original `source` paths and private notes **must never appear** in public prepared metadata or the `/api/demo/credits` response. The server only exposes metadata fields explicitly declared in the public credit model.
 
 ## Compatibility and enforcement
 

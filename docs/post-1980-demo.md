@@ -1,27 +1,45 @@
-# Post-1980 color-and-sound demo
+# 1980–1999 color-and-sound demo
 
-Source checks: October 25, 2026. Goal: varied color programming with original
-sound, fast channel surfing, and the feeling of tuning into an ongoing station.
-Production years below identify the works; modern films are not presented as
-actual 1980s/1990s broadcasts. No candidate is approved or deployed by this change.
+The public-demo brief is **original footage made from 1980 through 1999,
+inclusive**, with color picture and audible original sound. Upload, restoration
+or compilation dates do not establish the date of the underlying footage.
+Modern films with retro filters do not meet this brief. Big Buck Bunny (2008)
+and Tears of Steel (2012) are excluded; their earlier review pack is superseded
+and must not be used to prepare this lineup. No candidate is approved or deployed.
 
-## Source findings
+## Period candidates to inspect
 
-| Proposed station | Exact source check | Decision |
+Archive metadata checked October 25, 2026. These are research leads, not cleared
+selections or verified playback. Prefer native 4:3, period graphics, presenters,
+sets and sound. Listen to and watch the exact selected file before approval.
+
+| Candidate | Period evidence and archive record | Remaining checks |
 | --- | --- | --- |
-| NASA Select | [capture-a-6536 metadata](https://archive.org/metadata/capture-a-6536) identifies CNN coverage of Discovery STS-31, April 24–26, 1990. Description explicitly credits CNN and reserves rights. The actual file is `CaptureA_6536.mp4` (1697.07 seconds), not the proposed filename or duration. | Reject this source. NASA subject matter does not make CNN coverage a federal work. Do not restore the previously removed silent NASA clips. |
-| Tech TV | The supplied [Radio Shack compilation](https://archive.org/details/radio-shack-video-radioshackcatalogs.org) is a third-party rip without a clear license grant. The original [Portable1987 item](https://archive.org/metadata/Portable1987) identifies March 3, 1987 but has no `licenseurl` or `rights` field. Its H.264 derivative is 1737.79 seconds, not 1680. | Hold for an explicit grant covering this episode, soundtrack, excerpts and portfolio streaming. “Creative Commons / Internet Archive” is not a license. Avoid PBS branding that could imply affiliation. |
-| America Outdoors | [National Parks: An American Legacy](https://archive.org/details/gov.ntis.ava19377vnb1), NPS/Public.Resource.Org, is listed as 1992, color, sound and public domain. The existing derivative is [`gov.ntis.ava19377vnb1_512kb.mp4`](https://archive.org/download/gov.ntis.ava19377vnb1/gov.ntis.ava19377vnb1_512kb.mp4), measured 1773.273 seconds, 320×240 H.264/AAC. | Hold. The downloaded film contains extensive older black-and-white footage; the 1992 compilation date does not establish that the footage meets the 1980+ rule. The 11:00–12:00 sample fails the color/era brief. Modern-looking nature segments still need underlying-date and sound/rights review. |
-| Omni Sci-Fi Theater | [Tears of Steel](https://mango.blender.org/), 2012. Downloaded the [Blender-hosted 720p movie](https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov): 734.167 seconds, 1280×534 H.264 with MP3 audio. | First-wave candidate; prepare 02:00–03:00 for review, retaining the original movie mix. The indexed [movie sharing terms](https://mango.blender.org/sharing/) state CC BY 3.0; reconfirm the exact movie edition before publication. |
-| Cartoon 13 | [Big Buck Bunny](https://peach.blender.org/about/), original work 2008, CC BY 3.0. Downloaded Blender's [Sunflower normal 1080p/30 edition](https://download.blender.org/demo/movies/BBB/bbb_sunflower_1080p_30fps_normal.mp4.zip): 634.600 seconds, 1920×1080 H.264 with MP3 and AC3 audio. | First-wave candidate; prepare 01:30–02:30 for review. Record the Sunflower edition credits as well as the original creator credit. The proposed 596-second duration belongs to a different edition. |
+| Video Teletraining | [FAA / Public.Resource.Org](https://archive.org/details/gov.ntis.ava20236vnb1), 1994; listed color and sound with a public-domain notice. File `ava20236vnb1_512kb.mp4`, listed 320×240, 1109.08 seconds. Period communications/training programming. | Download, verify date in credits, inspect original audio and third-party material, choose an engaging excerpt. |
+| Wake Turbulence Avoidance | [FAA / Public.Resource.Org](https://archive.org/details/gov.ntis.ava19661vnb1), 1995; listed color and sound with a public-domain notice. Re-enactments and animation about aviation. File `gov.ntis.ava19661vnb1_512kb.mp4`, listed 320×240, 1455.96 seconds. | Inspect exact producer/partner credits, soundtrack and reuse basis; verify color, audio and excerpt quality. |
+| An Ax to Grind — Part 1 | [USDA Forest Service / Public.Resource.Org](https://archive.org/details/gov.usda.fs.mtdc.0823-2d01-mtdc.1.1), date/year fields say 1998 while description says 1999. Both fall within the brief; listed color, sound and CC0. File `gov.usda.fs.mtdc.0823-2d01-mtdc.1.1_512kb.mp4`, listed 320×240, 1776.61 seconds. Outdoor instructional programming. | Resolve the exact edition/year from the video, check original sound and credits, choose period live footage instead of historical inserts. |
+| Man and Safety — Animated | [Department of Defense / Public.Resource.Org](https://archive.org/details/gov.dod.dimoc.600519), date field 1984, CC0 metadata. File `gov.dod.dimoc.600519_512kb.mp4`, listed 320×240, 2698.63 seconds. Potential period animation. | No color/sound fields in the inspected metadata. Check both in the actual file and establish the original production date before selecting it. |
 
-The checks used downloaded bytes/ffprobe for the three movies above; Archive
-metadata for the rejected/held TV sources. No guessed durations enter playback.
-The Google sample-bucket downloads returned HTTP 403 in this environment, so
-this review makes no claim that those mirrors are universally broken or reliable.
-The official Blender sharing pages returned access errors on direct reads;
-search retrieved their CC BY 3.0 statements. Complete the exact-edition rights
-review before marking either film approved. These are candidates, not five cleared stations.
+All dimensions and durations in this table come from archive metadata and must
+be measured from downloaded bytes before scheduling. An archive license label
+is a starting point, not an automatic exact-file approval. Do not promise five
+stations before five suitable recordings have passed review.
+
+## Excluded or held sources
+
+- **Big Buck Bunny / Tears of Steel:** outside 1980–1999. Removed from the
+  candidate manifest; do not ask for approval of these modern films again.
+- **CNN Discovery STS-31 coverage:** the proposed “NASA” item
+  [capture-a-6536](https://archive.org/metadata/capture-a-6536) explicitly identifies
+  copyrighted CNN coverage. Do not use it or restore the removed silent NASA clips.
+- **Computer Chronicles / Net Cafe:** strong visual matches, but check each exact
+  episode. The supplied Radio Shack rip and `Portable1987` have no verified grant.
+  [Net Cafe: Disinformation on the Web](https://archive.org/details/nc119_disinformation)
+  identifies a 1997 broadcast but carries BY-NC-ND terms, not unrestricted CC BY.
+  Keep these on hold for permission covering intended portfolio streaming and edits.
+- **National Parks: An American Legacy (1992):** its checked 11:00–12:00 excerpt
+  contains older black-and-white footage. The compilation date is insufficient;
+  any different excerpt requires underlying-date, color, audio and rights review.
 
 ## Copyright and hosting corrections
 
@@ -60,7 +78,7 @@ uses the server schedule; this is not frame-accurate synchronization of already
 playing browsers under buffering/network delays. No browser `Date.now()` seek
 is added beside the authoritative server state.
 
-Prepared media validation now requires `year >= 1980` and an original audio
+Prepared media validation now requires `1980 <= year <= 1999` and an original audio
 stream for version 2. It also decodes the **selected output excerpt**, rejecting
 near-silence at or below -50 dBFS peak, including cached output. These checks
 cannot prove color, underlying date, meaningful sound or permission; review still
@@ -68,33 +86,28 @@ covers those. Version 1 remains a local compatibility path, not a public release
 
 ## Next release and experience work
 
-1. Review the two 60-second Blender previews, edition credits and exact rights.
-   Use [the candidate manifest](../demo/media-manifest.post-1980.example.json)
-   as a starting point; its approval fields deliberately fail validation. Record
-   the private version 2 manifest, hashes and human decision. Complete
-   the attribution and modifications notice (excerpting, fitting into 4:3,
-   H.264/AAC conversion); keep reviewer details and evidence outside Git.
-2. Prepare the approved files with `scripts/prepare-demo-media.py` and deploy a
-   fresh library using [the existing guide](../demo/real-media.md). Verify credits,
+1. Download the period candidates above privately, inspect the actual video and
+   soundtrack, and prepare short review clips with source hashes and accurate
+   credits. Reject poor transfers, silence, uncertain dates and unsuitable rights.
+2. Record approved selections in a private copy of
+   [the generic manifest](../demo/media-manifest.example.json). The modern-film
+   candidate manifest has been removed. Review footage date separately from the
+   upload or compilation date; preserve native framing and original sound.
+3. Prepare the approved files with `scripts/prepare-demo-media.py` and deploy a
+   new library using [the existing guide](../demo/real-media.md). Verify credits,
    range requests, phone control and isolated rooms. Keep port **8620** and the
-   generated rollback library. A merge alone does not publish these movies.
-3. Fill the remaining stations with exact-edition licensed 1980s/1990s footage,
-   or clearly labeled original productions. Do not fill a five-channel quota
-   with the rejected CNN clip, uncertain Computer Chronicles rights or older
-   footage hidden inside a 1992 compilation.
-4. Add original weather programming and station IDs with original/licensed audio.
-   Mark simulated weather as fictional; use Rabbit Ears branding. Ordered
-   bumper/program scheduling needs a separate design because file-id order is
-   stable but is not an editorial rundown.
-5. Add an optional antenna/fine-tuning interaction and accessible keyboard
-   controls, then measure rapid surfing on phone/desktop. Existing two-deck
-   buffering, CRT shader, static transition and green OSD already cover much of
-   the proposed tactile experience. Do not claim a 150–300ms load guarantee.
+   generated rollback library. A merge alone does not publish any videos.
+4. Expand the lineup using additional verified 1980–1999 recordings. Keep modern
+   or AI-generated clips out of the period footage selection. Original interface
+   effects and short Rabbit Ears station IDs can be considered separately after
+   the actual programming fits the brief.
+5. Add an optional antenna/fine-tuning interaction with keyboard controls and
+   measure rapid surfing on phone/desktop. Existing buffering, CRT effects and
+   green OSD already supply much of the requested presentation.
 6. Compare gentle offline [ntsc-rs processing](https://ntsc.rs/docs/command-line-interface/)
-   against the existing shader before adding degradation. Keep original masters
-   and review crop composition; default to aspect-preserving letterbox, not a
-   blind 4:3 center crop. Do not double-bake scanlines or heavily damage footage.
+   against the existing shader only after finding suitable period media. Preserve
+   masters; avoid heavy degradation, double-baked scanlines and blind 4:3 crops.
 
-AI video is optional for later bumpers, not a prerequisite for real programming.
-No AI video/music dependency, HLS service, third-party weather simulator or
-production resource increase is introduced in this release.
+Generated fixtures remain available for development/CI and rollback, clearly
+separate from the curated period lineup. Test fixture years exercise validation;
+they are not claims that synthetic test patterns were produced in the 1990s.

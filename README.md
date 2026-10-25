@@ -177,11 +177,11 @@ generated clips with cleared real content, follow [the media preparation and
 mount guide](demo/real-media.md). The [plan](docs/channel-and-demo-plan.md)
 records both this workflow and the home channel editor.
 
-Public-demo source selection is limited to footage produced in **1980 or later**,
+Public-demo source selection is limited to footage produced in **1980–1999 (inclusive)**,
 with a clear transfer and audible original sound. The production year refers to
 the underlying footage, not a later upload or restoration. Review the exact
 video and soundtrack before publication; see [media rights](docs/media-rights.md)
-and the [post-1980 lineup and broadcast plan](docs/post-1980-demo.md).
+and the [1980–1999 lineup and broadcast plan](docs/post-1980-demo.md).
 
 Demo Live channels with known durations use a repeating, UTC-anchored playlist:
 new visitors and returning viewers join the same scheduled program position.

@@ -46,16 +46,17 @@ class PrepareDemoMediaTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     prepare.validate(self.manifest, self.output)
 
-    def test_v2_requires_post_1980_footage_year(self):
+    def test_v2_requires_1980_through_1999_footage_year(self):
         self.approved_v2()
-        for year in (None, 1955, 1979, True, '1990'):
+        for year in (None, 1955, 1979, 2000, 2008, 2012, 2026, True, '1990'):
             with self.subTest(year=year):
                 self.manifest.write_text(json.dumps(dict(version=2, videos=[self.video | {'year': year}])))
-                with self.assertRaisesRegex(ValueError, '1980 or later'):
+                with self.assertRaisesRegex(ValueError, '1980–1999'):
                     prepare.validate(self.manifest, self.output)
-        self.video['year'] = 1980
-        self.manifest.write_text(json.dumps(dict(version=2, videos=[self.video])))
-        prepare.validate(self.manifest, self.output)
+        for year in (1980, 1999):
+            self.video['year'] = year
+            self.manifest.write_text(json.dumps(dict(version=2, videos=[self.video])))
+            prepare.validate(self.manifest, self.output)
 
     def test_v2_rejects_missing_audio_without_publishing(self):
         self.make_video(audio=False)

@@ -4,7 +4,9 @@ This workflow uses **only locally available, human-approved sources**. The scrip
 
 ## Private manifest: new editing fields
 
-The existing private manifest version 2 is unchanged. Each video may supply:
+Version 2 requires a footage year from 1980 through 1999 (inclusive). This
+refers to the underlying footage, not its upload or restoration date. Each
+video may also supply:
 
 | Field | Type | Meaning |
 | --- | --- | --- |

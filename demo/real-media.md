@@ -1,6 +1,6 @@
 # Replace the generated demo clips with real videos
 
-Public-demo footage must have been produced in **1980 or later**, with a clear
+Public-demo footage must have been produced in **1980–1999 (inclusive)**, with a clear
 picture and audible original sound. Check the underlying footage date rather
 than its upload or restoration date. See [source criteria](../docs/media-rights.md).
 
@@ -25,7 +25,7 @@ The example manifest is a template, not a cleared selection of shows.
    For version 2, a human review must explicitly set `approvedForPublicDemo: true`
    with `reviewedBy`, `reviewedAt` (YYYY-MM-DD), and an accurate
    `modifications` notice. The checked-in example is intentionally unapproved.
-   Supply `year` (1980 or later, based on underlying footage). Optional public
+   Supply `year` (1980–1999, based on underlying footage). Optional public
    attribution fields include `licenseUrl` and `attribution`. Keep private rights evidence and decisions outside Git.
 3. From the repository, validate and then prepare:
 
