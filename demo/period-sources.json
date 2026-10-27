@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "identifier": "gov.ntis.AVA19272",
+      "filename": "ava19272.vnb1_512kb.mp4",
+      "title": "Robot Reality",
+      "year": 1990,
+      "sha256": "f0fc5f4add6b38daa88045d6bb300acda25ddb512b766a99e099d5303f6f50f9"
+    },
+    {
+      "identifier": "gov.ntis.ava17096vnb1",
+      "filename": "gov.ntis.ava17096vnb1_512kb.mp4",
+      "title": "Awesome Power",
+      "year": 1988,
+      "sha256": "790771c540fe672087fd2a9a1c85cf6cced201939659b8092b283e42a8eba061"
+    },
+    {
+      "identifier": "gov.ntis.a19389vnb1",
+      "filename": "a19389vnb1_512kb.mp4",
+      "title": "Of Ice and Fire - The Mono Basin",
+      "year": 1992,
+      "sha256": "ea080c65c7af8e5179811fa61b76edaa854fcaa32cda7829d48271a9ea388d05"
+    }
+  ]
+}

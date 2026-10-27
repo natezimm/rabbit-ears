@@ -1,6 +1,13 @@
 # Ship the 1980–1999 demo lineup in one PR
 
-Status: implementation plan, October 26, 2026. Keep this draft PR open and add
+Status: acquisition tooling, candidate manifest, regression tests and release runbook implemented.
+All three originals have been acquired and pinned; three 45-second previews
+were generated with H.264/AAC and decoded audio peaks above -8 dBFS. This is
+technical QA, not a complete soundtrack or rights review. Exact-file human
+review, final excerpts and production activation remain pending.
+See [the executable runbook](../demo/period-lineup.md).
+
+Original plan, October 26, 2026. Keep this draft PR open and add
 implementation, tests and review results to the same branch; do not merge a
 separate planning PR. Media preparation and VM activation remain release steps,
 not effects of merging GitHub code.

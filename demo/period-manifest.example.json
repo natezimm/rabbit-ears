@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "videos": [
+    {
+      "source": "originals/gov.ntis.AVA19272/ava19272.vnb1_512kb.mp4",
+      "channel": "Robotics",
+      "title": "Robot Reality",
+      "year": 1990,
+      "creator": "National Institutes of Health / NIOSH",
+      "sourceUrl": "https://archive.org/details/gov.ntis.AVA19272",
+      "license": "Public-domain label in archive metadata; exact edition review pending",
+      "licenseUrl": "https://creativecommons.org/licenses/publicdomain/",
+      "clipStartSeconds": 120,
+      "clipDurationSeconds": 45,
+      "framing": "preserve",
+      "modifications": "45-second review excerpt; transcoded to H.264/AAC; original framing and sound retained",
+      "rightsEvidence": "REPLACE after reviewing exact edition, credits and soundtrack",
+      "approvedForPublicDemo": false,
+      "reviewedBy": "REPLACE",
+      "reviewedAt": "REPLACE"
+    },
+    {
+      "source": "originals/gov.ntis.ava17096vnb1/gov.ntis.ava17096vnb1_512kb.mp4",
+      "channel": "Weather",
+      "title": "Awesome Power",
+      "year": 1988,
+      "creator": "National Oceanic and Atmospheric Administration",
+      "sourceUrl": "https://archive.org/details/gov.ntis.ava17096vnb1",
+      "license": "Public-domain label in archive metadata; exact edition review pending",
+      "licenseUrl": "https://creativecommons.org/licenses/publicdomain/",
+      "clipStartSeconds": 120,
+      "clipDurationSeconds": 45,
+      "framing": "preserve",
+      "modifications": "45-second review excerpt; transcoded to H.264/AAC; original framing and sound retained",
+      "rightsEvidence": "REPLACE after reviewing exact edition, credits and soundtrack",
+      "approvedForPublicDemo": false,
+      "reviewedBy": "REPLACE",
+      "reviewedAt": "REPLACE"
+    },
+    {
+      "source": "originals/gov.ntis.a19389vnb1/a19389vnb1_512kb.mp4",
+      "channel": "Nature",
+      "title": "Of Ice and Fire - The Mono Basin",
+      "year": 1992,
+      "creator": "United States Forest Service",
+      "sourceUrl": "https://archive.org/details/gov.ntis.a19389vnb1",
+      "license": "Public-domain label in archive metadata; exact edition review pending",
+      "licenseUrl": "https://creativecommons.org/licenses/publicdomain/",
+      "clipStartSeconds": 120,
+      "clipDurationSeconds": 45,
+      "framing": "preserve",
+      "modifications": "45-second review excerpt; transcoded to H.264/AAC; original framing and sound retained",
+      "rightsEvidence": "REPLACE after reviewing exact edition, credits and soundtrack",
+      "approvedForPublicDemo": false,
+      "reviewedBy": "REPLACE",
+      "reviewedAt": "REPLACE"
+    }
+  ]
+}

@@ -7,6 +7,9 @@ than its upload or restoration date. See [source criteria](../docs/media-rights.
 The public demo already runs through nginx on host port **8620**, forwarding
 to container port 8080. The optional media mount does not change that routing.
 
+For the curated candidate acquisition and release commands, see
+[the period lineup runbook](period-lineup.md).
+
 ## Choose and prepare the content
 
 Use episodes you have permission to stream publicly, or whose public-domain
