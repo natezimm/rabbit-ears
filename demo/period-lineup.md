@@ -28,13 +28,15 @@ fresh directory, retaining the old directory for diagnosis.
 
 The catalog contains Robot Reality (1990), Awesome Power (1988), and Of Ice and
 Fire (1992). These are unapproved candidates, not a declaration that every frame
-or soundtrack contribution is cleared. The manifest's 02:00–02:45 trims are
-initial review samples, not final broadcast selections.
+or soundtrack contribution is cleared. The manifest's 03:00–07:00 trims are
+proposed review windows, not final broadcast selections. All three sources are
+on hold after inspecting credits; see [the edition review](../docs/period-media-review.md).
+The earlier 02:00–02:45 samples must not be treated as cleared media.
 
 ## Produce review samples without approving publication
 
 This command reads the private manifest, preserves the original picture and
-sound, and makes three short local previews. It does not set approval fields or
+sound, and makes three local review excerpts. It does not set approval fields or
 create public prepared-library metadata.
 
 ```bash

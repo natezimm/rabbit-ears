@@ -3,8 +3,10 @@
 Status: acquisition tooling, candidate manifest, regression tests and release runbook implemented.
 All three originals have been acquired and pinned; three 45-second previews
 were generated with H.264/AAC and decoded audio peaks above -8 dBFS. This is
-technical QA, not a complete soundtrack or rights review. Exact-file human
-review, final excerpts and production activation remain pending.
+technical QA, not a complete soundtrack or rights review. The October 27
+credit/source review identified specific third-party production and soundtrack questions for all three editions; see
+[review findings and proposed windows](period-media-review.md). None is cleared.
+Continuous audiovisual review, final cuts and production activation remain pending.
 See [the executable runbook](../demo/period-lineup.md).
 
 Original plan, October 26, 2026. Keep this draft PR open and add
