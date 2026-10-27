@@ -63,6 +63,8 @@ In the private manifest, correct credits/license/year, set final trim positions,
 write accurate modification notices, and complete `rightsEvidence`, `reviewedBy`
 and `reviewedAt`. Set `approvedForPublicDemo` only after actual review. Never use
 a made-up reviewer or approve the whole collection from an archive label.
+Preparation refuses an approved entry that still contains `REPLACE` text,
+including the template's `license`, so every placeholder needs a real value.
 
 ## Prepare and stage
 

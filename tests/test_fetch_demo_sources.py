@@ -85,3 +85,20 @@ class SourceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.acquire()
         self.assertFalse((self.root / 'gov.example/movie.mp4').exists())
+
+
+class PeriodCatalogTests(unittest.TestCase):
+    """The period catalog, its recorded locks and the manifest template must name the same files."""
+
+    def test_catalog_locks_and_manifest_agree(self):
+        demo = Path(__file__).resolve().parents[1] / 'demo'
+        catalog = json.loads((demo / 'period-sources.json').read_text())['sources']
+        locks = {s['identifier']: s for s in json.loads((demo / 'period-source-locks.json').read_text())['sources']}
+        manifest = json.loads((demo / 'period-manifest.example.json').read_text())['videos']
+        self.assertEqual(set(locks), {s['identifier'] for s in catalog})
+        for source in catalog:
+            lock = locks[source['identifier']]
+            self.assertEqual((lock['filename'], lock['sha256']), (source['filename'], source['sha256']))
+        self.assertEqual(sorted(v['source'] for v in manifest),
+                         sorted(f"originals/{s['identifier']}/{s['filename']}" for s in catalog))
+        self.assertTrue(all(v['approvedForPublicDemo'] is False for v in manifest))

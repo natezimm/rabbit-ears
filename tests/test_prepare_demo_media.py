@@ -39,7 +39,9 @@ class PrepareDemoMediaTests(unittest.TestCase):
         for field, value in [('approvedForPublicDemo', False), ('reviewedBy', ''),
                              ('reviewedAt', 'not a date'), ('modifications', ''),
                              ('licenseUrl', 'javascript:bad'), ('year', 9999),
-                             ('sourceUrl', 'https:///bad')]:
+                             ('sourceUrl', 'https:///bad'),
+                             ('rightsEvidence', 'REPLACE after review'),
+                             ('license', 'REPLACE with the verified basis')]:
             with self.subTest(field=field):
                 record = self.video | {field: value}
                 self.manifest.write_text(json.dumps(dict(version=2, videos=[record])))
