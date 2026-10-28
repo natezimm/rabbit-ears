@@ -4,13 +4,34 @@ Reviewed October 27, 2026. Scope: the three exact MP4 editions pinned in
 [the source locks](../demo/period-source-locks.json), for excerpted looping
 public portfolio playback with the original soundtrack.
 
-## Decision
+## Current release decision — October 28, 2026
+
+The project owner explicitly authorized proceeding with all three proposed
+03:00–07:00 excerpts for the personal portfolio demo, relying on the archive's
+public-domain labels and accepting the third-party rights uncertainty described
+below. No agency permission was obtained and no inquiry was sent. This decision
+supersedes the review's recommendation to hold release pending agency evidence;
+it does not change the underlying findings or certify public-domain status.
+
+The approved release manifest is [demo/period-manifest.json](../demo/period-manifest.json).
+Its approval flag records the owner's release decision, not an assertion that an
+agency or lawyer cleared the media. The separate example manifest stays unapproved.
+Public credits describe the source's public-domain assertion accurately, link to
+the item record, disclose editing, and avoid implying agency endorsement.
+
+The selected cuts use the previously sampled four-minute windows. A continuous
+watch/listen and sentence-boundary refinement have not been completed. Encoding,
+audio non-silence and integrity checks are technical checks, not substitutes for
+that editorial review. VM activation and live playback checks remain separate.
+
+## Historical review decision (before owner authorization)
 
 **None of these three editions is cleared for public deployment by this review.**
 The archive metadata labels are insufficient to resolve the specific contributions
 identified in the films' credits. This is a hold pending evidence, not a finding
 that every frame is copyrighted or that permission is impossible to obtain.
-The candidate manifest remains unapproved; no reviewer identity is fabricated.
+The example manifest remains unapproved. The release manifest records the subsequent
+owner authorization above; no agency clearance or full audiovisual review is claimed.
 
 The previous 02:00–02:45 review samples are not final broadcast selections.
 In particular, Robot Reality's earlier preview includes the article title page

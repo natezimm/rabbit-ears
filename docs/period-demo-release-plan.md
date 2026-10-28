@@ -1,13 +1,18 @@
 # Ship the 1980–1999 demo lineup in one PR
 
-Status: acquisition tooling, candidate manifest, regression tests and release runbook implemented.
-All three originals have been acquired and pinned; three 45-second previews
-were generated with H.264/AAC and decoded audio peaks above -8 dBFS. This is
-technical QA, not a complete soundtrack or rights review. The October 27
-credit/source review identified specific third-party production and soundtrack questions for all three editions; see
-[review findings and proposed windows](period-media-review.md). None is cleared.
-Continuous audiovisual review, final cuts and production activation remain pending.
-See [the executable runbook](../demo/period-lineup.md).
+Status: acquisition tooling, tests and runbook implemented. On October 28, 2026,
+the owner authorized the three 03:00–07:00 excerpts for the personal portfolio
+demo based on the archive labels, accepting the documented rights uncertainty.
+`demo/period-manifest.json` records that release decision; the example stays
+unapproved. No agency clearance or complete watch/listen is claimed. See
+[the current decision and historical review](period-media-review.md).
+
+The release uses original sound and framing through the existing server playback
+path. VM activation and public playback verification remain pending. See
+[the executable runbook](../demo/period-lineup.md).
+
+The following original plan is retained as history; its agency-clearance holds
+are superseded by the owner's decision above.
 
 Original plan, October 26, 2026. Keep this draft PR open and add
 implementation, tests and review results to the same branch; do not merge a

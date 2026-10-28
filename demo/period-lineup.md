@@ -14,7 +14,7 @@ files, plus space for the existing rollback release. Inspect `df -h` first.
 ```bash
 mkdir -p "$HOME/rabbit-period-work"
 python3 scripts/fetch-demo-sources.py demo/period-sources.json "$HOME/rabbit-period-work/originals"
-cp demo/period-manifest.example.json "$HOME/rabbit-period-work/media-manifest.json"
+cp demo/period-manifest.json "$HOME/rabbit-period-work/media-manifest.json"
 ```
 
 The catalog pins exact filenames. Each download is size/checksum checked and
@@ -26,12 +26,12 @@ an edition, use a new working directory and repeat review. Do not delete a lock
 to bypass a mismatch. Interrupted finalization may leave an unpinned file; use a
 fresh directory, retaining the old directory for diagnosis.
 
-The catalog contains Robot Reality (1990), Awesome Power (1988), and Of Ice and
-Fire (1992). These are unapproved candidates, not a declaration that every frame
-or soundtrack contribution is cleared. The manifest's 03:00–07:00 trims are
-proposed review windows, not final broadcast selections. All three sources are
-on hold after inspecting credits; see [the edition review](../docs/period-media-review.md).
-The earlier 02:00–02:45 samples must not be treated as cleared media.
+The release contains Robot Reality (1990), Awesome Power (1988), and Of Ice and
+Fire (1992), using 03:00–07:00 from each recording. On October 28 the project owner
+approved proceeding based on the archive public-domain labels while accepting
+the documented third-party rights uncertainty. This is owner release approval,
+not agency clearance; see [the decision and findings](../docs/period-media-review.md).
+The example manifest remains unapproved for future review workflows.
 
 ## Produce review samples without approving publication
 
@@ -61,12 +61,11 @@ historical black-and-white sections and establish the underlying footage date.
 Review the exact edition and soundtrack reuse basis; preserve evidence privately.
 Use fewer channels or reviewed alternates if a candidate fails.
 
-In the private manifest, correct credits/license/year, set final trim positions,
-write accurate modification notices, and complete `rightsEvidence`, `reviewedBy`
-and `reviewedAt`. Set `approvedForPublicDemo` only after actual review. Never use
-a made-up reviewer or approve the whole collection from an archive label.
-Preparation refuses an approved entry that still contains `REPLACE` text,
-including the template's `license`, so every placeholder needs a real value.
+The checked-in release manifest records the owner's decision, source attribution
+and selected cuts. Copy it into the private work directory as shown above; do not
+invent agency permission or a completed continuous audiovisual review. For later
+sources, start from `period-manifest.example.json` and document a new release
+decision. Preparation still rejects unapproved entries and placeholder text.
 
 ## Prepare and stage
 
