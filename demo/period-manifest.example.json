@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "videos": [
+    {
+      "source": "originals/gov.ntis.AVA19272/ava19272.vnb1_512kb.mp4",
+      "channel": "Robotics",
+      "title": "Robot Reality",
+      "year": 1990,
+      "creator": "National Institutes of Health / NIOSH",
+      "sourceUrl": "https://archive.org/details/gov.ntis.AVA19272",
+      "license": "REPLACE with the verified public-domain basis (archive metadata labels it public domain)",
+      "licenseUrl": "https://creativecommons.org/licenses/publicdomain/",
+      "clipStartSeconds": 180,
+      "clipDurationSeconds": 240,
+      "framing": "preserve",
+      "modifications": "Proposed four-minute review window, not a final broadcast cut; H.264/AAC transcoding with original framing and sound",
+      "rightsEvidence": "REPLACE after resolving hold: Mixed-source film: credits identify third-party artwork and corporate footage; see docs/period-media-review.md",
+      "approvedForPublicDemo": false,
+      "reviewedBy": "REPLACE",
+      "reviewedAt": "REPLACE"
+    },
+    {
+      "source": "originals/gov.ntis.ava17096vnb1/gov.ntis.ava17096vnb1_512kb.mp4",
+      "channel": "Weather",
+      "title": "Awesome Power",
+      "year": 1988,
+      "creator": "National Oceanic and Atmospheric Administration",
+      "sourceUrl": "https://archive.org/details/gov.ntis.ava17096vnb1",
+      "license": "REPLACE with the verified public-domain basis (archive metadata labels it public domain)",
+      "licenseUrl": "https://creativecommons.org/licenses/publicdomain/",
+      "clipStartSeconds": 180,
+      "clipDurationSeconds": 240,
+      "framing": "preserve",
+      "modifications": "Proposed four-minute review window, not a final broadcast cut; H.264/AAC transcoding with original framing and sound",
+      "rightsEvidence": "REPLACE after resolving hold: Producer/station footage and excerpt reuse require clarification; see docs/period-media-review.md",
+      "approvedForPublicDemo": false,
+      "reviewedBy": "REPLACE",
+      "reviewedAt": "REPLACE"
+    },
+    {
+      "source": "originals/gov.ntis.a19389vnb1/a19389vnb1_512kb.mp4",
+      "channel": "Nature",
+      "title": "Of Ice and Fire - The Mono Basin",
+      "year": 1992,
+      "creator": "United States Forest Service",
+      "sourceUrl": "https://archive.org/details/gov.ntis.a19389vnb1",
+      "license": "REPLACE with the verified public-domain basis (archive metadata labels it public domain)",
+      "licenseUrl": "https://creativecommons.org/licenses/publicdomain/",
+      "clipStartSeconds": 180,
+      "clipDurationSeconds": 240,
+      "framing": "preserve",
+      "modifications": "Proposed four-minute review window, not a final broadcast cut; H.264/AAC transcoding with original framing and sound",
+      "rightsEvidence": "REPLACE after resolving hold: Original score and additional music reuse basis unresolved; see docs/period-media-review.md",
+      "approvedForPublicDemo": false,
+      "reviewedBy": "REPLACE",
+      "reviewedAt": "REPLACE"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "identifier": "gov.ntis.AVA19272",
+      "filename": "ava19272.vnb1_512kb.mp4",
+      "size": 66723811,
+      "sha256": "f0fc5f4add6b38daa88045d6bb300acda25ddb512b766a99e099d5303f6f50f9",
+      "archiveMd5": "33f56edc98abaad43243d760b10130d3",
+      "downloadUrl": "https://archive.org/download/gov.ntis.AVA19272/ava19272.vnb1_512kb.mp4",
+      "retrievedAt": "2026-10-27T01:43:12.408670+00:00"
+    },
+    {
+      "identifier": "gov.ntis.a19389vnb1",
+      "filename": "a19389vnb1_512kb.mp4",
+      "size": 91206148,
+      "sha256": "ea080c65c7af8e5179811fa61b76edaa854fcaa32cda7829d48271a9ea388d05",
+      "archiveMd5": "435a80acb48573cb574f9994f7ad2a3c",
+      "downloadUrl": "https://archive.org/download/gov.ntis.a19389vnb1/a19389vnb1_512kb.mp4",
+      "retrievedAt": "2026-10-27T01:43:34.658659+00:00"
+    },
+    {
+      "identifier": "gov.ntis.ava17096vnb1",
+      "filename": "gov.ntis.ava17096vnb1_512kb.mp4",
+      "size": 75247312,
+      "sha256": "790771c540fe672087fd2a9a1c85cf6cced201939659b8092b283e42a8eba061",
+      "archiveMd5": "387f0e8407cad4b3f27c7b4a3a74e059",
+      "downloadUrl": "https://archive.org/download/gov.ntis.ava17096vnb1/gov.ntis.ava17096vnb1_512kb.mp4",
+      "retrievedAt": "2026-10-27T01:43:23.436336+00:00"
+    }
+  ]
+}

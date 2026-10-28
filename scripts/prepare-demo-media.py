@@ -84,6 +84,10 @@ def validate(manifest, output):
             raise ValueError(f'{relative}: sourceUrl must be an HTTP(S) source page.')
         if document['version'] == 2:
             approved(item)
+            # Templates mark unreviewed text with REPLACE; approving one must not publish it.
+            placeholders = [k for k, v in item.items() if isinstance(v, str) and 'REPLACE' in v]
+            if placeholders:
+                raise ValueError(f'{relative}: replace placeholder text in {", ".join(sorted(placeholders))}.')
             for field in ('licenseUrl', 'modifications', 'attribution'):
                 value = item.get(field)
                 if value is not None and (not isinstance(value, str) or not value.strip()):

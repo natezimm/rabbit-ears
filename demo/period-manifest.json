@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "videos": [
+    {
+      "source": "originals/gov.ntis.AVA19272/ava19272.vnb1_512kb.mp4",
+      "channel": "Robotics",
+      "title": "Robot Reality",
+      "year": 1990,
+      "creator": "National Institute for Occupational Safety and Health (NIOSH); additional contributors listed in original credits",
+      "sourceUrl": "https://archive.org/details/gov.ntis.AVA19272",
+      "license": "Public domain according to Internet Archive item metadata; third-party rights not independently confirmed",
+      "licenseUrl": "https://archive.org/details/gov.ntis.AVA19272",
+      "clipStartSeconds": 180,
+      "clipDurationSeconds": 240,
+      "framing": "preserve",
+      "modifications": "Excerpt 03:00\u201307:00; transcoded to H.264/AAC with original framing and sound retained; displayed through the demo CRT effect.",
+      "rightsEvidence": "Owner authorized use for the personal portfolio demo on 2026-10-28 relying on Internet Archive public-domain labels and accepting the documented uncertainty. This is a release decision, not agency permission or legal clearance. Mixed-source film: credits identify third-party artwork and corporate footage; see docs/period-media-review.md",
+      "approvedForPublicDemo": true,
+      "reviewedBy": "Project owner \u2014 release decision recorded in project conversation",
+      "reviewedAt": "2026-10-28",
+      "attribution": "National Institute for Occupational Safety and Health (NIOSH); additional contributors listed in original credits. Source: Internet Archive / FedFlix. Edited excerpt; no agency endorsement implied."
+    },
+    {
+      "source": "originals/gov.ntis.ava17096vnb1/gov.ntis.ava17096vnb1_512kb.mp4",
+      "channel": "Weather",
+      "title": "Awesome Power",
+      "year": 1988,
+      "creator": "National Oceanic and Atmospheric Administration",
+      "sourceUrl": "https://archive.org/details/gov.ntis.ava17096vnb1",
+      "license": "Public domain according to Internet Archive item metadata; third-party rights not independently confirmed",
+      "licenseUrl": "https://archive.org/details/gov.ntis.ava17096vnb1",
+      "clipStartSeconds": 180,
+      "clipDurationSeconds": 240,
+      "framing": "preserve",
+      "modifications": "Excerpt 03:00\u201307:00; transcoded to H.264/AAC with original framing and sound retained; displayed through the demo CRT effect.",
+      "rightsEvidence": "Owner authorized use for the personal portfolio demo on 2026-10-28 relying on Internet Archive public-domain labels and accepting the documented uncertainty. This is a release decision, not agency permission or legal clearance. Producer/station footage and excerpt reuse require clarification; see docs/period-media-review.md",
+      "approvedForPublicDemo": true,
+      "reviewedBy": "Project owner \u2014 release decision recorded in project conversation",
+      "reviewedAt": "2026-10-28",
+      "attribution": "National Oceanic and Atmospheric Administration. Source: Internet Archive / FedFlix. Edited excerpt; no agency endorsement implied."
+    },
+    {
+      "source": "originals/gov.ntis.a19389vnb1/a19389vnb1_512kb.mp4",
+      "channel": "Nature",
+      "title": "Of Ice and Fire - The Mono Basin",
+      "year": 1992,
+      "creator": "United States Forest Service",
+      "sourceUrl": "https://archive.org/details/gov.ntis.a19389vnb1",
+      "license": "Public domain according to Internet Archive item metadata; third-party rights not independently confirmed",
+      "licenseUrl": "https://archive.org/details/gov.ntis.a19389vnb1",
+      "clipStartSeconds": 180,
+      "clipDurationSeconds": 240,
+      "framing": "preserve",
+      "modifications": "Excerpt 03:00\u201307:00; transcoded to H.264/AAC with original framing and sound retained; displayed through the demo CRT effect.",
+      "rightsEvidence": "Owner authorized use for the personal portfolio demo on 2026-10-28 relying on Internet Archive public-domain labels and accepting the documented uncertainty. This is a release decision, not agency permission or legal clearance. Original score and additional music reuse basis unresolved; see docs/period-media-review.md",
+      "approvedForPublicDemo": true,
+      "reviewedBy": "Project owner \u2014 release decision recorded in project conversation",
+      "reviewedAt": "2026-10-28",
+      "attribution": "United States Forest Service. Source: Internet Archive / FedFlix. Edited excerpt; no agency endorsement implied."
+    }
+  ]
+}
