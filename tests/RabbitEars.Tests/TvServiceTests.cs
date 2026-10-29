@@ -55,6 +55,35 @@ public sealed class TvServiceTests : IDisposable
         Service(new DemoOptions { Enabled = true, MaxTvs = maxTvs, IdleMinutes = 15 });
 
     [Fact]
+    public void Demo_connections_are_bounded_before_rooms_are_allocated()
+    {
+        var tv = Service(new DemoOptions { Enabled = true, MaxConnections = 3, MaxConnectionsPerRoom = 2 });
+        Assert.NotNull(tv.Join("visitor-a"));
+        Assert.NotNull(tv.Join("visitor-a"));
+        Assert.Null(tv.Join("visitor-a"));
+        Assert.NotNull(tv.Join("visitor-b"));
+        Assert.Null(tv.Join("visitor-c"));
+        Assert.Equal(2, tv.RoomCount);
+        tv.Leave("visitor-a");
+        Assert.NotNull(tv.Join("visitor-c"));
+    }
+
+    [Fact]
+    public async Task Rejected_tapes_preserve_playback_and_budget_recovers()
+    {
+        var tv = DemoService();
+        tv.Join("visitor-a");
+        TapeShelf[] shelves = [new(null, [new("0000000a", "Tape")])];
+        for (var i = 0; i < 6; i++) Assert.True(await tv.LoadTapes(shelves, "visitor-a", "tab"));
+        var before = tv.Snapshot("visitor-a")!;
+        Assert.False(await tv.LoadTapes([new(null, [new("0000000b", "Other")])], "visitor-a", "tab"));
+        Assert.Equal(before.Playing, tv.Snapshot("visitor-a")!.Playing);
+        Assert.False(await tv.LoadTapes(null, "visitor-a", "tab"));
+        _clock.Advance(TimeSpan.FromMinutes(1));
+        Assert.True(await tv.LoadTapes(shelves, "visitor-a", "tab"));
+    }
+
+    [Fact]
     public async Task New_demo_rooms_use_known_lengths_on_their_first_snapshot_and_keep_controls_isolated()
     {
         var service = Service(new DemoOptions { Enabled = true }, new FakeProbe(1000));

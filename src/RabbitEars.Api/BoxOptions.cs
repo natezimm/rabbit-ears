@@ -76,6 +76,12 @@ public sealed record PlayerInfo(string Kind, string Socket);
 /// </summary>
 public sealed class DemoOptions
 {
+    public int MaxConnections { get; set; } = 30;
+    public int MaxConnectionsPerRoom { get; set; } = 3;
+    public int MaxMediaResponses { get; set; } = 20;
+    public int MaxMediaResponsesPerAddress { get; set; } = 4;
+    /// <summary>Aggregate hosted-video budget, bytes per second (20 Mbit/s by default).</summary>
+    public int MediaBytesPerSecond { get; set; } = 2_500_000;
     public bool Enabled { get; set; }
 
     /// <summary>Require approved v2 metadata for mounted public media; generated clips do not need it.</summary>
@@ -85,10 +91,10 @@ public sealed class DemoOptions
     public bool SynchronizedBroadcast { get; set; } = true;
 
     /// <summary>Televisions on at once; past this the one left unwatched longest is switched off.</summary>
-    public int MaxTvs { get; set; } = 100;
+    public int MaxTvs { get; set; } = 10;
 
     /// <summary>How long a television nobody is watching stays on, so a reload comes back to it.</summary>
-    public double IdleMinutes { get; set; } = 15;
+    public double IdleMinutes { get; set; } = 5;
 }
 
 /// <summary>

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { encode } from 'uqr';
 
 import { DemoCredit } from '../core/models';
-import { FoundFile, TapeDeck, fromDrop, fromPicker } from '../core/tape-deck';
+import { TapeDeck, fromDrop, fromPicker } from '../core/tape-deck';
 import { TvLink } from '../core/tv-link';
 import { Remote } from '../remote/remote';
 import { TvScreen } from '../tv/tv-screen';
@@ -25,7 +25,6 @@ export class Demo {
   protected readonly credits = signal<DemoCredit[]>([]);
   protected readonly tapes = inject(TapeDeck);
   protected readonly dragging = signal(false);
-  protected readonly vcrNote = signal<string | null>(null);
 
   constructor() {
     void fetch('/api/demo/credits').then(async response => {
@@ -44,18 +43,18 @@ export class Demo {
     if (!event.dataTransfer?.types.includes('Files')) return;
     event.preventDefault();
     this.dragging.set(false);
-    this.insert(await fromDrop(event.dataTransfer.items));
+    const items = event.dataTransfer.items;
+    await this.tapes.insert(cancel => fromDrop(items, cancel));
   }
 
   protected onPick(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (input.files?.length) this.insert(fromPicker(input.files));
+    if (input.files?.length) {
+      const files = input.files;
+      void this.tapes.insert(() => fromPicker(files));
+    }
     // Picking the same files again should load them again.
     input.value = '';
-  }
-
-  private insert(found: FoundFile[]): void {
-    this.vcrNote.set(this.tapes.insert(found) ? null : 'No videos there. Try MP4 or WebM files.');
   }
 
   protected readonly remoteUrl = `${location.origin}/remote?room=${encodeURIComponent(this.link.room)}`;

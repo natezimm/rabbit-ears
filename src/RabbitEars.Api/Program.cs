@@ -12,6 +12,7 @@ builder.Services.AddSingleton(options);
 builder.Services.AddSingleton<LibraryScanner>();
 builder.Services.AddSingleton<ChannelCatalog>();
 builder.Services.AddSingleton<DemoMedia>();
+builder.Services.AddSingleton<DemoMediaBudget>();
 builder.Services.AddSingleton<StateFile>();
 builder.Services.AddSingleton<IEpisodeProbe, FfprobeEpisodeProbe>();
 builder.Services.AddSingleton<TvService>();
@@ -20,11 +21,45 @@ builder.Services.AddHostedService(services => services.GetRequiredService<TvServ
 builder.Services.AddSingleton<MpvScreen>();
 builder.Services.AddHostedService<MpvPlayer>();
 builder.Services.AddSignalR();
-builder.Services.AddClientRateLimit(options.RateLimit);
+builder.Services.AddClientRateLimit(options.RateLimit, options.Demo.Enabled);
+if (options.Demo.Enabled)
+{
+    builder.WebHost.ConfigureKestrel(server =>
+    {
+        server.Limits.MaxConcurrentConnections = 100;
+        server.Limits.MaxConcurrentUpgradedConnections = 30;
+        server.Limits.MaxRequestBodySize = 32 * 1024;
+        server.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(10);
+    });
+}
 
 var app = builder.Build();
 
 app.UseClientRateLimit(options.RateLimit);
+if (options.Demo.Enabled)
+{
+    app.Use(async (context, next) =>
+    {
+        if (!context.Request.Path.StartsWithSegments("/media")) { await next(context); return; }
+        // Multiple ranges are unnecessary for the player and can amplify work.
+        var range = context.Request.Headers.Range.ToString();
+        if (range.Length > 128 || range.Contains(','))
+        {
+            DemoMetrics.Reject("media_ranges");
+            context.Response.StatusCode = StatusCodes.Status416RangeNotSatisfiable;
+            return;
+        }
+        using var lease = context.RequestServices.GetRequiredService<DemoMediaBudget>()
+            .Enter(ClientRateLimit.ClientKey(context.Connection.RemoteIpAddress));
+        if (lease is null)
+        {
+            context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            context.Response.Headers.RetryAfter = "5";
+            return;
+        }
+        await next(context);
+    });
+}
 
 // A visitor to the public demo arrives at the bare address; show them the TV, not the remote.
 if (options.Demo.Enabled)
@@ -64,10 +99,12 @@ app.MapPost("/api/rescan", async (TvService tv) =>
 
 // Episodes are addressed by id, never by path, and only scanned files resolve.
 // Range support is what lets the screen jump straight into the middle of one.
-app.MapGet("/media/{id}", (string id, TvService tv) =>
-    tv.FindMedia(id) is { } path
-        ? Results.File(path, ContentTypeFor(path), enableRangeProcessing: true)
-        : Results.NotFound());
+app.MapMethods("/media/{id}", ["GET", "HEAD"], (string id, TvService tv, DemoMediaBudget budget) =>
+{
+    if (tv.FindMedia(id) is not { } path) return Results.NotFound();
+    if (!options.Demo.Enabled) return Results.File(path, ContentTypeFor(path), enableRangeProcessing: true);
+    return Results.Stream(new BudgetedMediaStream(File.OpenRead(path), budget), ContentTypeFor(path), enableRangeProcessing: true);
+});
 
 app.MapHub<TvHub>("/hub/tv");
 app.MapChannelAdmin(options);

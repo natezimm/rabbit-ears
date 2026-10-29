@@ -80,3 +80,9 @@ docker build -t rabbit-ears . && docker run --rm -p 8080:8080 rabbit-ears
 ```
 
 Then open <http://localhost:8080>.
+
+## Resource protection
+
+The demo has bounded local tape loading, room/connection admission and hosted-media
+traffic. See [limits and deployment checks](protection.md) before rolling out the
+trial CPU/PID budgets on a shared VM.

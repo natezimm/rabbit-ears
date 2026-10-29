@@ -124,7 +124,7 @@ from the repo root.
 site. `TvService` then runs one `Television` per room instead of one for the
 house: the browser makes up a room id (`tv-link.ts`, kept in `localStorage` or
 taken from `?room=`), the hub joins the matching SignalR group, and snapshots go
-to that group only. Nothing is saved, idle rooms are switched off, `/api/rescan`
+to that group only. Nothing is saved, disconnected idle rooms are removed, `/api/rescan`
 is off, and `/` redirects to `/demo` (TV, remote and QR code on one page).
 The demo page's VCR (`core/tape-deck.ts`) plays a visitor's own files from blob
 URLs: the hub's `LoadTapes` gets only random ids and names, and `Tapes.cs` turns
@@ -132,7 +132,12 @@ them into extra channels for that room (one per show folder, loose files on
 CH 00). Tape episode ids start with `tape-`, which the TV page resolves locally.
 Only the loading tab can play them, so they come out when its connection drops
 and it sends them again, without retuning, after a reconnect. At
-home the room id is ignored and everything behaves as before. Demo mode is not
+home the room id is ignored and everything behaves as before. Demo tape selections
+are bounded to 5 files/3 channels; browser size/duration checks keep media local.
+`LoadTapes` acknowledges acceptance before the browser releases old URLs.
+`DemoMediaBudget` bounds direct media concurrency and aggregate reads; room and
+connection admission live in `TvService`. See `demo/protection.md` for budgets
+and rollout checks. Demo mode is not
 authentication and must not grow into it.
 
 **Kept in sync by hand:** `web/src/app/core/models.ts` mirrors the records in

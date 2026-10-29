@@ -25,10 +25,9 @@ public static class Tapes
     public const string VcrName = "VCR";
     public const int VcrNumber = 0;
 
-    // Enough for a real library, small enough that a stranger cannot use the box
-    // as storage. The browser also keeps the whole list inside one hub message.
-    public const int MaxShelves = 30;
-    public const int MaxTapes = 500;
+    // A small portfolio demo selection; files themselves never reach the server.
+    public const int MaxShelves = 3;
+    public const int MaxTapes = 5;
     public const int MaxNameLength = 80;
     public const int MaxTitleLength = 120;
 

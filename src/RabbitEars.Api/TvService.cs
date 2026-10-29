@@ -43,6 +43,7 @@ public sealed partial class TvService : BackgroundService
     private readonly DemoMedia _demoMedia;
     private IReadOnlyList<DemoCredit> _credits = [];
     private readonly Dictionary<string, Room> _rooms = [];
+    private readonly DemoWindowBudget _creation = new();
 
     // Episode lengths found by probing, handed to every television including ones made later.
     private readonly Dictionary<string, double> _lengths = [];
@@ -96,7 +97,7 @@ public sealed partial class TvService : BackgroundService
     /// and counts the connection so the room is not cleared away under it.
     /// Returns null when the connection should be refused.
     /// </summary>
-    public string? Join(string? requested)
+    public string? Join(string? requested, string address = "unknown")
     {
         if (!Demo)
         {
@@ -107,9 +108,12 @@ public sealed partial class TvService : BackgroundService
         if (requested is null || !RoomId().IsMatch(requested)) return null;
         lock (_gate)
         {
+            if (_rooms.Values.Sum(r => r.Connections) >= _options.Demo.MaxConnections) return Refused("connections");
+            if (_rooms.TryGetValue(requested, out var existing) && existing.Connections >= _options.Demo.MaxConnectionsPerRoom) return Refused("room_connections");
             if (!_rooms.TryGetValue(requested, out var room))
             {
-                if (_rooms.Count >= _options.Demo.MaxTvs && !EvictOldestEmptyRoom()) return null;
+                if (!_creation.TryTake(address, Now, 5)) return Refused("room_creation");
+                if (_rooms.Count >= _options.Demo.MaxTvs && !EvictOldestEmptyRoom()) return Refused("rooms");
                 room = new Room(new Television(_options.Tv, _library.Channels, clock: _clock,
                     synchronizedBroadcast: _options.Demo.SynchronizedBroadcast, durations: _lengths), Now);
                 _rooms[requested] = room;
@@ -119,6 +123,12 @@ public sealed partial class TvService : BackgroundService
             room.LastActive = Now;
             return requested;
         }
+    }
+
+    private static string? Refused(string reason)
+    {
+        DemoMetrics.Reject(reason);
+        return null;
     }
 
     public void Leave(string room)
@@ -211,14 +221,21 @@ public sealed partial class TvService : BackgroundService
     /// <paramref name="owner"/> connection can play them, so they come out
     /// again when it goes. Ignored at home and for anything malformed.
     /// </summary>
-    public Task LoadTapes(IReadOnlyList<TapeShelf>? shelves, string room, string owner, bool tune = true)
+    public async Task<bool> LoadTapes(IReadOnlyList<TapeShelf>? shelves, string room, string owner, bool tune = true)
     {
-        if (!Demo) return Task.CompletedTask;
+        if (!Demo) return false;
         TvSnapshot snapshot;
         lock (_gate)
         {
             if (!_rooms.TryGetValue(room, out var found)
-                || Tapes.Channels(_library.Channels, shelves) is not { } tapes) return Task.CompletedTask;
+                || Tapes.Channels(_library.Channels, shelves) is not { } tapes) return false;
+            if (Now - found.TapeWindow >= TimeSpan.FromMinutes(1))
+            {
+                found.TapeWindow = Now;
+                found.TapeLoads = 0;
+            }
+            if (found.TapeLoads >= 6) { DemoMetrics.Reject("tape_replacements"); return false; }
+            found.TapeLoads++;
             found.Tapes = shelves!;
             found.TapeOwner = owner;
             found.LastActive = Now;
@@ -226,7 +243,8 @@ public sealed partial class TvService : BackgroundService
             if (tune) found.Tv.GoToChannel(tapes[0].Number);
             snapshot = found.Tv.Snapshot();
         }
-        return Broadcast(room, snapshot);
+        await Broadcast(room, snapshot);
+        return true;
     }
 
     /// <summary>
@@ -492,6 +510,8 @@ public sealed partial class TvService : BackgroundService
     private sealed class Room(Television tv, DateTimeOffset now)
     {
         public Television Tv { get; } = tv;
+        public DateTimeOffset TapeWindow { get; set; } = now;
+        public int TapeLoads { get; set; }
         public int Connections { get; set; }
         public DateTimeOffset LastActive { get; set; } = now;
 

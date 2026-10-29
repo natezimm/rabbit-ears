@@ -1,30 +1,20 @@
-import { Injectable, effect, inject, signal } from '@angular/core';
+import { Injectable, OnDestroy, effect, inject, signal } from '@angular/core';
 
-import { Tape, TapeShelf } from './models';
+import { TapeShelf } from './models';
 import { TvLink } from './tv-link';
 
-/** Matches `Tapes.EpisodePrefix` on the server. */
+import { FoundFile, clip, shelve, validateSelection, validateDuration } from './tape-policy';
+export { FoundFile, shelve } from './tape-policy';
 const TAPE_PREFIX = 'tape-';
-// Mirror the server's limits so a big folder is trimmed here instead of refused there.
-const MAX_SHELVES = 30;
-const MAX_TAPES = 500;
-const MAX_NAME = 80;
 const MAX_TITLE = 120;
-/** The box takes hub messages up to 32 KB; stay clear of that with room for the envelope. */
 const MAX_MESSAGE_BYTES = 28_000;
-const VIDEO_EXTENSIONS = /\.(mp4|m4v|webm|mkv|mov|ogv)$/i;
-
-/** A file and the folders it was found in, outermost first, relative to what was dropped or picked. */
-export interface FoundFile {
-  file: File;
-  folders: string[];
-}
 
 /** What the last load put on the TV, for the demo page to describe. */
 export interface TapeSummary {
   channels: number;
   tapes: number;
   skipped: number;
+  megabytes: number;
 }
 
 /**
@@ -34,10 +24,15 @@ export interface TapeSummary {
  * step, but never sees the video.
  */
 @Injectable({ providedIn: 'root' })
-export class TapeDeck {
+export class TapeDeck implements OnDestroy {
   private readonly link = inject(TvLink);
   private urls = new Map<string, string>();
   private shelves: TapeShelf[] = [];
+  private pending = new Map<string, string>();
+  private attempt: AbortController | null = null;
+  readonly progress = signal<string | null>(null);
+  readonly error = signal<string | null>(null);
+  readonly committing = signal(false);
 
   readonly loaded = signal<TapeSummary | null>(null);
 
@@ -48,7 +43,8 @@ export class TapeDeck {
     let wasConnected = this.link.connected();
     effect(() => {
       const connected = this.link.connected();
-      if (connected && !wasConnected && this.shelves.length) this.link.loadTapes(this.shelves, false);
+      if (connected && !wasConnected && this.shelves.length && !this.attempt)
+        void this.link.loadTapes(this.shelves, false).catch(() => this.error.set('Reconnect failed to restore your tapes. Please insert them again.'));
       wasConnected = connected;
     });
   }
@@ -56,42 +52,74 @@ export class TapeDeck {
   /** Where the TV should load an episode from, or null for a tape this tab no longer has. */
   source(episodeId: string): string | null {
     if (!episodeId.startsWith(TAPE_PREFIX)) return `/media/${episodeId}`;
-    return this.urls.get(episodeId.slice(TAPE_PREFIX.length)) ?? null;
+    return this.pending.get(episodeId.slice(TAPE_PREFIX.length)) ?? this.urls.get(episodeId.slice(TAPE_PREFIX.length)) ?? null;
   }
 
-  /** Put these videos on the TV, replacing any tapes already in. */
-  insert(found: FoundFile[]): TapeSummary | null {
-    const videos = found.filter(f => VIDEO_EXTENSIONS.test(f.file.name) || f.file.type.startsWith('video/'));
-    const shelves = shelve(videos);
-    if (shelves.length === 0) return null;
-
-    const files = new Map<string, File>();
-    const sent = fitMessage(shelves.map(shelf => ({
-      name: shelf.name,
-      tapes: shelf.files.map(file => {
-        const tape: Tape = { id: newId(), title: clip(file.name.replace(/\.[^.]+$/, ''), MAX_TITLE) };
-        files.set(tape.id, file);
-        return tape;
-      }),
-    })));
-
-    this.release();
-    for (const shelf of sent) {
-      for (const tape of shelf.tapes) this.urls.set(tape.id, URL.createObjectURL(files.get(tape.id)!));
+  /** Validate without disturbing playback; only replace after the server accepts. */
+  async insert(read: (cancel: AbortSignal) => FoundFile[] | Promise<FoundFile[]>): Promise<void> {
+    if (this.attempt) return;
+    const attempt = new AbortController();
+    this.attempt = attempt;
+    this.error.set(null);
+    this.progress.set('Checking your selection…');
+    try {
+      const found = await read(attempt.signal);
+      attempt.signal.throwIfAborted();
+      const videos = validateSelection(found);
+      const shelves = shelve(videos);
+      const probe = document.createElement('video');
+      for (let i = 0; i < videos.length; i++) {
+        this.progress.set(`Checking video ${i + 1} of ${videos.length}…`);
+        await probeVideo(probe, videos[i].file, attempt.signal);
+      }
+      attempt.signal.throwIfAborted();
+      const sent: TapeShelf[] = shelves.map(shelf => ({
+        name: shelf.name,
+        tapes: shelf.files.map(file => {
+          const id = newId();
+          this.pending.set(id, URL.createObjectURL(file));
+          return { id, title: clip(file.name.replace(/\.[^.]+$/, ''), MAX_TITLE) };
+        }),
+      }));
+      if (new TextEncoder().encode(JSON.stringify(sent)).length > MAX_MESSAGE_BYTES)
+        throw new Error('The video titles are too large to send. Please shorten them.');
+      this.committing.set(true);
+      this.progress.set('Inserting tapes…');
+      await this.link.loadTapes(sent, true);
+      this.release();
+      this.urls = this.pending;
+      this.pending = new Map();
+      this.shelves = sent;
+      this.loaded.set({ channels: sent.length, tapes: videos.length, skipped: found.length - videos.length,
+        megabytes: Math.round(videos.reduce((sum, v) => sum + v.file.size, 0) / 1_000_000 * 10) / 10 });
+    } catch (error) {
+      this.error.set(attempt.signal.aborted ? 'Loading cancelled. Your previous tapes are unchanged.'
+        : error instanceof Error ? error.message : 'Could not load these videos. Please try again.');
+    } finally {
+      for (const url of this.pending.values()) URL.revokeObjectURL(url);
+      this.pending.clear();
+      this.attempt = null;
+      this.committing.set(false);
+      this.progress.set(null);
     }
-    this.shelves = sent;
-    const tapes = sent.reduce((sum, shelf) => sum + shelf.tapes.length, 0);
-    const summary = { channels: sent.length, tapes, skipped: found.length - tapes };
-    this.loaded.set(summary);
-    this.link.loadTapes(sent, true);
-    return summary;
   }
 
-  eject(): void {
+  cancel(): void { if (!this.committing()) this.attempt?.abort(); }
+
+  async eject(): Promise<void> {
+    if (this.attempt) return;
+    try {
+      await this.link.ejectTapes();
+      this.release();
+      this.shelves = [];
+      this.loaded.set(null);
+      this.error.set(null);
+    } catch { this.error.set('Could not eject tapes. Please reconnect and try again.'); }
+  }
+
+  ngOnDestroy(): void {
+    this.attempt?.abort();
     this.release();
-    this.shelves = [];
-    this.loaded.set(null);
-    this.link.ejectTapes();
   }
 
   private release(): void {
@@ -105,6 +133,7 @@ export class TapeDeck {
  * Loose files from the file chooser have no folders.
  */
 export function fromPicker(files: FileList): FoundFile[] {
+  if (files.length > 1000) throw new Error('This folder has too many entries. Choose a smaller folder.');
   return Array.from(files, file => ({
     file,
     folders: (file.webkitRelativePath || file.name).split('/').slice(0, -1),
@@ -115,98 +144,67 @@ export function fromPicker(files: FileList): FoundFile[] {
  * Files and folders dropped on the page. Entries must be taken from the drop
  * event before anything awaits, or the browser empties the list.
  */
-export async function fromDrop(items: DataTransferItemList): Promise<FoundFile[]> {
+export async function fromDrop(items: DataTransferItemList, cancel: AbortSignal): Promise<FoundFile[]> {
+  // Capture entries synchronously while the drop event still owns them.
   const entries = Array.from(items, item => item.webkitGetAsEntry?.() ?? null).filter(e => e !== null);
   const found: FoundFile[] = [];
-  for (const entry of entries) await walk(entry, [], found);
+  const scan = { count: 0, deadline: performance.now() + 10_000 };
+  for (const entry of entries) await walk(entry, [], found, scan, cancel);
   return found;
 }
 
-async function walk(entry: FileSystemEntry, folders: string[], found: FoundFile[]): Promise<void> {
-  if (found.length >= MAX_TAPES * 2) return;
+async function walk(entry: FileSystemEntry, folders: string[], found: FoundFile[],
+  scan: { count: number; deadline: number }, cancel: AbortSignal): Promise<void> {
+  cancel.throwIfAborted();
+  if (++scan.count > 1000 || folders.length > 8 || performance.now() >= scan.deadline)
+    throw new Error('Folder scan limit reached. Choose a smaller or less deeply nested folder.');
+  const remaining = () => Math.max(1, scan.deadline - performance.now());
   if (entry.isFile) {
-    const file = await new Promise<File | null>(resolve => (entry as FileSystemFileEntry).file(resolve, () => resolve(null)));
-    if (file) found.push({ file, folders });
+    const file = await bounded<File>((resolve, reject) => (entry as FileSystemFileEntry).file(resolve, reject), cancel, remaining());
+    found.push({ file, folders });
     return;
   }
   const reader = (entry as FileSystemDirectoryEntry).createReader();
-  const inside = [...folders, entry.name];
-  // Directory readers hand entries over in batches until one comes back empty.
   for (;;) {
-    const batch = await new Promise<FileSystemEntry[]>(resolve => reader.readEntries(resolve, () => resolve([])));
-    if (batch.length === 0) return;
-    for (const child of batch) await walk(child, inside, found);
+    const batch = await bounded<FileSystemEntry[]>((resolve, reject) => reader.readEntries(resolve, reject), cancel, remaining());
+    if (!batch.length) return;
+    for (const child of batch) await walk(child, [...folders, entry.name], found, scan, cancel);
   }
 }
 
-interface Shelf {
-  name: string | null;
-  files: File[];
-}
-
-/**
- * Arrange videos the way the box arranges its media folder. A folder of show
- * folders becomes one channel per show (seasons inside a show stay with it); a
- * folder holding only videos becomes one channel named after it; loose files
- * go on the VCR.
- */
-export function shelve(videos: FoundFile[]): Shelf[] {
-  const byTop = new Map<string, FoundFile[]>();
-  const loose: File[] = [];
-  for (const video of videos) {
-    if (video.folders.length === 0) {
-      loose.push(video.file);
-      continue;
-    }
-    const top = video.folders[0];
-    byTop.set(top, [...(byTop.get(top) ?? []), video]);
-  }
-
-  const named = new Map<string, File[]>();
-  const add = (name: string, file: File) => {
-    const key = clip(name, MAX_NAME);
-    named.set(key, [...(named.get(key) ?? []), file]);
-  };
-  for (const [top, inside] of byTop) {
-    const isLibrary = inside.some(v => v.folders.length > 1);
-    for (const video of inside) {
-      if (!isLibrary) add(top, video.file);
-      else if (video.folders.length > 1) add(video.folders[1], video.file);
-      else loose.push(video.file);
-    }
-  }
-
-  const byName = (a: File, b: File) => a.name.localeCompare(b.name, undefined, { numeric: true });
-  const shelves: Shelf[] = [...named]
-    .sort(([a], [b]) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
-    .map(([name, files]) => ({ name, files: files.sort(byName) }));
-  if (loose.length) shelves.unshift({ name: null, files: loose.sort(byName) });
-
-  // Trim to the server's limits, keeping whole channels where possible.
-  let room = MAX_TAPES;
-  return shelves.slice(0, MAX_SHELVES).flatMap(shelf => {
-    const files = shelf.files.slice(0, room);
-    room -= files.length;
-    return files.length ? [{ ...shelf, files }] : [];
+/** All temporary event handlers and timers leave with the operation. */
+function bounded<T>(start: (resolve: (value: T) => void, reject: (reason: unknown) => void) => void,
+  cancel: AbortSignal, timeout: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const finish = (action: () => void) => { clearTimeout(timer); cancel.removeEventListener('abort', abort); action(); };
+    const abort = () => finish(() => reject(new Error('Loading cancelled.')));
+    const timer = setTimeout(() => finish(() => reject(new Error('Reading the video or folder took too long. Try a smaller selection.'))), timeout);
+    cancel.addEventListener('abort', abort, { once: true });
+    if (cancel.aborted) { abort(); return; }
+    try { start(value => finish(() => resolve(value)), error => finish(() => reject(error))); }
+    catch (error) { finish(() => reject(error)); }
   });
 }
 
-/** Drop tapes from the end until the whole list fits in one hub message. */
-function fitMessage(shelves: TapeShelf[]): TapeShelf[] {
-  const encoder = new TextEncoder();
-  const size = () => encoder.encode(JSON.stringify(shelves)).length;
-  while (shelves.length && size() > MAX_MESSAGE_BYTES) {
-    const last = shelves[shelves.length - 1];
-    last.tapes.pop();
-    if (!last.tapes.length) shelves.pop();
+async function probeVideo(video: HTMLVideoElement, file: File, cancel: AbortSignal): Promise<void> {
+  const url = URL.createObjectURL(file);
+  try {
+    video.preload = 'metadata';
+    await bounded<void>((resolve, reject) => {
+      video.onloadedmetadata = () => {
+        try { validateDuration(video.duration); resolve(); } catch (error) { reject(error); }
+      };
+      video.onerror = () => reject(new Error(`Cannot read “${file.name}”. Try MP4 with H.264 video and AAC audio.`));
+      video.src = url;
+      video.load();
+    }, cancel, 10_000);
+  } finally {
+    video.onloadedmetadata = null;
+    video.onerror = null;
+    video.removeAttribute('src');
+    video.load();
+    URL.revokeObjectURL(url);
   }
-  return shelves;
-}
-
-function clip(text: string, max: number): string {
-  // Control characters would be refused by the box; names are for display only.
-  const plain = text.replace(/\p{Cc}/gu, ' ').trim() || 'Untitled';
-  return plain.length > max ? plain.slice(0, max) : plain;
 }
 
 function newId(): string {

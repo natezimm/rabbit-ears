@@ -36,26 +36,38 @@
 
     <section class="vcr" aria-labelledby="vcr-title">
       <h2 id="vcr-title">VCR: play your own videos</h2>
-      <p>Drop videos or a folder of shows on the TV, or choose them here. They play from your computer and are never uploaded.
-        A folder of show folders becomes one channel per show; loose files go on CH 00.</p>
+      <p>Try your own videos. Files stay on your device and are never uploaded.</p>
+      <p>Up to 5 videos across 3 channels. Maximum 30 minutes and 500 MB per video; 1 GB total.</p>
+      <p>MP4 with H.264 video and AAC audio recommended. Other formats depend on your browser.</p>
+      <details>
+        <summary>How loading works</summary>
+        <p>A folder of shows becomes one channel per show; loose files go on CH 00.
+          Loading replaces your previous tapes only after validation. Keep this tab open to play them.
+          Video contents stay local; titles and channel names are sent to coordinate your phone remote.
+          Non-video files are ignored. Very large or deeply nested folders are refused.</p>
+      </details>
       <div class="vcr-buttons">
         <label class="vcr-button">Insert tapes
-          <input type="file" accept="video/*,.mkv" multiple (change)="onPick($event)" />
+          <input type="file" accept="video/*,.mkv" multiple [disabled]="!!tapes.progress()" (change)="onPick($event)" />
         </label>
         <label class="vcr-button">Load a folder
-          <input type="file" webkitdirectory multiple (change)="onPick($event)" />
+          <input type="file" webkitdirectory multiple [disabled]="!!tapes.progress()" (change)="onPick($event)" />
         </label>
         @if (tapes.loaded()) {
-          <button type="button" class="vcr-button" (click)="tapes.eject()">Eject</button>
+          <button type="button" class="vcr-button" [disabled]="!!tapes.progress()" (click)="tapes.eject()">Eject</button>
         }
       </div>
       @if (tapes.loaded(); as loaded) {
         <p role="status">{{ loaded.tapes }} {{ loaded.tapes === 1 ? 'video' : 'videos' }} on {{ loaded.channels }}
           {{ loaded.channels === 1 ? 'channel' : 'channels' }}@if (loaded.skipped) {; {{ loaded.skipped }} other files skipped}.
-          Formats your browser can't play are skipped on air.</p>
-      } @else if (vcrNote(); as note) {
-        <p role="status">{{ note }}</p>
+          {{ loaded.megabytes }} MB loaded.</p>
       }
+      @if (tapes.progress(); as progress) {
+        <p role="status">{{ progress }}</p>
+        <button type="button" class="vcr-button" [disabled]="tapes.committing()" (click)="tapes.cancel()">Cancel</button>
+      }
+      @if (tapes.error(); as error) { <p role="alert">{{ error }}</p> }
+      @if (link.unavailable(); as message) { <p role="alert">{{ message }}</p> }
     </section>
 
     <section class="phone">

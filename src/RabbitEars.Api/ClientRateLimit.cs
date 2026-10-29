@@ -22,7 +22,7 @@ namespace RabbitEars.Api;
 public static class ClientRateLimit
 {
     /// <summary>Adds the limiter, if switched on. Pair with <see cref="UseClientRateLimit"/>.</summary>
-    public static void AddClientRateLimit(this IServiceCollection services, RateLimitOptions options)
+    public static void AddClientRateLimit(this IServiceCollection services, RateLimitOptions options, bool demo = false)
     {
         if (options.TrustForwardedFor)
         {
@@ -39,7 +39,14 @@ public static class ClientRateLimit
 
         if (!options.Enabled) return;
 
-        var limiter = Create(options);
+        var limiter = demo
+            ? PartitionedRateLimiter.CreateChained(
+                PartitionedRateLimiter.Create<HttpContext, string>(_ => RateLimitPartition.GetTokenBucketLimiter("demo-global", _ => new()
+                {
+                    TokenLimit = 500, TokensPerPeriod = 100, ReplenishmentPeriod = TimeSpan.FromSeconds(1),
+                    QueueLimit = 0, AutoReplenishment = true,
+                })), Create(options))
+            : Create(options);
         services.AddSingleton(limiter);
         services.AddRateLimiter(rate =>
         {
@@ -47,6 +54,7 @@ public static class ClientRateLimit
             rate.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             rate.OnRejected = (rejected, _) =>
             {
+                DemoMetrics.Reject("requests");
                 rejected.HttpContext.Response.Headers.RetryAfter =
                     RetryAfterSeconds(rejected.Lease, options).ToString(CultureInfo.InvariantCulture);
                 return ValueTask.CompletedTask;
@@ -78,7 +86,7 @@ public static class ClientRateLimit
         return PartitionedRateLimiter.Create<HttpContext, string>(context =>
             context.Connection.RemoteIpAddress is { } address && IPAddress.IsLoopback(address)
                 ? RateLimitPartition.GetNoLimiter("loopback")
-                : RateLimitPartition.GetTokenBucketLimiter(ClientKey(context.Connection.RemoteIpAddress), _ => bucket));
+                : RateLimitPartition.GetTokenBucketLimiter(BucketKey(context.Connection.RemoteIpAddress), _ => bucket));
     }
 
     /// <summary>
@@ -96,6 +104,11 @@ public static class ClientRateLimit
         Array.Clear(bytes, 8, 8);
         return new IPAddress(bytes) + "/64";
     }
+
+    // A fixed number of partitions bounds memory even when addresses churn. Hash
+    // collisions share an allowance; this deliberately favors a bounded host.
+    private static string BucketKey(IPAddress? address) =>
+        ((uint)StringComparer.Ordinal.GetHashCode(ClientKey(address)) % 1024).ToString(CultureInfo.InvariantCulture);
 
     private static int RetryAfterSeconds(RateLimitLease lease, RateLimitOptions options)
     {
