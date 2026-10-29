@@ -12,7 +12,9 @@ Video bytes never reach the server. Size/duration checks protect the visitor's
 device, not the VM. The server independently validates IDs, titles, 5 files,
 3 channels and the SignalR message-size limit. The existing tapes stay available
 through preflight and server rejection. The two-player renderer still owns
-seeking and playback; no transcoding is added. A codec can pass metadata checks
+seeking and playback; no transcoding is added. VCR channels resume their
+server-tracked position after tuning away, rather than adopting the public
+stations’ UTC broadcast clock. A codec can pass metadata checks
 and fail during playback; the VCR shows a conversion/eject suggestion and the
 existing Television failure limit prevents an endless loop.
 

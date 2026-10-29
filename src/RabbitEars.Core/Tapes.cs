@@ -67,7 +67,7 @@ public static class Tapes
                 s.Name is null ? VcrNumber : next++,
                 s.Name ?? VcrName,
                 [.. s.Tapes.Select(t => new Episode(EpisodePrefix + t.Id, t.Title))],
-                KeyPrefix + s.Name))];
+                KeyPrefix + s.Name, TuneInMode.Resume))];
     }
 
     // Ids are made up by the browser: plain lowercase hex, so they are safe in any URL or log line.

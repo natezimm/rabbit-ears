@@ -108,6 +108,9 @@ export class TapeDeck implements OnDestroy {
 
   async eject(): Promise<void> {
     if (this.attempt) return;
+    this.attempt = new AbortController();
+    this.committing.set(true);
+    this.progress.set('Ejecting tapes…');
     try {
       await this.link.ejectTapes();
       this.release();
@@ -115,6 +118,11 @@ export class TapeDeck implements OnDestroy {
       this.loaded.set(null);
       this.error.set(null);
     } catch { this.error.set('Could not eject tapes. Please reconnect and try again.'); }
+    finally {
+      this.attempt = null;
+      this.committing.set(false);
+      this.progress.set(null);
+    }
   }
 
   ngOnDestroy(): void {
