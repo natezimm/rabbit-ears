@@ -120,11 +120,11 @@ covers those. Version 1 remains a local compatibility path, not a public release
    soundtrack, and prepare short review clips with source hashes and accurate
    credits. Reject poor transfers, silence, uncertain dates and unsuitable rights.
 2. Record approved selections in a private copy of
-   [the generic manifest](../demo/media-manifest.example.json). The modern-film
+   [the generic manifest](../../demo/media-manifest.example.json). The modern-film
    candidate manifest has been removed. Review footage date separately from the
    upload or compilation date; preserve native framing and original sound.
 3. Prepare the approved files with `scripts/prepare-demo-media.py` and deploy a
-   new library using [the existing guide](../demo/real-media.md). Verify credits,
+   new library using [the existing guide](../../demo/real-media.md). Verify credits,
    range requests, phone control and isolated rooms. Keep port **8620** and the
    generated rollback library. A merge alone does not publish any videos.
 4. Expand the lineup using additional verified 1980–1999 recordings. Keep modern

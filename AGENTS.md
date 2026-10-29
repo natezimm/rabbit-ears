@@ -49,6 +49,10 @@ dotnet test --filter "FullyQualifiedName~ShuffleDeckTests"                      
 
 ## Architecture
 
+Diagrams of all this are in `docs/architecture.md` and the reasons in
+`docs/adr/`; update them when a change alters the shape they describe.
+Finished plans live in `docs/archive/`.
+
 **The server is the only source of truth.** The TV page and the phone remote send
 button presses and render whatever state comes back. Neither holds its own idea
 of the channel or volume, which is why they cannot disagree.

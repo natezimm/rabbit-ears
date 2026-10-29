@@ -5,11 +5,11 @@ the owner authorized the three 03:00–07:00 excerpts for the personal portfolio
 demo based on the archive labels, accepting the documented rights uncertainty.
 `demo/period-manifest.json` records that release decision; the example stays
 unapproved. No agency clearance or complete watch/listen is claimed. See
-[the current decision and historical review](period-media-review.md).
+[the current decision and historical review](../period-media-review.md).
 
 The release uses original sound and framing through the existing server playback
 path. VM activation and public playback verification remain pending. See
-[the executable runbook](../demo/period-lineup.md).
+[the executable runbook](../../demo/period-lineup.md).
 
 The following original plan is retained as history; its agency-clearance holds
 are superseded by the owner's decision above.

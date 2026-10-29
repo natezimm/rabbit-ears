@@ -1,24 +1,98 @@
 # Rabbit Ears
 
-A 90s TV for the living room, built with Angular and ASP.NET Core.
+A 90s TV for the living room: folders of old shows become channels on a curved
+CRT picture, driven by a remote. ASP.NET Core (.NET 10), Angular 22, WebGL and mpv.
 
-Folders of old shows and movies become **channels**. Flip to one and something
-is already playing; when it ends the next one rolls on an endless shuffle.
-The picture is bent like a tube TV (bulged glass, rounded corners, scanlines),
-with a chunky green `CH 03` banner and a bars-and-dots volume display. No menus,
-no apps: just a remote and channels.
-
-It runs on a mini PC under Linux: one small service that owns the TV, and mpv
-playing the shows full screen, exactly as they were downloaded. On a laptop and
-on the demo site, a browser page draws the same picture instead.
-
-There is a public demo site where every visitor gets a TV of their own; scan
-the QR code beside it to use your phone as the remote. It plays clips made for
-it, since real shows cannot be put on a public website.
+[![CI](https://github.com/natezimm/rabbit-ears/actions/workflows/ci.yml/badge.svg)](https://github.com/natezimm/rabbit-ears/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Live demo](https://img.shields.io/badge/demo-rabbitears.nathanzimmerman.com-3DFF6E)](https://rabbitears.nathanzimmerman.com)
 
 ![Flipping channels on the demo site: the curved picture, the green channel banner and volume bar, and the remote beside it following along](docs/demo.gif)
 
-## Run it on your laptop
+**[Try the live demo](https://rabbitears.nathanzimmerman.com)**. Every visitor
+gets a TV of their own; scan the QR code beside it to use your phone as the
+remote. It plays clips cleared for a public site, since real shows cannot be.
+
+## What it does
+
+- Each folder of shows or movies is a **channel**. Flip to one and something is
+  already playing; when it ends the next one rolls on an endless shuffle.
+- Channels keep **broadcasting while you watch another** (`Live`), or pick up
+  where you left them (`Resume`), or start fresh each time (`Random`).
+- The picture is bent like a tube TV (bulged glass, rounded corners,
+  scanlines), with a chunky green `CH 03` banner and a bars-and-dots volume
+  display.
+- An IR remote (through a Flirc receiver) and a phone remote drive the same TV
+  and can never disagree. No menus, no apps, no accounts.
+- On the box, mpv plays the original files in any common format; the browser
+  page draws the same picture on a laptop and on the demo site.
+- The demo's **VCR** plays a visitor's own videos on extra channels without
+  uploading them anywhere.
+
+## Engineering highlights
+
+- **The server is the only source of truth.** `Television` is a pure state
+  machine with injected time and randomness, unit tested by single-stepping
+  it; clients send presses and render full snapshots
+  ([ADR 0001](docs/adr/0001-server-is-the-only-source-of-truth.md),
+  [`Television.cs`](src/RabbitEars.Core/Television.cs)).
+- **Play tokens and sequence counters** make the screen's reports safe to
+  arrive late, twice or out of order, and let any one snapshot rebuild the
+  whole display ([ADR 0002](docs/adr/0002-play-tokens-and-sequence-counters.md)).
+- **One picture, two renderers.** A WebGL shader in the browser and the same
+  tube maths as an mpv hook shader on the box, with mpv driven over its JSON IPC
+  socket ([ADR 0003](docs/adr/0003-mpv-on-the-box-browser-as-fallback.md),
+  [`MpvScreen.cs`](src/RabbitEars.Api/MpvScreen.cs),
+  [`crt-shader.ts`](web/src/app/tv/crt-shader.ts)).
+- **No dead frames.** Two `<video>` elements swap so the next episode is loaded
+  and seeked before the cut ([`tube.ts`](web/src/app/tv/tube.ts)).
+- **A public demo without accounts.** Per-visitor rooms, a shared UTC broadcast
+  clock, idle cleanup and per-address rate limits, deliberately not
+  authentication ([ADR 0004](docs/adr/0004-demo-rooms-are-not-authentication.md)).
+- **Contracts checked by tests.** `ModelSyncTests` fails when the TypeScript
+  models drift from the C# records the server sends.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  Remote["Phone remote"] -->|"button presses"| Hub["TvHub<br/>SignalR"]
+  Hub --> Service["TvService<br/>one lock, broadcast on change"]
+  Service --> Television["Television<br/>pure state machine"]
+  Service --> Disk[("Media folders<br/>state.json")]
+  Hub -->|"full snapshots"| Remote
+  Hub -->|"full snapshots"| TvPage["Browser TV page<br/>WebGL CRT shader"]
+  TvPage -->|"ended, failed, position<br/>+ play token"| Hub
+  Service <-->|"snapshots in,<br/>end-file events out"| Mpv["mpv on the box<br/>IPC socket + CRT shader"]
+  Flirc["IR remote via Flirc"] -->|"key presses"| Mpv
+  Flirc -.->|"or, in a browser"| TvPage
+
+  classDef server fill:#ffedd5,stroke:#c2410c,color:#7c2d12
+  classDef client fill:#dcfce7,stroke:#15803d,color:#14532d
+  classDef data fill:#fef3c7,stroke:#b45309,color:#78350f
+  classDef external fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+  class Remote,Flirc,TvPage client
+  class Hub,Service,Television server
+  class Disk data
+  class Mpv external
+```
+
+[docs/architecture.md](docs/architecture.md) has the system context, the
+button-press sequence with play tokens, demo-mode rooms and the delivery
+pipeline. Decisions are recorded in [docs/adr/](docs/adr/).
+
+## Tech stack
+
+| Layer | Technology |
+| --- | --- |
+| Server | ASP.NET Core minimal APIs and SignalR on .NET 10 |
+| Web | Angular 22 (standalone, signals, zoneless), WebGL shader |
+| Box screen | mpv over its JSON IPC socket, a GLSL hook shader, ASS overlay text |
+| Media | ffprobe for lengths, ffmpeg for test clips and conversion |
+| Tests | xUnit, Playwright (desktop and phone), Python `unittest` |
+| Delivery | GitHub Actions, Docker, nginx, systemd |
+
+## Run it locally
 
 You need the .NET 10 SDK, Node 22 or newer, and ffmpeg (for the test shows).
 
@@ -37,196 +111,67 @@ To try it with real shows, point it at a folder that has one subfolder per show:
 Box__MediaRoot="/path/to/shows" bash scripts/dev.sh --no-build
 ```
 
-Run the tests with:
-
-```bash
-dotnet test
-```
-
-Run the desktop/phone browser regression suite with `(cd web && npm run test:browser)`
-after installing Chromium. [Browser test instructions](docs/browser-tests.md)
-cover setup, individual runs, and the CI report/traces.
-
-## The remote
-
-The TV page takes plain key presses, which is what a Flirc USB receiver sends.
-Program the Flirc with its **Full Keyboard** profile:
-
-| Key | Remote button | What it does |
-| --- | --- | --- |
-| Up / Down | Channel up / down | Next / previous channel, wrapping around |
-| Right / Left | Volume up / down | One step per press; held buttons do not repeat |
-| `m` | Mute | Mute |
-| `p` | Power | Standby (the picture collapses to a line, like a tube switching off) |
-| `0`–`9` | Number keys | Tune straight to a channel; Enter/OK skips the short wait |
-| `i` | Info | Flash the channel banner |
-| `l` | Last | Jump back to the previous channel |
-
-Volume-down once more at 0 says `GOODBYE` and shuts the box down cleanly when
-`PowerOffAtZeroVolume` is on (it is in the mini PC config), so it is safe to pull
-the plug.
-
-The phone remote at `/remote` has the same buttons plus a channel list. It and
-the TV both just draw what the box says is on, so they cannot disagree.
-
-At home, choose **Manage channels** on the remote or open `/admin` to rename,
-number, hide, and filter channels and set each channel's tune-in behavior.
-See [channel administration](docs/channel-administration.md). Metadata is saved
-separately from media folders; renaming a display label preserves playback.
-
-## Shows and movies
-
-One folder per channel; the folder name is the channel name. Season subfolders
-are fine. Channels are numbered from 2 in A-to-Z order.
-
-```text
-/srv/rabbitears/media/
-  Arthur/                 -> CH 02  Arthur
-    Season 1/S01E01.mp4
-  Disney Movies/          -> CH 03  Disney Movies
-    The Lion King.mp4
-    Aladdin.mp4
-  Dragon Tales/           -> CH 04  Dragon Tales
-    S01E01.mp4
-```
-
-A folder of movies is a channel like any other: each film takes its turn in the
-shuffle. With the default `Live` setting every channel keeps broadcasting while
-you watch another one, like real TV: flip away for five minutes and the show is
-five minutes further on when you come back, or onto its next episode. `Resume`
-instead picks up exactly where you left it, which some prefer for films.
-
-On the box, mpv plays the files as they are: MKV, AVI, MP4, MPEG and the other
-common rip formats, with no converting. The browser TV page (the laptop and the
-demo site) only plays H.264 + AAC in MP4, or WebM, and `GET /api/library` lists
-any files it cannot play. To make a library the browser can play too, convert
-it once, keeping its folder layout:
-
-```bash
-bash scripts/convert-media.sh /path/to/originals /path/to/converted
-```
-
-New episodes and new show folders are picked up within ten minutes, or at once
-with `curl -X POST http://localhost:5080/api/rescan`.
-
-## Settings
-
-Everything is in the `Box` section of
-[`src/RabbitEars.Api/appsettings.json`](src/RabbitEars.Api/appsettings.json).
-On the mini PC, override settings in `/etc/rabbitears/box.env` instead (names
-joined with two underscores) and restart the service. The ones worth knowing:
-
-| Setting | Default | |
-| --- | --- | --- |
-| `Tv.TuneIn` | `Live` | `Live`: channels keep running while you are away, rolling into later episodes. `Resume`: a channel picks up exactly where you left it. `Random`: every flip starts a fresh shuffled episode. |
-| `Tv.StartOffsetMin` / `Max` | `6` / `10` | A new episode starts this many seconds in, so it feels already on. |
-| `Picture.Transition` | `none` | Channel-change effect: `none`, `static` (analog snow) or `glitch`. |
-| `Picture.Crt.*` | see the file | `Curvature`, `CornerRadius`, `Vignette`, `ScanlineIntensity`. `Enabled: false` shows the plain video with no shader at all, the lightest option for a weak graphics chip. |
-| `Picture.Osd.Color` | `#3DFF6E` | The phosphor green. |
-| `Tv.InitialVolume` / `VolumeStep` | `60` / `5` | |
-| `Ffprobe` | `ffprobe` | Reads each episode's length from its file header so `Live` channels know when to roll to the next episode. Without it, lengths are learned as episodes play. |
-| `Player.Kind` | `mpv` | What draws the box's screen: `mpv` plays any format, `browser` is the `/tv` page in Chromium (MP4 and WebM only). Takes effect at the next login. |
-
-## Put it on the mini PC
-
-Written for Ubuntu Desktop; the box it is meant for runs Ubuntu 26 on an Intel
-mini PC. The full walk-through, with what to expect at each step and what to do
-when something is off, is [docs/box-setup.md](docs/box-setup.md). In short:
-
-1. On the box, turn on remote login:
-
-   ```bash
-   sudo apt update && sudo apt install -y openssh-server
-   ```
-
-2. On your laptop, build a self-contained copy (the box needs no .NET or Node),
-   send it over and install it. Re-running this is also how you update:
-
-   ```bash
-   bash scripts/deploy.sh YOU@rabbitears.local
-   ```
-
-   The installer starts the service on boot, opens the TV full screen at login,
-   installs mpv and ffmpeg (and Chromium, if there is no browser), and stops the screen
-   blanking or locking. Anything it could not do itself is listed at the end.
-3. On the box, turn on **Settings > System > Users > Automatic Login**, set the
-   display to 1080p, and pick the TV as the sound output.
-4. Copy shows into `/srv/rabbitears/media/` and reboot.
-
-The install scripts have been rehearsed on the laptop but **not yet run on the
-real box**; expect to adjust them on first contact with the hardware.
-
-## The demo site
-
-The [`Dockerfile`](Dockerfile) builds the whole thing into one container in
-demo mode (`Box:Demo:Enabled`): every browser picks its own room id, so each
-visitor gets a separate TV that nobody else can change. Nothing is saved, idle
-TVs switch off after 15 minutes, and the clips are generated at build time by
-`scripts/make-dev-media.sh`. `/` opens `/demo`, which puts the TV, a remote and
-a QR code for a phone remote on one page.
+To run the public demo's container instead:
 
 ```bash
 docker build -t rabbit-ears . && docker run --rm -p 8080:8080 rabbit-ears
 ```
 
-[demo/README.md](demo/README.md) has the steps for hosting it on a server
-behind nginx.
+[Using the box](docs/using-the-box.md) covers the remote's keys, how folders
+become channels, converting a library for the browser, and settings.
 
-The shared-VM Compose configuration uses localhost port **8620**. To replace
-generated clips with cleared real content, follow [the media preparation and
-mount guide](demo/real-media.md). The [plan](docs/channel-and-demo-plan.md)
-records both this workflow and the home channel editor.
+## Tests and quality
 
-Public-demo source selection is limited to footage produced in **1980–1999 (inclusive)**,
-with a clear transfer and audible original sound. The production year refers to
-the underlying footage, not a later upload or restoration. Review the exact
-video and soundtrack before publication; see [media rights](docs/media-rights.md)
-and the [1980–1999 lineup and broadcast plan](docs/post-1980-demo.md).
+Every pull request and every push to `main` runs four CI jobs
+([ci.yml](.github/workflows/ci.yml)):
 
-Demo Live channels with known durations use a repeating, UTC-anchored playlist:
-new visitors and returning viewers join the same scheduled program position.
-Channel, volume, mute and power controls remain isolated per visitor room.
-`Box__Demo__SynchronizedBroadcast=false` restores the per-room shuffle. Home
-playback is unchanged.
+- `backend`: xUnit tests over the state machine, service, scanner, mpv
+  driver and model sync (`dotnet test`).
+- `web`: Playwright runs the built Angular app against real, isolated API
+  processes in Chromium at desktop and phone sizes (`npm run test:browser`, see
+  [browser tests](docs/browser-tests.md)).
+- `media-preparation`: Python tests for the demo media tooling, with ffmpeg.
+- `demo-image`: builds the container, smoke tests it, and verifies the release
+  and byte-range media serving.
 
-## How it fits together
+.NET warnings are errors (`Directory.Build.props`).
+
+## Deployment
+
+**The box.** `bash scripts/deploy.sh YOU@rabbitears.local` builds a
+self-contained copy on a laptop (the box needs no .NET or Node), sends it over
+and installs it: a systemd service, a kiosk session that opens mpv full screen,
+and the screen kept awake. [docs/box-setup.md](docs/box-setup.md) is the full
+walk-through. At home it is for the local network only, so do not expose port
+5080 to the internet.
+
+**The demo site.** The [`Dockerfile`](Dockerfile) builds the whole app into
+one container in demo mode, released by hand on a VM behind nginx with a
+rollback point. [demo/README.md](demo/README.md) has the hosting steps, real
+content, and the [release checklist](demo/release-checklist.md).
+
+## Project layout
 
 ```text
-src/RabbitEars.Core/     no web or disk: the TV's behaviour, unit tested
-  Television.cs            the state machine (channels, volume, standby, digits)
-  ShuffleDeck.cs           every episode once per pass, no back-to-back repeats
-src/RabbitEars.Api/      ASP.NET Core: one process that owns the TV
-  TvService.cs             the single television; saves state, rescans, broadcasts
-  TvHub.cs                 SignalR: button presses in, state out
-  LibraryScanner.cs        folders -> channels
-  EpisodeProbe.cs          asks ffprobe how long each episode is
-  MpvScreen.cs             the box's screen: drives mpv as tube.ts drives <video>
-  MpvPlayer.cs             keeps mpv connected and feeds MpvScreen one thing at a time
-  MpvOsd.cs                the green on-screen display, drawn as mpv overlay text
-  mpv/                     mpv's settings, remote keys and tube shader
-web/src/app/
-  tv/crt-shader.ts         the tube picture (a WebGL shader)
-  tv/tube.ts               two video players, so channel changes cut cleanly
-  tv/tv-screen.*           the TV page and green on-screen display
-  remote/                  the phone remote
-  demo/                    the public demo page: TV, remote and QR code together
-deploy/                    systemd service, kiosk launcher, installer (run on the box)
-scripts/                   build, deploy to the box, convert shows (run on the laptop)
-docs/box-setup.md          step-by-step checklist for getting the box working
-Dockerfile, demo/          the public demo site and how to host it
+src/RabbitEars.Core/   the TV's behaviour, no web or disk (Television, ShuffleDeck, Tapes)
+src/RabbitEars.Api/    the one process: hub, TvService, scanner, admin, mpv driver
+  mpv/                 mpv's settings, remote keys and tube shader
+web/src/app/           Angular: tv/, remote/, demo/, admin/, core/
+tests/                 xUnit tests, and Python tests for the media tooling
+deploy/                runs on the box: systemd unit, kiosk launcher, installer
+scripts/               runs on a laptop: dev, publish, deploy, media tools
+demo/                  hosting the public demo
+docs/                  architecture, ADRs, guides; docs/archive/ for finished plans
 ```
 
-The box is the single source of truth. The TV page and the phone only send
-button presses and render the state that comes back over SignalR. There are no
-accounts or pairing: it is meant for your home network only, so do not expose
-port 5080 to the internet. The demo site's container is the one build meant to
-be public.
+## Roadmap
 
-## Not built yet
-
-- An editor for global picture, volume, and system settings. Channel names,
-  numbering, eligibility and per-channel tune-in modes are already editable at `/admin`.
+- An editor for global picture, volume and system settings. Channel names,
+  numbering, eligibility and per-channel tune-in modes are already editable at
+  `/admin` ([channel administration](docs/channel-administration.md)).
 - HDMI-CEC, so the TV's own remote can drive it.
+- A first install on the real mini PC. The install scripts have been rehearsed
+  on a laptop; expect to adjust them on first contact with the hardware.
 
 ## License
 
