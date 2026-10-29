@@ -8,7 +8,7 @@ Select footage produced in **1980–1999 (inclusive)**. A later upload, restorat
 compilation does not make earlier footage eligible. Confirm picture quality
 and audible original sound before preparing excerpts; reject grainy or
 unsuitable transfers. These are editorial requirements in addition to the
-rights review below. The [1980–1999 demo plan](post-1980-demo.md) records source checks and candidate status; it does not approve a public release.
+rights review below. The [1980–1999 demo research notes](archive/post-1980-demo.md) record source checks and candidate status; it does not approve a public release.
 
 ## Private inventory (never commit)
 
