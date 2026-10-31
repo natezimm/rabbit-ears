@@ -177,3 +177,10 @@ docs/                  architecture, ADRs, guides; docs/archive/ for finished pl
 
 MIT. Credits and licenses for third-party material are in
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+## Run on a Mac
+
+The [Mac desktop setup](docs/mac-setup.md) builds a self-contained API and launcher
+that run mpv as your user. Start and quit the TV without Docker or a system service.
+Apple silicon is the initial target; see the setup guide for dependencies, phone
+remote access, saved state and the manual validation checklist.

@@ -270,3 +270,13 @@ budget. Direct `/media` requests have independent concurrency limits and a
 shared read pacer (`DemoMediaBudget`), preserving standard single-range seeking.
 The global HTTP/hub budget, bounded address partitions, and container caps limit
 other work. See [operator limits and rollout checks](../demo/protection.md).
+
+## Desktop session
+
+On macOS, `RabbitEars.Desktop` owns the API and mpv child processes, starting the
+API before the player and shutting down both when the window closes. It resolves
+user profile settings, locks the state directory, checks the port, and supplies a
+private Unix socket to both children. State and bounded logs live outside the
+package. The existing `MpvPlayer` still drives the screen; `Television` and the
+remote protocol are unchanged. LAN access is explicit. See [Mac setup](mac-setup.md)
+and [ADR 0005](adr/0005-desktop-launcher-owns-the-session.md).

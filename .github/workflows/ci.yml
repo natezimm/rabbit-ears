@@ -29,6 +29,36 @@ jobs:
           global-json-file: global.json
       - run: dotnet test
 
+  mac-desktop:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: brew install mpv ffmpeg
+      - name: Record native dependency versions
+        run: |
+          uname -a
+          mpv --version
+          ffprobe -version
+      - run: dotnet test
+      - run: bash scripts/publish-mac.sh osx-arm64
+      - run: python3 tests/smoke-mac.py publish/mac/osx-arm64
+      # Tar preserves executable bits when downloaded from Actions.
+      - run: tar -czf rabbit-ears-osx-arm64.tar.gz -C publish/mac osx-arm64
+      - uses: actions/upload-artifact@v7
+        with:
+          name: rabbit-ears-osx-arm64
+          path: rabbit-ears-osx-arm64.tar.gz
+          retention-days: 7
+
   web:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
