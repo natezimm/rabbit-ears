@@ -117,7 +117,12 @@ export class TvScreen {
       const decks = [this.deckA().nativeElement, this.deckB().nativeElement];
       this.tube = new Tube(decks, this.picture(), {
         ended: token => this.link.episodeEnded(token),
-        failed: token => this.link.episodeFailed(token),
+        failed: token => {
+          const playing = this.link.state()?.playing;
+          if (playing?.token === token && playing.episodeId.startsWith('tape-'))
+            this.tapes.error.set(`Cannot play “${playing.title}”. Try MP4 with H.264 video and AAC audio, or eject these tapes.`);
+          this.link.episodeFailed(token);
+        },
         position: (token, seconds, duration) => this.link.reportPosition(token, seconds, duration),
         soundBlocked: blocked => this.soundBlocked.set(blocked),
       }, id => this.tapes.source(id));

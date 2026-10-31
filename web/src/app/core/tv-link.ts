@@ -46,6 +46,7 @@ function pickRoom(): string {
 export class TvLink {
   readonly state = signal<TvSnapshot | null>(null);
   readonly connected = signal(false);
+  readonly unavailable = signal<string | null>(null);
   readonly room = pickRoom();
 
   private readonly hub: HubConnection = new HubConnectionBuilder()
@@ -56,6 +57,7 @@ export class TvLink {
     .build();
 
   constructor() {
+    this.hub.on('Unavailable', (message: string) => this.unavailable.set(message));
     this.hub.on('State', (snapshot: TvSnapshot) => this.accept(snapshot));
     this.hub.onreconnecting(() => this.connected.set(false));
     this.hub.onreconnected(() => this.connected.set(true));
@@ -78,8 +80,12 @@ export class TvLink {
   mute = () => this.send('Mute');
   power = () => this.send('Power');
 
-  loadTapes = (shelves: TapeShelf[], tune: boolean) => this.send('LoadTapes', shelves, tune);
-  ejectTapes = () => this.send('EjectTapes');
+  async loadTapes(shelves: TapeShelf[], tune: boolean): Promise<void> {
+    if (!this.connected()) throw new Error('Please wait for the TV to reconnect.');
+    const accepted = await this.hub.invoke<boolean>('LoadTapes', shelves, tune);
+    if (!accepted) throw new Error('Tapes were refused. Use up to 5 videos on 3 channels, or wait a minute before trying again.');
+  }
+  ejectTapes = () => this.hub.invoke('EjectTapes');
 
   episodeEnded = (token: string) => this.send('EpisodeEnded', token);
   episodeFailed = (token: string) => this.send('EpisodeFailed', token);
@@ -94,6 +100,7 @@ export class TvLink {
   private accept(snapshot: TvSnapshot): void {
     const current = this.state();
     if (current && current.boot === snapshot.boot && snapshot.revision < current.revision) return;
+    this.unavailable.set(null);
     this.state.set(snapshot);
   }
 

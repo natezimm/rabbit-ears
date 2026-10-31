@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures';
+import { execFileSync } from 'node:child_process';
 import { copyFile, mkdir, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
@@ -182,4 +183,79 @@ test('a folder of show folders loads as one channel per show, with loose files o
   await expect(guide.getByRole('button', { name: /Cheers.*2 episodes/ })).toBeVisible();
   await expect(guide.getByRole('button', { name: /Home videos.*1 episode/ })).toBeVisible();
   await expect(page.getByRole('status').filter({ hasText: '4 videos on 3 channels; 1 other files skipped' })).toBeVisible();
+});
+
+test('five tapes load and invalid replacements preserve them', async ({ page, box }) => {
+  await page.goto(`${box.url}/demo?room=limits-room`);
+  await expect(page.getByRole('button', { name: /CH 02 Arthur/ })).toBeVisible();
+  const picker = page.locator('input[type=file]:not([webkitdirectory])');
+  const buffer = await readFile(join(box.root, 'fixture.mp4'));
+  const files = Array.from({ length: 5 }, (_, i) => ({ name: `Tape ${i}.mp4`, mimeType: 'video/mp4', buffer }));
+  await picker.setInputFiles(files);
+  await expect(page.getByRole('status').filter({ hasText: '5 videos on 1 channel' })).toBeVisible();
+  const vcr = page.getByRole('button', { name: /CH 00 VCR/ });
+  await expect(vcr).toHaveAttribute('aria-pressed', 'true');
+  await picker.setInputFiles([...files, { ...files[0], name: 'Sixth.mp4' }]);
+  await expect(page.getByRole('alert')).toContainText('up to 5');
+  await expect(vcr).toHaveAttribute('aria-pressed', 'true');
+  await picker.setInputFiles({ name: 'Broken.mp4', mimeType: 'video/mp4', buffer: Buffer.from('not video') });
+  await expect(page.getByRole('alert')).toContainText('Cannot read');
+  await expect(page.getByRole('status').filter({ hasText: '5 videos on 1 channel' })).toBeVisible();
+  await expect.poll(() => page.locator('video.live').evaluateAll((videos: HTMLVideoElement[]) =>
+    videos.some(v => v.src.startsWith('blob:') && !v.paused))).toBeTruthy();
+});
+
+test('cancelled metadata probe releases its URL and keeps the previous tapes', async ({ page, box }) => {
+  await page.addInitScript(() => {
+    const create = URL.createObjectURL.bind(URL);
+    const revoke = URL.revokeObjectURL.bind(URL);
+    const active = new Set<string>();
+    Object.assign(window, { tapeUrls: active, stallProbe: false });
+    URL.createObjectURL = object => { const url = create(object); active.add(url); return url; };
+    URL.revokeObjectURL = url => { active.delete(url); revoke(url); };
+    const createElement = document.createElement.bind(document);
+    document.createElement = ((...args: Parameters<typeof createElement>) => {
+      const element = createElement(...args);
+      if (args[0] === 'video') element.addEventListener('loadedmetadata', event => {
+        if ((window as unknown as { stallProbe: boolean }).stallProbe && !element.isConnected)
+          event.stopImmediatePropagation();
+      });
+      return element;
+    }) as typeof document.createElement;
+  });
+  await page.goto(`${box.url}/demo?room=cancel-room`);
+  await expect(page.getByRole('button', { name: /CH 02 Arthur/ })).toBeVisible();
+  const picker = page.locator('input[type=file]:not([webkitdirectory])');
+  const file = { name: 'Tape.mp4', mimeType: 'video/mp4', buffer: await readFile(join(box.root, 'fixture.mp4')) };
+  await picker.setInputFiles(file);
+  await expect(page.getByRole('status').filter({ hasText: '1 video on 1 channel' })).toBeVisible();
+  await page.evaluate(() => { Object.assign(window, { stallProbe: true }); });
+  await picker.setInputFiles({ ...file, name: 'Second.mp4' });
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Loading cancelled');
+  await expect(page.locator('.vcr')).toContainText('1 video on 1 channel');
+  await page.getByRole('button', { name: 'Eject', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as { tapeUrls: Set<string> }).tapeUrls.size)).toBe(0);
+});
+
+
+test('a 30-minute tape seeks near the end and resumes after channel surfing', async ({ page, box }) => {
+  const path = join(box.root, 'Long tape.mp4');
+  execFileSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'color=blue:size=160x120:rate=1',
+    '-t', '1800', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', path]);
+  await page.goto(`${box.url}/demo?room=long-tape-room`);
+  await expect(page.getByRole('button', { name: /CH 02 Arthur/ })).toBeVisible();
+  await page.locator('input[type=file]:not([webkitdirectory])').setInputFiles(path);
+  const video = page.locator('video.live');
+  await expect.poll(() => video.evaluateAll((v: HTMLVideoElement[]) => v.some(x => x.src.startsWith('blob:') && x.duration === 1800))).toBeTruthy();
+  await video.evaluate((v: HTMLVideoElement) => { v.currentTime = 1780; });
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(1779);
+  // Allow the normal server position report to preserve the seek.
+  await page.waitForTimeout(2500);
+  await page.locator('.lineup').getByRole('button', { name: /CH 02 Arthur/ }).click();
+  await expect(page.locator('.lcd-big')).toContainText('CH 02');
+  await page.locator('.lineup').getByRole('button', { name: /CH 00 VCR/ }).click();
+  await expect.poll(() => video.evaluateAll((v: HTMLVideoElement[]) => v.some(x => x.src.startsWith('blob:') && x.currentTime > 1779))).toBeTruthy();
+  await video.evaluate((v: HTMLVideoElement) => { v.currentTime = 10; });
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeLessThan(30);
 });

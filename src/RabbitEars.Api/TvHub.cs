@@ -21,16 +21,26 @@ public sealed class TvHub(TvService tv) : Hub
     public override async Task OnConnectedAsync()
     {
         var requested = Context.GetHttpContext()?.Request.Query[RoomKey].ToString();
-        if (tv.Join(requested) is not { } room)
+        if (tv.Join(requested, ClientRateLimit.ClientKey(Context.GetHttpContext()?.Connection.RemoteIpAddress)) is not { } room)
         {
+            await Clients.Caller.SendAsync("Unavailable", "The demo is busy. Please try again in a minute.");
             Context.Abort();
             return;
         }
 
         Context.Items[RoomKey] = room;
-        await Groups.AddToGroupAsync(Context.ConnectionId, room);
-        await Clients.Caller.SendAsync("State", tv.Snapshot(room));
-        await base.OnConnectedAsync();
+        try
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, room);
+            await Clients.Caller.SendAsync("State", tv.Snapshot(room));
+            await base.OnConnectedAsync();
+        }
+        catch
+        {
+            Context.Items.Remove(RoomKey);
+            tv.Leave(room);
+            throw;
+        }
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
@@ -38,8 +48,8 @@ public sealed class TvHub(TvService tv) : Hub
         if (Context.Items.ContainsKey(RoomKey))
         {
             // Its tapes' files lived in that tab, so nothing can play them now.
-            await tv.EjectTapes(Room, Context.ConnectionId);
-            tv.Leave(Room);
+            try { await tv.EjectTapes(Room, Context.ConnectionId); }
+            finally { tv.Leave(Room); }
         }
         await base.OnDisconnectedAsync(exception);
     }
@@ -57,7 +67,7 @@ public sealed class TvHub(TvService tv) : Hub
     public Task Power() => tv.Press(t => t.TogglePower(), Room);
 
     // A demo visitor's own videos, played by the browser that sent them. Ignored at home.
-    public Task LoadTapes(TapeShelf[] shelves, bool tune) => tv.LoadTapes(shelves, Room, Context.ConnectionId, tune);
+    public Task<bool> LoadTapes(TapeShelf[] shelves, bool tune) => tv.LoadTapes(shelves, Room, Context.ConnectionId, tune);
     public Task EjectTapes() => tv.EjectTapes(Room);
 
     // Reports from the TV screen. The token says which play request they are

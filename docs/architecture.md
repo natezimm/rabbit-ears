@@ -255,3 +255,18 @@ rollback point; the box is updated from a laptop with `scripts/deploy.sh`.
 hand; `ModelSyncTests` fails when they drift. `MpvOsd.cs` and `tv-screen.css`
 lay out the green display on the same 4:3 frame and are kept in step the same
 way.
+
+
+## Public-demo resource boundaries
+
+Local tape preflight reads metadata sequentially with cancellation; only IDs and
+names cross SignalR. `LoadTapes` returns acceptance, allowing `TapeDeck` to keep
+previous URLs until replacement succeeds. `tape-policy.ts` holds browser limits;
+a backend contract test checks file/channel limits against `Tapes`.
+
+`TvService.Join` admits demo rooms and connections under its existing lock.
+Room creation has a bounded expiring address budget, and replacement has a room
+budget. Direct `/media` requests have independent concurrency limits and a
+shared read pacer (`DemoMediaBudget`), preserving standard single-range seeking.
+The global HTTP/hub budget, bounded address partitions, and container caps limit
+other work. See [operator limits and rollout checks](../demo/protection.md).

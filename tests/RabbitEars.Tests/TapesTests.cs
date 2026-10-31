@@ -13,6 +13,20 @@ public sealed class TapesTests
     private static Tape T(string id, string title = "Episode") => new(id, title);
 
     [Fact]
+    public void Local_tapes_resume_after_seeking_even_when_broadcast_stations_share_a_clock()
+    {
+        var clock = new FakeClock();
+        var tapes = Tapes.Channels(Broadcast, [new TapeShelf(null, [T("0000000a")])])!;
+        var tv = new Television(new TvSettings(), [.. Broadcast, .. tapes], clock: clock, synchronizedBroadcast: true);
+        tv.GoToChannel(0);
+        tv.ReportPosition(tv.Snapshot().Playing!.Token, 1780, 1800);
+        tv.GoToChannel(2);
+        clock.Advance(TimeSpan.FromSeconds(7));
+        tv.GoToChannel(0);
+        Assert.Equal(1780, tv.Snapshot().Playing!.Start);
+    }
+
+    [Fact]
     public void Folders_follow_the_broadcast_lineup_in_A_to_Z_order_and_loose_files_go_on_the_vcr()
     {
         var channels = Tapes.Channels(Broadcast,

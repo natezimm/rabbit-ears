@@ -16,6 +16,12 @@ services:
     # directly must not trust it, or a visitor could claim any address.
     environment:
       Box__RateLimit__TrustForwardedFor: "true"
-    # It idles around 25 MB and stays under 50 MB with dozens of visitors;
-    # the cap keeps it from ever crowding out the other sites.
+    # Trial budget: verify with the staging checklist before production rollout.
     mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 128
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
