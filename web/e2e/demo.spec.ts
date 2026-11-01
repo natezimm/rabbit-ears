@@ -254,8 +254,17 @@ test('a 30-minute tape seeks near the end and resumes after channel surfing', as
   await page.waitForTimeout(2500);
   await page.locator('.lineup').getByRole('button', { name: /CH 02 Arthur/ }).click();
   await expect(page.locator('.lcd-big')).toContainText('CH 02');
+  // The tape stays on screen until Arthur can play. Wait for that cut, so the
+  // tape on screen after tuning back is the newly loaded one and not the old deck.
+  await expect.poll(() => video.evaluateAll((v: HTMLVideoElement[]) =>
+    v.length === 1 && v[0].src.includes('/media/'))).toBeTruthy();
   await page.locator('.lineup').getByRole('button', { name: /CH 00 VCR/ }).click();
-  await expect.poll(() => video.evaluateAll((v: HTMLVideoElement[]) => v.some(x => x.src.startsWith('blob:') && x.currentTime > 1779))).toBeTruthy();
-  await video.evaluate((v: HTMLVideoElement) => { v.currentTime = 10; });
+  await expect.poll(() => video.evaluateAll((v: HTMLVideoElement[]) =>
+    v.length === 1 && v[0].src.startsWith('blob:') && v[0].currentTime > 1779))
+    .toBeTruthy();
+  await video.evaluate((v: HTMLVideoElement) => new Promise(resolve => {
+    v.addEventListener('seeked', resolve, { once: true });
+    v.currentTime = 10;
+  }));
   await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeLessThan(30);
 });
