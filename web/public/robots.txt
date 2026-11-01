@@ -1,0 +1,9 @@
+# The public demo's page is /demo; the TV, remote, admin page, media and API are not for crawlers.
+User-agent: *
+Allow: /demo
+Disallow: /tv
+Disallow: /remote
+Disallow: /admin
+Disallow: /api/
+Disallow: /media/
+Disallow: /hub
