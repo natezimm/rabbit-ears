@@ -188,12 +188,23 @@ public sealed partial class TvService : BackgroundService
     }
 
     /// <summary>Apply one remote press and, if it changed anything, tell everyone watching that TV.</summary>
-    public Task Press(Action<Television> press, string room = HomeRoom)
+    public Task Press(Action<Television> press, string room = HomeRoom) => Press(press, room, null, null);
+
+    /// <summary>
+    /// A screen's report that an episode ended or failed. For a tape, only the
+    /// connection whose browser holds its files can tell: another tab in the
+    /// same room cannot play it and would otherwise skip it as broken.
+    /// </summary>
+    public Task PlaybackReport(Action<Television> report, string token, string room, string reporter) =>
+        Press(report, room, token, reporter);
+
+    private Task Press(Action<Television> press, string room, string? token, string? reporter)
     {
         TvSnapshot snapshot;
         lock (_gate)
         {
             if (!_rooms.TryGetValue(room, out var found)) return Task.CompletedTask;
+            if (token is not null && !MayReport(found, token, reporter)) return Task.CompletedTask;
             found.LastActive = Now;
             var before = found.Tv.Revision;
             press(found.Tv);
@@ -205,11 +216,11 @@ public sealed partial class TvService : BackgroundService
     }
 
     /// <summary>Frequent and uninteresting to other clients, so nothing is broadcast.</summary>
-    public void ReportPosition(string token, double seconds, double? duration = null, string room = HomeRoom)
+    public void ReportPosition(string token, double seconds, double? duration = null, string room = HomeRoom, string? reporter = null)
     {
         lock (_gate)
         {
-            if (!_rooms.TryGetValue(room, out var found)) return;
+            if (!_rooms.TryGetValue(room, out var found) || !MayReport(found, token, reporter)) return;
             found.Tv.ReportPosition(token, seconds, duration);
             _unsaved = true;
         }
@@ -443,6 +454,12 @@ public sealed partial class TvService : BackgroundService
             .FirstOrDefault();
         return oldest is not null && _rooms.Remove(oldest);
     }
+
+    /// <summary>Reports about a tape count only from its owner; the box's own screen (no reporter) always counts.</summary>
+    private static bool MayReport(Room room, string token, string? reporter) =>
+        reporter is null
+        || room.Tv.EpisodeFor(token)?.StartsWith(Tapes.EpisodePrefix, StringComparison.Ordinal) != true
+        || reporter == room.TapeOwner;
 
     private async Task Broadcast(string room, TvSnapshot snapshot)
     {

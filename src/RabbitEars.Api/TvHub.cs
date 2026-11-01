@@ -72,8 +72,11 @@ public sealed class TvHub(TvService tv) : Hub
 
     // Reports from the TV screen. The token says which play request they are
     // about, so a late report for a channel that was just left is harmless.
-    public Task EpisodeEnded(string token) => tv.Press(t => t.EpisodeEnded(token), Room);
-    public Task EpisodeFailed(string token) => tv.Press(t => t.EpisodeFailed(token), Room);
+    // For a tape, only the tab holding its files is listened to.
+    public Task EpisodeEnded(string token) =>
+        tv.PlaybackReport(t => t.EpisodeEnded(token), token, Room, Context.ConnectionId);
+    public Task EpisodeFailed(string token) =>
+        tv.PlaybackReport(t => t.EpisodeFailed(token), token, Room, Context.ConnectionId);
     public void ReportPosition(string token, double seconds, double? duration) =>
-        tv.ReportPosition(token, seconds, duration, Room);
+        tv.ReportPosition(token, seconds, duration, Room, Context.ConnectionId);
 }

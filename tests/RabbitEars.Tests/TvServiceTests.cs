@@ -55,6 +55,37 @@ public sealed class TvServiceTests : IDisposable
         Service(new DemoOptions { Enabled = true, MaxTvs = maxTvs, IdleMinutes = 15 });
 
     [Fact]
+    public async Task Only_the_tab_holding_a_tape_can_report_on_it()
+    {
+        var tv = DemoService();
+        tv.Join("visitor-a");
+        tv.Join("visitor-a");
+        Assert.True(await tv.LoadTapes([new(null, [new("0000000a", "Tape"), new("0000000b", "Other")])], "visitor-a", "owner-tab"));
+        var tape = tv.Snapshot("visitor-a")!;
+        Assert.StartsWith(Tapes.EpisodePrefix, tape.Playing!.EpisodeId);
+
+        // A second tab in the same room has no file for the tape, so it fails to load it.
+        await tv.PlaybackReport(t => t.EpisodeFailed(tape.Playing.Token), tape.Playing.Token, "visitor-a", "other-tab");
+        await tv.PlaybackReport(t => t.EpisodeEnded(tape.Playing.Token), tape.Playing.Token, "visitor-a", "other-tab");
+        Assert.Equal(tape.Revision, tv.Snapshot("visitor-a")!.Revision);
+
+        await tv.PlaybackReport(t => t.EpisodeEnded(tape.Playing.Token), tape.Playing.Token, "visitor-a", "owner-tab");
+        Assert.NotEqual(tape.Playing.EpisodeId, tv.Snapshot("visitor-a")!.Playing!.EpisodeId);
+    }
+
+    [Fact]
+    public async Task Any_tab_can_report_on_a_broadcast_channel()
+    {
+        var tv = DemoService();
+        tv.Join("visitor-a");
+        var before = tv.Snapshot("visitor-a")!;
+
+        await tv.PlaybackReport(t => t.EpisodeEnded(before.Playing!.Token), before.Playing!.Token, "visitor-a", "any-tab");
+
+        Assert.NotEqual(before.Playing.Token, tv.Snapshot("visitor-a")!.Playing!.Token);
+    }
+
+    [Fact]
     public void Demo_connections_are_bounded_before_rooms_are_allocated()
     {
         var tv = Service(new DemoOptions { Enabled = true, MaxConnections = 3, MaxConnectionsPerRoom = 2 });

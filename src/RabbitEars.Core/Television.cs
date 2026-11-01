@@ -237,6 +237,9 @@ public sealed class Television
         return true;
     }
 
+    /// <summary>The episode a recent play request was for, or null for a token too old or unknown.</summary>
+    public string? EpisodeFor(string token) => _recentRequests.FirstOrDefault(r => r.Token == token)?.EpisodeId;
+
     /// <summary>
     /// Where the screen has got to, and how long the episode is if it knows.
     /// Reports for a channel that was just left still land on that channel,
