@@ -122,7 +122,7 @@ become channels, converting a library for the browser, and settings.
 
 ## Tests and quality
 
-Every pull request and every push to `main` runs four CI jobs
+Every pull request and every push to `main` runs five CI jobs
 ([ci.yml](.github/workflows/ci.yml)):
 
 - `backend`: xUnit tests over the state machine, service, scanner, mpv
@@ -130,6 +130,8 @@ Every pull request and every push to `main` runs four CI jobs
 - `web`: Playwright runs the built Angular app against real, isolated API
   processes in Chromium at desktop and phone sizes (`npm run test:browser`, see
   [browser tests](docs/browser-tests.md)).
+- `mac-desktop`: on macOS, runs the backend tests, packages the Mac launcher and
+  smoke tests the package with real mpv and ffprobe.
 - `media-preparation`: Python tests for the demo media tooling, with ffmpeg.
 - `demo-image`: builds the container, smoke tests it, and verifies the release
   and byte-range media serving.

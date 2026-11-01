@@ -15,7 +15,7 @@ In demo mode (`Box:Demo:Enabled`) `TvService` runs one `Television` per room.
 The browser makes up a room id (kept in `localStorage`, or taken from
 `?room=` when a phone scans the QR code), the hub joins the matching SignalR
 group, and snapshots go to that group only. Nothing is saved, idle rooms are
-switched off after 15 minutes, `/api/rescan` and the admin APIs are off, and
+switched off after a few minutes (`Box:Demo:IdleMinutes`), `/api/rescan` and the admin APIs are off, and
 requests and hub calls are rate limited per address. A visitor's own videos
 in the VCR stay in their browser as blob URLs; the hub sees only random ids
 and names.
