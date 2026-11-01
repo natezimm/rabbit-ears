@@ -303,7 +303,8 @@ public sealed class Television
             previous.Remove(c.Key ?? c.Name, out var old) ? old.Updated(c, _random) : Returning(c, now))];
         foreach (var gone in previous.Values)
         {
-            if (gone.Showing is not null) _offAir[gone.Key] = new SavedPosition(gone.Showing.Id, gone.Position, gone.PositionAt);
+            // A replaced tape shelf is gone for good, and visitors can replace shelves at will.
+            if (gone.Showing is not null && !Tapes.IsTapeChannel(gone.Key)) _offAir[gone.Key] = new SavedPosition(gone.Showing.Id, gone.Position, gone.PositionAt);
         }
         _savedChannel = _tuners.Count > 0 ? null : watching;
 
