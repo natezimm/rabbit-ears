@@ -63,9 +63,11 @@ playback is unchanged.
 ## Size
 
 Running, the container idles at about 25 MB of memory and measured about 45 MB
-with 30 visitors each on their own TV; `compose.yaml` caps it at 256 MB. Idle
-TVs are switched off after 15 minutes and at most 100 run at once. The image is
-about 450 MB on disk. Each visitor streams video at up to about 1.2 Mbit/s,
+with 30 visitors each on their own TV (measured before the current room cap);
+`compose.yaml` caps it at 256 MB. Idle TVs are switched off after 5 minutes
+(`Box:Demo:IdleMinutes`) and at most 10 run at once (`Box:Demo:MaxTvs`); see
+[protection.md](protection.md) for the other limits. The image is about 450 MB
+on disk. Each visitor streams video at up to about 1.2 Mbit/s,
 which is the cost worth watching on a metered VM.
 
 Building is the heavy part: the Angular and .NET builds can briefly want a

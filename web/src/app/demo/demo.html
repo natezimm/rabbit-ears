@@ -28,7 +28,7 @@
                   (click)="link.goToChannel(channel.number)">
             <span class="number">CH {{ channel.number.toString().padStart(2, '0') }}</span>
             <span class="programme"><strong>{{ channel.name }}</strong>
-              <small>{{ channel.title || (channel.episodes + ' episodes') }}</small></span>
+              <small>{{ channel.title || (channel.episodes + (channel.episodes === 1 ? ' episode' : ' episodes')) }}</small></span>
           </button>
         }
       }
