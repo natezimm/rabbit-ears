@@ -29,7 +29,8 @@ public sealed class StateFile(BoxOptions options, ILogger<StateFile> log)
         }
     }
 
-    public void Save(SavedState state)
+    /// <summary>False when the write failed and the previous file is still in place.</summary>
+    public bool Save(SavedState state)
     {
         try
         {
@@ -37,10 +38,12 @@ public sealed class StateFile(BoxOptions options, ILogger<StateFile> log)
             var temp = FilePath + ".tmp";
             File.WriteAllText(temp, JsonSerializer.Serialize(state, Json));
             File.Move(temp, FilePath, overwrite: true);
+            return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            log.LogWarning(ex, "Could not save {Path}.", FilePath);
+            log.LogWarning(ex, "Could not save {Path}; will try again.", FilePath);
+            return false;
         }
     }
 }

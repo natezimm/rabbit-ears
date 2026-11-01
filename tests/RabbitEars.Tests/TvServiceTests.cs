@@ -193,6 +193,27 @@ public sealed class TvServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task A_failed_save_is_tried_again_without_another_change()
+    {
+        var first = Service();
+        await first.Press(t => t.ChannelUp());
+        var playing = first.Snapshot().Playing!;
+        first.ReportPosition(playing.Token, 42);
+
+        // A directory where the temp file goes makes the write fail.
+        var blocker = Directory.CreateDirectory(Path.Combine(_state, "state.json.tmp"));
+        await first.StopAsync(CancellationToken.None);
+        Assert.False(File.Exists(Path.Combine(_state, "state.json")));
+
+        blocker.Delete();
+        await first.StopAsync(CancellationToken.None);
+
+        var second = Service().Snapshot();
+        Assert.Equal(playing.EpisodeId, second.Playing!.EpisodeId);
+        Assert.Equal(42, second.Playing.Start);
+    }
+
+    [Fact]
     public void Only_scanned_episodes_resolve_to_files()
     {
         var tv = Service();

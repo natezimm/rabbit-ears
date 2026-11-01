@@ -51,7 +51,11 @@ public sealed partial class TvService : BackgroundService
         new BoundedChannelOptions(1) { FullMode = BoundedChannelFullMode.DropWrite });
 
     private Library _library;
-    private bool _unsaved;
+    // Changes since start, and how many of them are in state.json. A failed
+    // write leaves them apart, so the next save tries again.
+    private long _changes;
+    private long _savedChanges;
+    private readonly Lock _saving = new();
     private bool _shuttingDown;
 
     public TvService(
@@ -198,7 +202,7 @@ public sealed partial class TvService : BackgroundService
             var before = found.Tv.Revision;
             press(found.Tv);
             if (found.Tv.Revision == before) return Task.CompletedTask;
-            _unsaved = true;
+            _changes++;
             snapshot = found.Tv.Snapshot();
         }
         return Broadcast(room, snapshot);
@@ -211,7 +215,7 @@ public sealed partial class TvService : BackgroundService
         {
             if (!_rooms.TryGetValue(room, out var found)) return;
             found.Tv.ReportPosition(token, seconds, duration);
-            _unsaved = true;
+            _changes++;
         }
     }
 
@@ -325,7 +329,7 @@ public sealed partial class TvService : BackgroundService
                 foreach (var (id, seconds) in _lengths) room.Tv.SetDuration(id, seconds);
                 changed.Add((name, room.Tv.Snapshot()));
             }
-            _unsaved = true;
+            _changes++;
         }
         foreach (var (room, snapshot) in changed) await Broadcast(room, snapshot);
         _rescanned.Writer.TryWrite(true);
@@ -352,7 +356,7 @@ public sealed partial class TvService : BackgroundService
             {
                 _lengths[id] = seconds;
                 foreach (var room in _rooms.Values) room.Tv.SetDuration(id, seconds);
-                _unsaved = true;
+                _changes++;
             }
         }
     }
@@ -426,7 +430,7 @@ public sealed partial class TvService : BackgroundService
                 var before = room.Tv.Revision;
                 room.Tv.Tick();
                 if (room.Tv.Revision == before) continue;
-                _unsaved = true;
+                _changes++;
                 changed.Add((name, room.Tv.Snapshot()));
             }
         }
@@ -479,14 +483,20 @@ public sealed partial class TvService : BackgroundService
         // Demo televisions belong to passing visitors; there is nothing worth keeping.
         if (Demo) return;
 
-        SavedState state;
-        lock (_gate)
+        // One writer at a time: the background loop, shutdown and GOODBYE all save,
+        // and they share the temp file. The disk write stays outside the TV's lock.
+        lock (_saving)
         {
-            if (!_unsaved) return;
-            _unsaved = false;
-            state = _rooms[HomeRoom].Tv.Save();
+            SavedState state;
+            long changes;
+            lock (_gate)
+            {
+                if (_changes == _savedChanges) return;
+                changes = _changes;
+                state = _rooms[HomeRoom].Tv.Save();
+            }
+            if (_stateFile.Save(state)) _savedChanges = changes;
         }
-        _stateFile.Save(state);
     }
 
     private void BeginShutdown()
