@@ -217,6 +217,34 @@ public sealed class TvServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task A_missing_media_folder_keeps_the_lineup_and_the_saved_position()
+    {
+        var tv = Service();
+        await tv.Press(t => t.ChannelUp());
+        var playing = tv.Snapshot().Playing!;
+        tv.ReportPosition(playing.Token, 42);
+        var media = _media + "-unplugged";
+        Directory.Move(_media, media);
+        var broadcasts = _hub.Sent.Count;
+
+        try
+        {
+            await tv.Rescan();
+            Assert.Equal(["Arthur", "Dragon Tales"], tv.Report().Channels.Select(c => c.Name));
+            Assert.Equal(broadcasts, _hub.Sent.Count);
+            await tv.StopAsync(CancellationToken.None);
+        }
+        finally
+        {
+            Directory.Move(media, _media);
+        }
+
+        var restarted = Service().Snapshot();
+        Assert.Equal(playing.EpisodeId, restarted.Playing!.EpisodeId);
+        Assert.Equal(42, restarted.Playing.Start);
+    }
+
+    [Fact]
     public void At_home_every_connection_joins_the_one_tv_whatever_room_it_asks_for()
     {
         var tv = Service();
