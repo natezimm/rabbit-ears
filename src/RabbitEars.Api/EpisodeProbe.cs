@@ -66,12 +66,32 @@ public sealed class FfprobeEpisodeProbe(BoxOptions options, ILogger<FfprobeEpiso
                     ? seconds
                     : null;
             }
-            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            catch (OperationCanceledException)
             {
-                process.Kill();
+                // Disposing the handle leaves ffprobe running, so end it whether
+                // this was the timeout or the caller giving up (a rescan, shutdown).
+                await Stop(process);
+                if (cancellationToken.IsCancellationRequested) throw;
                 log.LogWarning("ffprobe took too long on {Path}; skipping it.", path);
                 return null;
             }
         }
+    }
+
+    private static async Task Stop(Process process)
+    {
+        try
+        {
+            process.Kill(entireProcessTree: true);
+        }
+        catch (InvalidOperationException)
+        {
+            // It finished on its own in the meantime.
+            return;
+        }
+        // Killed processes exit promptly; the bound only guards against a stuck kernel wait.
+        using var exited = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        try { await process.WaitForExitAsync(exited.Token); }
+        catch (OperationCanceledException) { }
     }
 }
