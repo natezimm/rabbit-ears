@@ -259,3 +259,18 @@ test('a 30-minute tape seeks near the end and resumes after channel surfing', as
   await video.evaluate((v: HTMLVideoElement) => { v.currentTime = 10; });
   await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeLessThan(30);
 });
+
+test('search engines and link previews find the demo page', async ({ page, box }) => {
+  const robots = await page.request.get(`${box.url}/robots.txt`);
+  expect(robots.headers()['content-type']).toContain('text/plain');
+  const rules = (await robots.text()).split('\n');
+  expect(rules).toContain('Allow: /demo');
+  expect(rules).toContain('Disallow: /api/');
+
+  await page.goto(`${box.url}/demo`);
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /TV channels/);
+  await expect(page.locator('meta[property="og:image"]'))
+    .toHaveAttribute('content', 'https://rabbitears.nathanzimmerman.com/social-card.png');
+  const card = await page.request.get(`${box.url}/social-card.png`);
+  expect(card.ok()).toBe(true);
+});
