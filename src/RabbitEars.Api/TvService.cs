@@ -269,10 +269,27 @@ public sealed partial class TvService : BackgroundService
         return Broadcast(room, snapshot);
     }
 
+    /// <summary>
+    /// Look at the media folder again. A folder that is missing or cannot be read
+    /// (a drive unplugged, a mount gone) keeps the lineup as it was rather than
+    /// taking every channel off the air; the next rescan tries again.
+    /// </summary>
     public async Task Rescan()
     {
         await _lineup.WaitAsync();
-        try { await ApplyLibrary(_catalog.Scan()); }
+        try
+        {
+            if (!Directory.Exists(_options.MediaRoot))
+            {
+                _log.LogWarning("Media folder {Root} is missing; keeping the current lineup.", _options.MediaRoot);
+                return;
+            }
+            await ApplyLibrary(_catalog.Scan());
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _log.LogWarning(ex, "Could not read media folder {Root}; keeping the current lineup.", _options.MediaRoot);
+        }
         finally { _lineup.Release(); }
     }
 

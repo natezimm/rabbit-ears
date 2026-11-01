@@ -13,6 +13,21 @@ public sealed class TapesTests
     private static Tape T(string id, string title = "Episode") => new(id, title);
 
     [Fact]
+    public void Replaced_tape_shelves_are_not_kept_as_off_air_positions()
+    {
+        var tv = new Television(new TvSettings(), Broadcast);
+        for (var i = 0; i < 20; i++)
+        {
+            var tapes = Tapes.Channels(Broadcast, [new TapeShelf($"Shelf {i}", [T($"{i:x8}")])])!;
+            tv.SetLineup([.. Broadcast, .. tapes]);
+            tv.GoToChannel(tapes[0].Number);
+        }
+        tv.SetLineup(Broadcast);
+
+        Assert.DoesNotContain(tv.Save().Positions.Keys, Tapes.IsTapeChannel);
+    }
+
+    [Fact]
     public void Local_tapes_resume_after_seeking_even_when_broadcast_stations_share_a_clock()
     {
         var clock = new FakeClock();

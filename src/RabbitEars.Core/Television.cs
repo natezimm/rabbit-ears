@@ -31,6 +31,12 @@ public sealed class Television
 
     private List<Tuner> _tuners = [];
     private int _index;
+
+    // Where channels missing from the lineup were, by key. A media drive that is
+    // briefly unplugged, or a folder moved away and back, must not lose them.
+    private readonly Dictionary<string, SavedPosition> _offAir = [];
+    // The channel to come back to while the lineup is empty.
+    private string? _savedChannel;
     private string? _lastChannel;
     private NowPlaying? _playing;
     private OsdMessage? _message;
@@ -70,6 +76,11 @@ public sealed class Television
             if (saved?.Positions.GetValueOrDefault(tuner.Key) is { } position)
                 tuner.Restore(position, _clock.GetUtcNow());
         }
+        foreach (var (key, position) in saved?.Positions ?? [])
+        {
+            if (!_tuners.Exists(t => t.Key == key)) _offAir[key] = position;
+        }
+        _savedChannel = saved?.Channel;
 
         var start = _tuners.FindIndex(t => t.Key == saved?.Channel);
         if (start < 0) start = _tuners.FindIndex(t => t.Number == settings.StartChannel);
@@ -284,11 +295,18 @@ public sealed class Television
     /// </summary>
     public void SetLineup(IReadOnlyList<ChannelDefinition> channels)
     {
-        var watching = _tuners.Count > 0 ? Current.Key : null;
+        var watching = _tuners.Count > 0 ? Current.Key : _savedChannel;
         var previous = _tuners.ToDictionary(t => t.Key);
+        var now = _clock.GetUtcNow();
 
         _tuners = [.. channels.OrderBy(c => c.Number).Select(c =>
-            previous.TryGetValue(c.Key ?? c.Name, out var old) ? old.Updated(c, _random) : new Tuner(c, _random))];
+            previous.Remove(c.Key ?? c.Name, out var old) ? old.Updated(c, _random) : Returning(c, now))];
+        foreach (var gone in previous.Values)
+        {
+            // A replaced tape shelf is gone for good, and visitors can replace shelves at will.
+            if (gone.Showing is not null && !Tapes.IsTapeChannel(gone.Key)) _offAir[gone.Key] = new SavedPosition(gone.Showing.Id, gone.Position, gone.PositionAt);
+        }
+        _savedChannel = _tuners.Count > 0 ? null : watching;
 
         var index = _tuners.FindIndex(t => t.Key == watching);
         _index = Math.Max(index, 0);
@@ -316,18 +334,29 @@ public sealed class Television
 
     public SavedState Save()
     {
-        var onAir = _tuners.SelectMany(t => t.Episodes).Select(e => e.Id).ToHashSet();
+        var positions = new Dictionary<string, SavedPosition>(_offAir);
+        foreach (var tuner in _tuners.Where(t => t.Showing is not null))
+            positions[tuner.Key] = new SavedPosition(tuner.Showing!.Id, tuner.Position, tuner.PositionAt);
+        var kept = _tuners.SelectMany(t => t.Episodes).Select(e => e.Id)
+            .Concat(_offAir.Values.Select(p => p.EpisodeId)).ToHashSet();
         return new(
-            _tuners.Count > 0 ? Current.Key : null,
+            _tuners.Count > 0 ? Current.Key : _savedChannel,
             _lastChannel,
             Volume,
             Muted,
-            _tuners.Where(t => t.Showing is not null)
-                .ToDictionary(t => t.Key, t => new SavedPosition(t.Showing!.Id, t.Position, t.PositionAt)),
-            _durations.Where(d => onAir.Contains(d.Key)).ToDictionary());
+            positions,
+            _durations.Where(d => kept.Contains(d.Key)).ToDictionary());
     }
 
     // -- internals --------------------------------------------------------------
+
+    /// <summary>A channel new to this lineup, picking up where it was if it has been on before.</summary>
+    private Tuner Returning(ChannelDefinition channel, DateTimeOffset now)
+    {
+        var tuner = new Tuner(channel, _random);
+        if (_offAir.Remove(tuner.Key, out var position)) tuner.Restore(position, now);
+        return tuner;
+    }
 
     private void Step(int delta)
     {

@@ -371,6 +371,49 @@ public class TelevisionTests
     }
 
     [Fact]
+    public void A_library_that_disappears_and_comes_back_keeps_its_resume_points()
+    {
+        var resume = new TvSettings { TuneIn = TuneInMode.Resume };
+        var tv = Tv(resume);
+        tv.GoToChannel(3);
+        var dragon = tv.Snapshot().Playing!;
+        tv.ReportPosition(dragon.Token, 123);
+
+        // The drive is unplugged: the rescan finds nothing, and that state is saved.
+        tv.SetLineup([]);
+        var saved = tv.Save();
+        Assert.Equal(123, saved.Positions["Dragon Tales"].Position);
+        Assert.Equal("Dragon Tales", saved.Channel);
+
+        // Restart while it is still unplugged, then plug it back in.
+        var restarted = new Television(resume, [], saved, new Random(7), new FakeClock());
+        restarted.SetLineup(Lineup);
+
+        var back = restarted.Snapshot();
+        Assert.Equal("Dragon Tales", back.Channel!.Name);
+        Assert.Equal(dragon.EpisodeId, back.Playing!.EpisodeId);
+        Assert.Equal(123, back.Playing.Start);
+    }
+
+    [Fact]
+    public void A_channel_removed_and_added_back_resumes_where_it_was()
+    {
+        var tv = Tv(new TvSettings { TuneIn = TuneInMode.Resume });
+        tv.GoToChannel(4);
+        var pooh = tv.Snapshot().Playing!;
+        tv.GoToChannel(2);
+        tv.ReportPosition(pooh.Token, 45);
+
+        tv.SetLineup([Channel(2, "Arthur"), Channel(3, "Dragon Tales")]);
+        Assert.DoesNotContain(tv.Snapshot().Channels, c => c.Name == "Winnie the Pooh");
+        tv.SetLineup(Lineup);
+        tv.GoToChannel(4);
+
+        Assert.Equal(pooh.EpisodeId, tv.Snapshot().Playing!.EpisodeId);
+        Assert.Equal(45, tv.Snapshot().Playing!.Start);
+    }
+
+    [Fact]
     public void No_shows_at_all_says_no_channels()
     {
         var tv = new Television(new TvSettings(), []);

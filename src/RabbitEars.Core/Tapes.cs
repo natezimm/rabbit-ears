@@ -35,6 +35,9 @@ public static class Tapes
 
     public static bool IsTape(string episodeId) => episodeId.StartsWith(EpisodePrefix, StringComparison.Ordinal);
 
+    /// <summary>Whether a channel key belongs to a visitor's tape shelf rather than a media folder.</summary>
+    public static bool IsTapeChannel(string channelKey) => channelKey.StartsWith(KeyPrefix, StringComparison.Ordinal);
+
     /// <summary>
     /// Channels for these shelves, numbered to follow <paramref name="broadcast"/>,
     /// or null if the shelves are malformed or over the limits.
