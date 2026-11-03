@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "identifier": "nasa-plus-8954",
+      "filename": "sts-7-mission-highlights.ts",
+      "title": "STS-7 Mission Highlights",
+      "year": 1983,
+      "kind": "hls",
+      "url": "https://nasaplus.akamaized.net/output/8954.m3u8"
+    },
+    {
+      "identifier": "nasa-plus-8429",
+      "filename": "sts-31-mission-highlights.ts",
+      "title": "STS-31 Mission Highlights",
+      "year": 1990,
+      "kind": "hls",
+      "url": "https://nasaplus.akamaized.net/output/8429.m3u8"
+    },
+    {
+      "identifier": "nasa-plus-8956",
+      "filename": "sts-61-mission-highlights.ts",
+      "title": "STS-61 Mission Highlights",
+      "year": 1993,
+      "kind": "hls",
+      "url": "https://nasaplus.akamaized.net/output/8956.m3u8"
+    }
+  ]
+}

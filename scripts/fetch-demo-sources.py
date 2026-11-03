@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Acquire exact Archive.org candidates locally; never grants publishing approval."""
+"""Acquire exact Archive.org or HLS candidates locally; never grants publishing approval."""
 import argparse
 from datetime import datetime, timezone
 import hashlib
@@ -7,11 +7,14 @@ import json
 from pathlib import Path
 import re
 import time
-from urllib.parse import quote
+from urllib.parse import quote, urljoin, urlparse
 from urllib.request import urlopen
 
 FORMATS = {'512Kb MPEG4', 'h.264', 'MPEG4'}
 MAX_SOURCE_BYTES = 2 * 1024 ** 3
+MAX_PLAYLIST_BYTES = 1024 * 1024
+# Highest HLS rendition to pick unless a source sets maxBandwidth; keeps an hour under 2 GB.
+DEFAULT_MAX_BANDWIDTH = 4_000_000
 
 
 def safe_name(value):
@@ -67,6 +70,98 @@ def retry(operation):
             time.sleep(attempt + 1)
 
 
+def https_url(value):
+    parsed = urlparse(value) if isinstance(value, str) else None
+    if not parsed or parsed.scheme != 'https' or not parsed.netloc or any(c.isspace() for c in value):
+        raise ValueError('HLS addresses must be HTTPS')
+    return value
+
+
+def request_text(url):
+    with urlopen(https_url(url), timeout=30) as response:
+        data = response.read(MAX_PLAYLIST_BYTES + 1)
+    if len(data) > MAX_PLAYLIST_BYTES:
+        raise ValueError('Playlist response too large')
+    return data.decode('utf-8')
+
+
+def playlist_attributes(line):
+    return dict(re.findall(r'([A-Z0-9-]+)=("[^"]*"|[^,]*)', line.split(':', 1)[1]))
+
+
+def choose_variant(text, base, max_bandwidth):
+    """Picks the best rendition at or under the bandwidth cap, so the same source resolves the same way."""
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    variants = []
+    for index, line in enumerate(lines):
+        if line.startswith('#EXT-X-STREAM-INF:') and index + 1 < len(lines) and not lines[index + 1].startswith('#'):
+            bandwidth = playlist_attributes(line).get('BANDWIDTH', '')
+            if bandwidth.isdigit():
+                variants.append((int(bandwidth), https_url(urljoin(base, lines[index + 1]))))
+    fitting = [v for v in variants if v[0] <= max_bandwidth]
+    if not fitting:
+        raise ValueError('No HLS rendition fits maxBandwidth')
+    return max(fitting)
+
+
+def media_segments(text, base):
+    """Lists a finished, unencrypted media playlist's segments in play order."""
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if not lines or lines[0] != '#EXTM3U' or '#EXT-X-ENDLIST' not in lines:
+        raise ValueError('Expected a complete video-on-demand media playlist')
+    init, segments = None, []
+    for line in lines:
+        if line.startswith('#EXT-X-KEY:') and playlist_attributes(line).get('METHOD') != 'NONE':
+            raise ValueError('Encrypted HLS is not supported')
+        if line.startswith(('#EXT-X-BYTERANGE', '#EXT-X-DISCONTINUITY')):
+            raise ValueError('Byte-range or discontinuous HLS is not supported')
+        if line.startswith('#EXT-X-MAP:'):
+            if init is not None or segments:
+                raise ValueError('Only one leading HLS initialization segment is supported')
+            init = https_url(urljoin(base, playlist_attributes(line).get('URI', '').strip('"')))
+        elif not line.startswith('#'):
+            segments.append(https_url(urljoin(base, line)))
+    if not segments:
+        raise ValueError('Media playlist has no segments')
+    return init, segments
+
+
+def resolve_hls(url, max_bandwidth):
+    text = request_text(url)
+    if '#EXT-X-STREAM-INF:' in text:
+        bandwidth, url = choose_variant(text, url, max_bandwidth)
+        text = request_text(url)
+    else:
+        bandwidth = None
+    init, segments = media_segments(text, url)
+    return {'variantUrl': url, 'bandwidth': bandwidth, 'init': init, 'segments': segments}
+
+
+def download_parts(urls, temporary):
+    """Concatenates segments; TS segments join directly and fMP4 segments follow their init segment."""
+    try:
+        count = 0
+        with temporary.open('wb') as output:
+            for url in urls:
+                with urlopen(url, timeout=30) as response:
+                    declared = response.headers.get('Content-Length') if getattr(response, 'headers', None) else None
+                    received = 0
+                    while block := response.read(1024 * 1024):
+                        received += len(block)
+                        count += len(block)
+                        if count > MAX_SOURCE_BYTES:
+                            raise ValueError('HLS source exceeds the size limit')
+                        output.write(block)
+                if declared is not None and declared.isdigit() and int(declared) != received:
+                    raise OSError('Incomplete segment')
+        if count == 0:
+            raise ValueError('HLS source is empty')
+        return count
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
+
+
 def acquire(candidate, root):
     identifier = safe_name(candidate['identifier'])
     filename = safe_name(candidate['filename'])
@@ -79,6 +174,7 @@ def acquire(candidate, root):
     directory.mkdir(parents=True, exist_ok=True)
     target, lock_path = directory / filename, directory / 'source-lock.json'
     for path in (target, lock_path, directory / 'metadata.json', directory / 'metadata.json.tmp',
+                 directory / 'playlist.json', directory / 'playlist.json.tmp',
                  directory / 'source-lock.json.tmp', directory / (filename + '.part')):
         if path.is_symlink():
             raise ValueError('Source paths must not be symlinks')
@@ -93,6 +189,10 @@ def acquire(candidate, root):
         return lock
     if target.exists():
         raise ValueError('Unpinned source exists; use a clean source directory')
+    if candidate.get('kind', 'archive') == 'hls':
+        return acquire_hls(candidate, directory, target, lock_path, pinned_sha)
+    if candidate.get('kind', 'archive') != 'archive':
+        raise ValueError('Unknown source kind')
     metadata = retry(lambda: request_json('https://archive.org/metadata/' + quote(identifier, safe='')))
     if metadata.get('metadata', {}).get('identifier') != identifier:
         raise ValueError('Archive response identifier mismatch')
@@ -127,6 +227,37 @@ def acquire(candidate, root):
             'archiveMd5': entry.get('md5'), 'downloadUrl': url,
             'retrievedAt': datetime.now(timezone.utc).isoformat()}
     atomic_json(directory / 'metadata.json', metadata)
+    temporary.replace(target)
+    atomic_json(lock_path, lock)
+    return lock
+
+
+def acquire_hls(candidate, directory, target, lock_path, pinned_sha):
+    url = https_url(candidate.get('url'))
+    max_bandwidth = candidate.get('maxBandwidth', DEFAULT_MAX_BANDWIDTH)
+    if type(max_bandwidth) is not int or max_bandwidth <= 0:
+        raise ValueError('maxBandwidth must be a positive integer')
+    playlist = retry(lambda: resolve_hls(url, max_bandwidth))
+    expected_suffix = '.mp4' if playlist['init'] else '.ts'
+    if not target.name.lower().endswith(expected_suffix):
+        raise ValueError(f'HLS source filename must end with {expected_suffix} for these segments')
+    temporary = directory / (target.name + '.part')
+    parts = ([playlist['init']] if playlist['init'] else []) + playlist['segments']
+
+    def download():
+        size = download_parts(parts, temporary)
+        sha = hashes(temporary)[0]
+        if pinned_sha and sha != pinned_sha:
+            temporary.unlink(missing_ok=True)
+            raise ValueError('Catalog SHA-256 mismatch')
+        return size, sha
+
+    size, sha = retry(download)
+    lock = {'identifier': candidate['identifier'], 'filename': target.name, 'size': size, 'sha256': sha,
+            'kind': 'hls', 'playlistUrl': url, 'variantUrl': playlist['variantUrl'],
+            'bandwidth': playlist['bandwidth'], 'segments': len(playlist['segments']),
+            'retrievedAt': datetime.now(timezone.utc).isoformat()}
+    atomic_json(directory / 'playlist.json', playlist)
     temporary.replace(target)
     atomic_json(lock_path, lock)
     return lock
