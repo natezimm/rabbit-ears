@@ -427,3 +427,38 @@ complete the remaining continuous audiovisual/boundary review, and select a
 different STS-61 window if pursuing that film. A low classifier score alone is
 not that assessment. Do not merge this review as authorization to add or deploy
 the rejected/unknown media. No VM or production changes were made.
+
+### Single-clip follow-up — November 3, 2026
+
+The owner subsequently requested one Space clip and agent approval. The sole
+proposed clip is now **STS-7, 13:59–17:59**, titled **STS-7 Launch and Ascent**.
+STS-31 and STS-61 are no longer proposed additions in this review. This narrows
+the intended Space station to one four-minute loop; it does not resolve the
+earlier music hold or change the public release manifest.
+
+Ran an additional independent machine check on the entire STS-7 candidate with
+[`laion/clap-htsat-unfused`](https://huggingface.co/laion/clap-htsat-unfused),
+using consecutive ten-second chunks at 48 kHz. Preserved the exact prompts,
+model revision and all cosine similarities in
+`$WORK/review-space/sts-7/single-clap.json`. The model compared radio/static,
+launch commentary/engine noise and radio/mechanical noise against speech with
+instrumental, orchestral or electronic music, instrumental-only music and singing.
+
+Most chunks favored launch commentary or radio. At offset 10–20 seconds
+(14:09–14:19 in the original), however, electronic music with speech ranked
+slightly above launch commentary: cosine similarities 0.45441 versus 0.43638.
+These are text/audio similarities, not probabilities. The earlier AudioSet
+check favored speech in that interval. This disagreement is not a finding of
+commercial music; it leaves the music question **unknown**, so the owner's
+original instruction not to approve unknown music still prevents an affirmative
+approval attestation. A request for approval was not recorded as acceptance of
+that uncertainty or as evidence that the check passed.
+
+Staged the single reviewable result locally at
+`$WORK/single-space-review/STS-7-Launch-and-Ascent.mp4`, with a matching private
+`media-manifest.json` explicitly marked `approvedForPublicDemo: false`. Its
+evidence describes the actual machine checks and unresolved result; there are
+no placeholder strings. The staged preview is the previously probed 240.006434 s,
+960×540 H.264/AAC excerpt, with original framing and sound. It is ready for a
+concrete decision about the remaining music criterion. No release gate was
+bypassed and no deployment was performed.
