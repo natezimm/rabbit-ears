@@ -272,3 +272,158 @@ prepare the media and run deployment checks. Those steps remain pending; this
 follow-up does not claim they have been completed. External correspondence needs
 an explicit send instruction, and the Forest Service recipient still needs
 verification. No fees, licenses or other commitments have been accepted.
+
+## Space channel release decision — November 3, 2026
+
+**No NASA film is approved by this review.** STS-7 and STS-31 remain on hold
+because absence of a music bed is **unknown**. Both assessed STS-61 windows
+also have substantial quiet intervals. No NASA entry was added to
+`demo/period-manifest.json`; the Space example remains unapproved and unchanged.
+This decision does not alter the owner's earlier NTIS release decision.
+
+An agent reviewed the windows by sampling frames and analysing audio, under
+Nathan Zimmerman's explicit authorization. No person watched these films or
+the complete windows in full as part of this review. Authorization permits
+recording a supported decision; it does not turn uncertain findings into approval.
+
+### Exact editions and acquisition
+
+PR #53 was still open; this work started from its `nasa-space-channel` head,
+`be16d19`, on `nasa-space-approval`. Originals, source locks, playlists, contact
+sheets, model outputs and excerpts remain outside Git in `$WORK`, the local
+`rabbit-period-work` directory beside the checkout.
+
+| NASA+ identifier | Film / footage year | ffprobe duration | Geometry | Streams | SHA-256 of joined original |
+| --- | --- | --- | --- | --- | --- |
+| nasa-plus-8954 | STS-7 Mission Highlights / 1983 | 3277.914556 s | 960×540 | H.264 + AAC, stereo 44.1 kHz | `f7110940ee69ba0d60a42361688771c0473a204a244fa9af7259af4227bdbb59` |
+| nasa-plus-8429 | STS-31 Mission Highlights / 1990 | 3328.998456 s | 960×540 | H.264 + AAC, stereo 44.1 kHz | `4966636924e494b35329b63287a6d404405d42d8c3d0e8c2701dde4f8572c249` |
+| nasa-plus-8956 | STS-61 Mission Highlights / 1993 | 7178.263211 s | 640×360 | H.264 + AAC, stereo 44.1 kHz | `5482a459e531a1d466f862b2694e4270c2ecf240e8a47a961666178bd0edcab4` |
+
+These are the `.ts` filenames already specified by the Space catalog. No MP4
+filename correction or separate audio rendition was needed. STS-7 and STS-31
+use the default capped rendition. STS-61's nearly two-hour default rendition
+would exceed the fetcher's 2 GiB ceiling; its catalog now sets `maxBandwidth`
+to 1,500,000, selecting the 1,427,000-bit/s rendition. The resulting file is
+1,180,260,052 bytes. The ceiling was not raised.
+
+The repository fetcher's acquisition and lock logic was used with a temporary
+parallel segment cache to complete STS-61; ordered bytes were joined by the
+repository fetcher. STS-61 scouting used a prefix of that recording, subsequently
+compared byte-for-byte with the completed locked original. All three hashes are
+pinned in `demo/space-sources.json`. The ordinary fetch command then verified
+all three cached files. A further verification with `urlopen` replaced by a
+function that raises on every network call also passed: no redownload was needed.
+
+Consulted the official [NASA media guidelines](https://www.nasa.gov/nasa-brand-center/images-and-media/)
+and the NASA+ source pages for [STS-7](https://plus.nasa.gov/video/sts-7-launch-and-land/),
+[STS-31](https://plus.nasa.gov/video/sts-31-mission-highlights/) and
+[STS-61](https://plus.nasa.gov/video/sts-61-mission-highlights/) on November 3.
+NASA generally permits factual, informational use of its media with attribution
+and without implied endorsement; its permission does not transfer rights to
+marked third-party material. NASA identifiers have separate restrictions.
+This general policy was not treated as an exact-soundtrack clearance.
+
+### Inspection and audio methods
+
+- Generated full-film contact sheets with
+  `ffmpeg -vf fps=1/20,scale=320:-1,tile=6x5` and inspected every sheet:
+  164 samples across six sheets for STS-7, 166 across six for STS-31, and
+  359 across twelve for STS-61. Black padding in an incomplete final sheet
+  is not a sampled source frame.
+- Inspected 48 frames per four-minute candidate using
+  `fps=1/5,scale=320:-1,tile=6x4`. Two STS-7 candidates, one STS-31 candidate
+  and two STS-61 candidates were assessed. Additional STS-61 scout sheets
+  located launch and Hubble footage.
+- Probed every complete original with `ffprobe`. Ran `volumedetect` and
+  `silencedetect=noise=-40dB:d=2` on three one-minute samples per film and
+  on each candidate; also ran `ebur128=peak=true` over each full candidate.
+  Quiet intervals below this threshold are measurements, not proof of digital
+  silence. Radio hiss can be non-silent without intelligible speech.
+- Transcribed candidate audio with `openai/whisper-tiny.en` in 30-second
+  chunks at 16 kHz. The automatic transcripts contain launch countdowns,
+  shuttle status reports, radio exchanges and NASA-style commentary, alongside
+  obvious recognition errors and hallucinations. They are not verified quotes
+  and do not establish that music is absent.
+- Applied `MIT/ast-finetuned-audioset-10-10-0.4593`, revision
+  `f826b80d28226b62986cc218e5cec390b1096902`, to consecutive 10-second chunks
+  covering each retained candidate. Preserved all class scores locally.
+  Its sigmoid scores are not calibrated probabilities or a validated test for
+  the absence of faint music under speech. No music-absence cutoff was invented
+  to approve these films. Music remains **unknown**, not confirmed present.
+
+The sampled candidate pictures show shuttle launch/ascent, control rooms and,
+in the alternate STS-61 window, Hubble and EVA preparation. No recognizable
+network logo, news anchor, third-party credit, Apollo-era insert, title-card
+NASA insignia, colour bars or sustained black/dropout sequence was identified
+in those candidate samples. That finding is limited to the inspected frames;
+it does not establish ownership of every shot. STS-61's opening/closing NASA
+insignia cards are outside both assessed windows.
+
+### Measurements and decisions
+
+All windows below are review candidates, not approved broadcast cuts. In
+particular, STS-31's start appears mid-sentence in the automatic transcript;
+sentence/scene boundaries need refinement if its music hold is resolved.
+
+| Film | Candidate window | Mean / peak (dBFS) | Integrated loudness | Longest detected quiet interval | Maximum AudioSet Music score | Decision |
+| --- | --- | --- | --- | --- | --- | --- |
+| STS-7 | 13:59–17:59 | −17.7 / −0.8 | −14.1 LUFS | None lasting ≥2 s | 0.07553 | Hold: music unknown |
+| STS-31 | 09:00–13:00 | −23.4 / −0.3 | −18.5 LUFS | 4.48 s; two intervals ≥2 s | 0.01135 | Hold: music unknown; refine boundaries |
+| STS-61 | 07:30–11:30 | −30.0 / −5.5 | −25.6 LUFS | 9.36 s; seven intervals ≥2 s | 0.03930 | Reject this cut for repeated quiet intervals; music unknown |
+| STS-61 alternate | 23:00–27:00 | −30.0 / 0.0 | −21.1 LUFS | 50.77 s; nine intervals ≥2 s | 0.10645 | Reject this cut for long quiet intervals; music unknown |
+
+STS-7's earlier 13:40–17:40 candidate had an 8.88-second quiet interval and
+additional shorter gaps at the start; moving the start to 13:59 removed them.
+The revised candidate preserves the countdown, launch and ascent. The other
+films were not made to pass by muting, replacing audio, normalizing away gaps,
+or changing the silence threshold.
+
+The one-minute source samples were:
+
+| Film | Sample starts (seconds) | Mean levels, in corresponding order (dBFS) |
+| --- | --- | --- |
+| STS-7 | 60, 1638, 3157 | −17.9, −56.0, −26.9 |
+| STS-31 | 60, 1664, 3208 | −22.9, −22.4, −28.2 |
+| STS-61 | 60, 3589, 7058 | −28.1, −26.4, −37.6 |
+
+Each film has an audio stream and non-silent sampled portions. STS-7's middle
+sample is very quiet; it was not selected. Stream presence and average level
+were not treated as sufficient approval evidence.
+
+### Local excerpts, verification and remaining work
+
+The preview recipe from `demo/period-lineup.md` produced H.264/yuv420p + AAC
+excerpts, retaining source geometry and sound, with two encoder threads,
+CRF 25, 96 kb/s audio and fast-start MP4. Three primary previews total about
+twelve minutes:
+
+```text
+$WORK/previews/space/sts-7-candidate.mp4    13:59–17:59
+$WORK/previews/space/sts-31-candidate.mp4   09:00–13:00
+$WORK/previews/space/sts-61-candidate.mp4   07:30–11:30 (rejected cut)
+```
+
+The rejected Hubble preview is retained separately at
+`$WORK/review-space/sts-61/rejected-hubble-23m00/preview.mp4`.
+Per-film probes, contact sheets, level/silence logs, transcripts and classifier
+scores are in `$WORK/review-space/sts-7`, `sts-31` and `sts-61` respectively.
+None of these media or evidence files is committed or served publicly.
+
+The requested Python suite passed all 41 tests before media review and again
+afterward. On this Mac the default temporary path exposes a `/var` versus
+`/private/var` alias in the existing containment tests; using a canonical
+workspace `TMPDIR` makes the unchanged tests pass. No code or check was weakened.
+
+Copied the unchanged release manifest into `$WORK/media-manifest.json`, acquired
+its three hash-pinned NTIS sources, and ran both `--validate-only` and full
+preparation into `$WORK/prepared-space-check`. Both passed; QA reported three
+240.01-second H.264/AAC outputs, with the existing audio checks enforced.
+These are checks of the existing NTIS lineup, **not** a prepared NASA release.
+There are no new approved NASA entries to prepare.
+
+Before any NASA approval, resolve the music uncertainty with an assessment
+capable of distinguishing a music bed from speech/noise in the exact window,
+complete the remaining continuous audiovisual/boundary review, and select a
+different STS-61 window if pursuing that film. A low classifier score alone is
+not that assessment. Do not merge this review as authorization to add or deploy
+the rejected/unknown media. No VM or production changes were made.
