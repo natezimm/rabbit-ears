@@ -148,6 +148,13 @@ The first run prints each file's SHA-256. Add it to that source's entry in
 fragmented MP4 instead of MPEG-TS, the fetcher says so; rename that source's
 `filename` to end in `.mp4` and run it again in a clean directory.
 
+If a stream keeps its sound in a separate audio rendition, the fetcher downloads
+both and copies them into one MP4 with ffmpeg, without re-encoding, so that
+source's `filename` must end in `.mp4`. The joined file's hash depends on the
+local ffmpeg, so pin the downloaded streams instead: copy `videoSha256` and
+`audioSha256` from its `source-lock.json` into the catalog as `sha256` and
+`audioSha256`.
+
 `demo/space-manifest.example.json` holds unapproved entries for the three films.
 Before approving one, watch the whole film and choose a four-minute window. In
 that window, check that the sound is NASA's own (crew, mission control or

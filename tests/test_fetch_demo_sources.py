@@ -91,9 +91,13 @@ class SourceTests(unittest.TestCase):
 class Response(io.BytesIO):
     """A urlopen stand-in that reports its length like an HTTP response."""
 
-    def __init__(self, data, length=None):
+    def __init__(self, data, length=None, url=None):
         super().__init__(data)
         self.headers = {'Content-Length': str(len(data) if length is None else length)}
+        self.url = url
+
+    def geturl(self):
+        return self.url
 
 
 class HlsTests(unittest.TestCase):
@@ -113,7 +117,7 @@ class HlsTests(unittest.TestCase):
 
     def playlists(self, url):
         return {'https://video.example/output/1.m3u8': self.MASTER,
-                'https://video.example/output/mid/index.m3u8': self.MEDIA}[url]
+                'https://video.example/output/mid/index.m3u8': self.MEDIA}[url], url
 
     def acquire(self, parts=None):
         parts = self.parts if parts is None else parts
@@ -160,6 +164,51 @@ class HlsTests(unittest.TestCase):
                       '#EXTM3U\n#EXT-X-ENDLIST\n']:
             with self.subTest(media=media), self.assertRaises(ValueError):
                 fetch.media_segments(media, 'https://video.example/index.m3u8')
+
+    def test_relative_references_follow_redirects(self):
+        redirected = 'https://cdn.example/moved/1.m3u8'
+        with patch.object(fetch, 'urlopen', return_value=Response(b'#EXTM3U', url=redirected)):
+            self.assertEqual(fetch.request_text('https://video.example/output/1.m3u8'), ('#EXTM3U', redirected))
+        pages = {'https://video.example/output/1.m3u8': (self.MASTER, redirected),
+                 'https://cdn.example/moved/mid/index.m3u8': (self.MEDIA, 'https://cdn.example/moved/mid/index.m3u8')}
+        with patch.object(fetch, 'request_text', side_effect=pages.__getitem__):
+            playlist = fetch.resolve_hls('https://video.example/output/1.m3u8', 4000000)
+        self.assertEqual(playlist['segments'], ['https://cdn.example/moved/mid/a.ts', 'https://cdn.example/moved/mid/b.ts'])
+
+    def test_separate_audio_is_downloaded_pinned_and_joined(self):
+        master = ('#EXTM3U\n#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="aac",NAME="English",DEFAULT=YES,URI="audio/index.m3u8"\n'
+                  '#EXT-X-STREAM-INF:BANDWIDTH=3000000,AUDIO="aac"\nmid/index.m3u8\n')
+        audio = '#EXTM3U\n#EXTINF:6,\nx.aac\n#EXT-X-ENDLIST\n'
+        pages = {'https://video.example/output/1.m3u8': master, 'https://video.example/output/mid/index.m3u8': self.MEDIA,
+                 'https://video.example/output/audio/index.m3u8': audio}
+        parts = dict(self.parts, **{'https://video.example/output/audio/x.aac': b'sound'})
+        joined = []
+
+        def mux(video, sound, target):
+            joined.append((video.read_bytes(), sound.read_bytes()))
+            target.write_bytes(b'joined')
+
+        self.candidate['filename'] = 'show.mp4'
+        with patch.object(fetch, 'request_text', side_effect=lambda url: (pages[url], url)), \
+             patch.object(fetch, 'urlopen', side_effect=lambda url, timeout: Response(parts[url])), \
+             patch.object(fetch, 'mux', side_effect=mux):
+            lock = fetch.acquire(self.candidate, self.root)
+        self.assertEqual(joined, [(b'first second', b'sound')])
+        self.assertEqual(lock['audioSha256'], hashlib.sha256(b'sound').hexdigest())
+        self.assertEqual(lock['videoSha256'], hashlib.sha256(b'first second').hexdigest())
+        self.assertEqual((self.root / 'nasa-plus-1/show.mp4').read_bytes(), b'joined')
+        self.assertEqual(sorted(p.name for p in (self.root / 'nasa-plus-1').iterdir()),
+                         ['playlist.json', 'show.mp4', 'source-lock.json'])
+        self.candidate['sha256'] = lock['videoSha256']
+        self.assertEqual(fetch.acquire(self.candidate, self.root), lock)
+        self.candidate['audioSha256'] = '0' * 64
+        with self.assertRaises(ValueError):
+            fetch.acquire(self.candidate, self.root)
+
+    def test_audio_group_without_definition_rejected(self):
+        master = '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=3000000,AUDIO="aac"\nmid/index.m3u8\n'
+        with self.assertRaises(ValueError):
+            fetch.choose_variant(master, 'https://video.example/1.m3u8', 4000000)
 
     def test_no_rendition_under_cap(self):
         with self.assertRaises(ValueError):
