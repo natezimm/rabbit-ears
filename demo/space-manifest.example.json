@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "videos": [
+    {
+      "source": "originals/nasa-plus-8954/sts-7-mission-highlights.ts",
+      "channel": "Space",
+      "title": "STS-7 Mission Highlights",
+      "year": 1983,
+      "creator": "NASA",
+      "sourceUrl": "https://plus.nasa.gov/video/sts-7-launch-and-land/",
+      "license": "NASA-produced footage; NASA's media guidelines state NASA video is generally not subject to U.S. copyright",
+      "licenseUrl": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "attribution": "Courtesy NASA. Use does not imply NASA endorsement.",
+      "clipStartSeconds": 0,
+      "clipDurationSeconds": 240,
+      "framing": "preserve",
+      "modifications": "REPLACE with the chosen four-minute window and edits; H.264/AAC transcoding with original framing and sound",
+      "rightsEvidence": "REPLACE after listening to the chosen window: confirm no commercial music bed or third-party (network or contractor) footage",
+      "approvedForPublicDemo": false,
+      "reviewedBy": "REPLACE",
+      "reviewedAt": "REPLACE"
+    },
+    {
+      "source": "originals/nasa-plus-8429/sts-31-mission-highlights.ts",
+      "channel": "Space",
+      "title": "STS-31 Mission Highlights",
+      "year": 1990,
+      "creator": "NASA",
+      "sourceUrl": "https://plus.nasa.gov/video/sts-31-mission-highlights/",
+      "license": "NASA-produced footage; NASA's media guidelines state NASA video is generally not subject to U.S. copyright",
+      "licenseUrl": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "attribution": "Courtesy NASA. Use does not imply NASA endorsement.",
+      "clipStartSeconds": 0,
+      "clipDurationSeconds": 240,
+      "framing": "preserve",
+      "modifications": "REPLACE with the chosen four-minute window and edits; H.264/AAC transcoding with original framing and sound",
+      "rightsEvidence": "REPLACE after listening to the chosen window: confirm no commercial music bed or third-party (network or contractor) footage",
+      "approvedForPublicDemo": false,
+      "reviewedBy": "REPLACE",
+      "reviewedAt": "REPLACE"
+    },
+    {
+      "source": "originals/nasa-plus-8956/sts-61-mission-highlights.ts",
+      "channel": "Space",
+      "title": "STS-61 Mission Highlights",
+      "year": 1993,
+      "creator": "NASA",
+      "sourceUrl": "https://plus.nasa.gov/video/sts-61-mission-highlights/",
+      "license": "NASA-produced footage; NASA's media guidelines state NASA video is generally not subject to U.S. copyright",
+      "licenseUrl": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "attribution": "Courtesy NASA. Use does not imply NASA endorsement.",
+      "clipStartSeconds": 0,
+      "clipDurationSeconds": 240,
+      "framing": "preserve",
+      "modifications": "REPLACE with the chosen four-minute window and edits; H.264/AAC transcoding with original framing and sound",
+      "rightsEvidence": "REPLACE after listening to the chosen window: confirm no commercial music bed or third-party (network or contractor) footage",
+      "approvedForPublicDemo": false,
+      "reviewedBy": "REPLACE",
+      "reviewedAt": "REPLACE"
+    }
+  ]
+}

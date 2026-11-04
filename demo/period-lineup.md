@@ -127,3 +127,37 @@ docker compose -f compose.yaml up -d --force-recreate --no-build
 
 Verify health and playback again. Do not delete rollback media until the new
 release has been checked. No production activation is performed by this PR.
+
+## Add the NASA Space channel
+
+`demo/space-sources.json` lists three NASA shuttle mission films for a Space
+channel: STS-7 (1983), STS-31 (1990) and STS-61 (1993) from NASA+. They are
+NASA-produced; NASA's [media guidelines](https://www.nasa.gov/nasa-brand-center/images-and-media/)
+say NASA video is generally not subject to U.S. copyright, with conditions on
+endorsement, the NASA insignia and marked third-party material. NASA+ serves
+them only as HLS streams, so the fetcher picks the best rendition at or under
+`maxBandwidth` (4 Mb/s by default), joins its segments in order into one file and
+pins the result's SHA-256 like an archive download.
+
+```bash
+python3 scripts/fetch-demo-sources.py demo/space-sources.json "$HOME/rabbit-period-work/originals"
+```
+
+The first run prints each file's SHA-256. Add it to that source's entry in
+`space-sources.json` so later runs refuse a changed stream. If NASA+ serves
+fragmented MP4 instead of MPEG-TS, the fetcher says so; rename that source's
+`filename` to end in `.mp4` and run it again in a clean directory.
+
+If a stream keeps its sound in a separate audio rendition, the fetcher downloads
+both and copies them into one MP4 with ffmpeg, without re-encoding, so that
+source's `filename` must end in `.mp4`. The joined file's hash depends on the
+local ffmpeg, so pin the downloaded streams instead: copy `videoSha256` and
+`audioSha256` from its `source-lock.json` into the catalog as `sha256` and
+`audioSha256`.
+
+`demo/space-manifest.example.json` holds unapproved entries for the three films.
+Before approving one, watch the whole film and choose a four-minute window. In
+that window, check that the sound is NASA's own (crew, mission control or
+narration) with no commercial music bed, and that there's no network or
+contractor footage. Then set `clipStartSeconds`, replace the `REPLACE` fields,
+and copy the entry into the release manifest with the owner's approval.
