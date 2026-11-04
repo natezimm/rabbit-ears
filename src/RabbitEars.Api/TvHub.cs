@@ -54,9 +54,8 @@ public sealed class TvHub(TvService tv) : Hub
         await base.OnDisconnectedAsync(exception);
     }
 
-    // The demo guide lists lower channel numbers above higher ones.
-    public Task ChannelUp() => tv.Press(tv.Demo ? t => t.ChannelDown() : t => t.ChannelUp(), Room);
-    public Task ChannelDown() => tv.Press(tv.Demo ? t => t.ChannelUp() : t => t.ChannelDown(), Room);
+    public Task ChannelUp() => tv.Press(t => t.ChannelUp(), Room);
+    public Task ChannelDown() => tv.Press(t => t.ChannelDown(), Room);
     public Task LastChannel() => tv.Press(t => t.LastChannel(), Room);
     public Task GoToChannel(int number) => tv.Press(t => t.GoToChannel(number), Room);
     public Task Digit(int digit) => tv.Press(t => t.PushDigit(digit), Room);
