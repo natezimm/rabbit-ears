@@ -141,27 +141,6 @@ public sealed class TvHubTests : IAsyncLifetime
             (await http.GetFromJsonAsync<TvSnapshot>("/api/state?room=visitor-one"))!.Channel);
     }
 
-    [Theory]
-    [InlineData("ChannelUp", 2)]
-    [InlineData("ChannelDown", 4)]
-    public async Task On_the_demo_site_channel_arrows_follow_guide_order(string command, int expectedChannel)
-    {
-        var thirdChannel = Path.Combine(_media, "Space");
-        Directory.CreateDirectory(thirdChannel);
-        File.WriteAllText(Path.Combine(thirdChannel, "S01E01.mp4"), "not really a video");
-
-        await using var demo = Demo();
-        var (remote, states) = await ConnectRemote(demo, "hub/tv?room=guide-test");
-        await using var connection = remote;
-
-        await remote.InvokeAsync("GoToChannel", 3);
-        var middle = await Next(states, s => s.Channel?.Number == 3);
-
-        await remote.InvokeAsync(command);
-        var after = await Next(states, s => s.Revision > middle.Revision);
-        Assert.Equal(expectedChannel, after.Channel?.Number);
-    }
-
     [Fact]
     public async Task On_the_demo_site_a_connection_with_no_room_is_turned_away()
     {

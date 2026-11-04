@@ -86,7 +86,7 @@ public sealed partial class TvService : BackgroundService
         }
     }
 
-    internal bool Demo => _options.Demo.Enabled;
+    private bool Demo => _options.Demo.Enabled;
 
     /// <summary>
     /// The home television changed. Raised after every broadcast, from whichever
