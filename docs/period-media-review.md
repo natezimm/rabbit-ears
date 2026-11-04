@@ -462,3 +462,19 @@ no placeholder strings. The staged preview is the previously probed 240.006434 s
 960×540 H.264/AAC excerpt, with original framing and sound. It is ready for a
 concrete decision about the remaining music criterion. No release gate was
 bypassed and no deployment was performed.
+
+### STS-31 release decision — November 3, 2026
+
+Nathan Zimmerman listened to the complete STS-31 preview for **09:00–13:00**
+and reported “No music throughout.” That listening check resolves the music
+hold on this exact excerpt. The earlier visual review sampled 166 full-film
+frames and 48 frames in the excerpt, with no recognizable third-party branding
+or credits in the excerpt samples. The agent authorized the single Space entry
+under Nathan’s prior release authorization. The visual review used sampled
+frames, and Nathan’s confirmation applies to audio in the excerpt.
+
+The release manifest uses the exact 240-second preview window. Its opening
+may start mid-sentence, as noted in the earlier machine transcription. Keeping
+the reviewed boundaries preserves the exact audio Nathan heard. This decision
+supersedes the earlier STS-31 hold and the STS-7 proposal. STS-7 and STS-61
+remain outside the release manifest.

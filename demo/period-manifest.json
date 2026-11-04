@@ -57,6 +57,25 @@
       "reviewedBy": "Project owner \u2014 release decision recorded in project conversation",
       "reviewedAt": "2026-10-28",
       "attribution": "United States Forest Service. Source: Internet Archive / FedFlix. Edited excerpt; no agency endorsement implied."
+    },
+    {
+      "source": "originals/nasa-plus-8429/sts-31-mission-highlights.ts",
+      "channel": "Space",
+      "title": "STS-31 Discovery Launch",
+      "year": 1990,
+      "creator": "NASA",
+      "sourceUrl": "https://plus.nasa.gov/video/sts-31-mission-highlights/",
+      "license": "NASA-produced footage; NASA's media guidelines state NASA video is generally not subject to U.S. copyright",
+      "licenseUrl": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "attribution": "Courtesy NASA. Use does not imply NASA endorsement.",
+      "clipStartSeconds": 540,
+      "clipDurationSeconds": 240,
+      "framing": "preserve",
+      "modifications": "Excerpt 09:00\u201313:00; H.264/AAC transcoding with original framing and sound.",
+      "rightsEvidence": "NASA media guidelines and NASA+ source page reviewed. Original SHA-256 4966636924e494b35329b63287a6d404405d42d8c3d0e8c2701dde4f8572c249. Agent inspected 166 overview frames and 48 excerpt frames at five-second intervals; no recognizable network branding, third-party credits, or out-of-era footage identified in those samples. Audio analysis measured \u221218.5 LUFS and a longest quiet interval of 4.48 seconds. Automatic transcription identified launch and mission commentary. Nathan Zimmerman listened to the complete exact preview and reported no music throughout. Agent release decision under Nathan Zimmerman\u2019s authorization, based on sampled visual review and owner listening.",
+      "approvedForPublicDemo": true,
+      "reviewedBy": "Agent review authorized by Nathan Zimmerman",
+      "reviewedAt": "2026-11-03"
     }
   ]
 }
