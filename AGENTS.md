@@ -43,6 +43,10 @@ dotnet test --filter "FullyQualifiedName~ShuffleDeckTests"                      
 - `docker build -t rabbit-ears . && docker run --rm -p 8080:8080 rabbit-ears` runs
   the public demo site (see "Demo mode" below). `demo/` has the compose file and
   nginx config for hosting it.
+- `.github/workflows/security.yml` runs CodeQL (C#, TypeScript, Python, the
+  workflows), GitHub's dependency review on pull requests and an audit of NuGet
+  and shipped npm packages for high or critical advisories, on pull requests,
+  `main` and every Monday.
 - `scripts/` runs on the laptop (`publish.sh`, `deploy.sh YOU@host`,
   `convert-media.sh`). `deploy/` runs on the box. `docs/box-setup.md` is the
   step-by-step for bringing a box up.
