@@ -82,7 +82,9 @@ jobs:
           node-version-file: .nvmrc
       - name: NuGet packages, direct and transitive
         run: |
-          dotnet restore
+          # Restore's own audit would turn any advisory, even a low one, into an error here
+          # (TreatWarningsAsErrors), so it is off and the filter below sets the threshold.
+          dotnet restore -p:NuGetAudit=false
           dotnet list package --vulnerable --include-transitive --format json > "$RUNNER_TEMP/nuget.json"
           found=$(jq '[.. | objects | select(has("vulnerabilities")) | .id as $id | .resolvedVersion as $v
             | .vulnerabilities[] | select(.severity == "High" or .severity == "Critical")
