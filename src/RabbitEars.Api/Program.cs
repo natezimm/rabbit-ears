@@ -6,9 +6,13 @@ var options = builder.Configuration.GetSection("Box").Get<BoxOptions>() ?? new B
 // Relative paths in config are relative to the app folder, wherever it is started from.
 options.MediaRoot = Path.GetFullPath(options.MediaRoot, builder.Environment.ContentRootPath);
 options.StateDir = Path.GetFullPath(options.StateDir, builder.Environment.ContentRootPath);
-options.Player.MpvSocket = Path.GetFullPath(options.Player.MpvSocket, builder.Environment.ContentRootPath);
+options.Player.MpvSocket = MpvEndpoint.Normalize(options.Player.MpvSocket, builder.Environment.ContentRootPath,
+    OperatingSystem.IsWindows() && options.UsesMpv);
 
 builder.Services.AddSingleton(options);
+// Only the desktop launcher opts into lifetime control through its private stdin pipe.
+if (Environment.GetEnvironmentVariable("RABBITEARS_DESKTOP_STDIN") == "1" && Console.IsInputRedirected)
+    builder.Services.AddHostedService<DesktopParentLifetime>();
 builder.Services.AddSingleton<LibraryScanner>();
 builder.Services.AddSingleton<ChannelCatalog>();
 builder.Services.AddSingleton<DemoMedia>();

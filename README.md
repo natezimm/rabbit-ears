@@ -186,3 +186,10 @@ The [Mac desktop setup](docs/mac-setup.md) builds a self-contained API and launc
 that run mpv as your user. Start and quit the TV without Docker or a system service.
 Apple silicon is the initial target; see the setup guide for dependencies, phone
 remote access, saved state and the manual validation checklist.
+
+## Run on Windows
+
+The [Windows desktop setup](docs/windows-setup.md) builds self-contained `win-x64`
+and `win-arm64` packages with the existing native mpv screen, admin page and phone
+remote. State stays in your user profile. Windows x64 CI covers named pipes and
+headless playback; the ARM64 package is intended for manual Parallels testing.

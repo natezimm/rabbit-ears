@@ -280,3 +280,13 @@ private Unix socket to both children. State and bounded logs live outside the
 package. The existing `MpvPlayer` still drives the screen; `Television` and the
 remote protocol are unchanged. LAN access is explicit. See [Mac setup](mac-setup.md)
 and [ADR 0005](adr/0005-desktop-launcher-owns-the-session.md).
+
+### Windows desktop
+
+The shared launcher selects per-user Windows paths and passes a local named pipe
+identifier instead of normalizing it as a filesystem path. `MpvConnection` uses
+one JSON framing/request/event implementation over either a Unix stream or an
+asynchronous Windows named-pipe stream. Windows API processes opt into
+`DesktopParentLifetime`: shutdown or EOF on their redirected stdin requests host
+shutdown and the existing state save. No network shutdown endpoint is added.
+See [Windows setup](windows-setup.md) for packaging and Parallels validation.

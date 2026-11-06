@@ -51,7 +51,16 @@ public sealed class OwnedProcess : IAsyncDisposable
             if (!Process.HasExited)
             {
                 // SIGTERM lets ASP.NET run TvService.StopAsync and persist the television.
-                if (!OperatingSystem.IsWindows()) Kill(Process.Id, 15);
+                if (Process.StartInfo.RedirectStandardInput)
+                {
+                    try
+                    {
+                        await Process.StandardInput.WriteLineAsync("shutdown");
+                        Process.StandardInput.Close();
+                    }
+                    catch (IOException) { /* The API may already be stopping. */ }
+                }
+                else if (!OperatingSystem.IsWindows()) Kill(Process.Id, 15);
                 else Process.CloseMainWindow();
                 try { await Process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10)); }
                 catch (TimeoutException)
