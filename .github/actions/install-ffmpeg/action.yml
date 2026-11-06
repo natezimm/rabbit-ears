@@ -1,0 +1,49 @@
+name: Install ffmpeg
+description: >
+  Installs Ubuntu's ffmpeg, reusing the package files from an earlier run so a slow apt mirror
+  only costs time when the runner image changes.
+
+runs:
+  using: composite
+  steps:
+    # The image version changes about weekly, and with it the installed libraries the packages
+    # depend on. An older image's packages are still a useful start: apt fetches only what differs.
+    - id: key
+      shell: bash
+      run: echo "key=ffmpeg-debs-$ImageOS-$ImageVersion" >> "$GITHUB_OUTPUT"
+
+    - id: restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ~/ffmpeg-debs
+        key: ${{ steps.key.outputs.key }}
+        restore-keys: ffmpeg-debs-
+
+    - shell: bash
+      run: |
+        mkdir -p ~/ffmpeg-debs
+        if compgen -G ~/'ffmpeg-debs/*.deb' > /dev/null; then
+          sudo cp ~/ffmpeg-debs/*.deb /var/cache/apt/archives/
+        fi
+        # The mirror has been seen both stalling and crawling at tens of kB/s. A stalled attempt
+        # is abandoned and retried; files a slow attempt finished stay in apt's cache for the next.
+        # Without recommends, ffmpeg skips GPU drivers and speech models the tests never use.
+        apt_options=(-o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o APT::Keep-Downloaded-Packages=true)
+        for attempt in 1 2 3; do
+          sudo timeout 150 apt-get "${apt_options[@]}" update \
+            && sudo timeout 300 apt-get "${apt_options[@]}" install -y --no-install-recommends ffmpeg \
+            && break
+          if [ "$attempt" = 3 ]; then exit 1; fi
+        done
+        # Keep only packages the mirror still offers, so superseded versions do not pile up.
+        sudo apt-get autoclean -qq
+        rm -f ~/ffmpeg-debs/*.deb
+        cp /var/cache/apt/archives/*.deb ~/ffmpeg-debs/
+
+    - if: steps.restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      # Jobs running at once race to save the same key; one wins and the rest only warn.
+      continue-on-error: true
+      with:
+        path: ~/ffmpeg-debs
+        key: ${{ steps.key.outputs.key }}

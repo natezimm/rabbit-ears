@@ -76,15 +76,7 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
-      - run: |
-          # The runner's apt mirror sometimes stalls; give up on a slow attempt and try again
-          # rather than holding the job until its timeout.
-          for attempt in 1 2 3; do
-            sudo timeout 150 apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 update \
-              && sudo timeout 240 apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 install -y ffmpeg \
-              && exit 0
-          done
-          exit 1
+      - uses: ./.github/actions/install-ffmpeg
       # The browser download is cached per Playwright version; its system libraries are not.
       - name: Playwright version
         id: playwright
@@ -114,15 +106,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - run: |
-          # The runner's apt mirror sometimes stalls; give up on a slow attempt and try again
-          # rather than holding the job until its timeout.
-          for attempt in 1 2 3; do
-            sudo timeout 150 apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 update \
-              && sudo timeout 240 apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 install -y ffmpeg \
-              && exit 0
-          done
-          exit 1
+      - uses: ./.github/actions/install-ffmpeg
       - run: python3 -m unittest discover -s tests -p 'test_*.py'
 
   # The demo site's container, built the way the server builds it.
@@ -141,15 +125,7 @@ jobs:
           tags: rabbit-ears
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - run: |
-          # The runner's apt mirror sometimes stalls; give up on a slow attempt and try again
-          # rather than holding the job until its timeout.
-          for attempt in 1 2 3; do
-            sudo timeout 150 apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 update \
-              && sudo timeout 240 apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 install -y ffmpeg \
-              && exit 0
-          done
-          exit 1
+      - uses: ./.github/actions/install-ffmpeg
       - name: The container answers and opens on the demo page
         run: |
           docker run -d --name demo -p 8080:8080 rabbit-ears
