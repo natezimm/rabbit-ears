@@ -63,7 +63,7 @@ public sealed class PlayerOptions
     /// </summary>
     public string Kind { get; set; } = Mpv;
 
-    /// <summary>The control socket mpv opens and the box connects to.</summary>
+    /// <summary>The Unix socket path or local Windows named pipe opened by mpv.</summary>
     public string MpvSocket { get; set; } = "/run/rabbitears-tv/mpv.sock";
 }
 

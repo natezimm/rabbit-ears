@@ -59,6 +59,49 @@ jobs:
           path: rabbit-ears-osx-arm64.tar.gz
           retention-days: 7
 
+  windows-desktop:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install native playback dependencies
+        run: |
+          choco install mpvio.install --version=0.41.0 --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'mpv install failed' }
+          Join-Path $env:ChocolateyInstall 'lib/mpvio.install/tools' | Out-File $env:GITHUB_PATH -Append -Encoding utf8
+          choco install ffmpeg --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'FFmpeg install failed' }
+      - name: Record native versions
+        run: |
+          mpv --version
+          ffprobe -version
+          dotnet --info
+      - run: dotnet test
+      - run: ./scripts/publish-windows.ps1 win-x64
+      - run: ./tests/smoke-windows.ps1 -Package publish/windows/win-x64
+      # ARM64 is a build artifact for Parallels testing, not a claim of native validation.
+      - run: ./scripts/publish-windows.ps1 win-arm64
+      - name: Archive packages and checksums
+        run: |
+          Compress-Archive publish/windows/win-x64 rabbit-ears-win-x64.zip
+          Compress-Archive publish/windows/win-arm64 rabbit-ears-win-arm64.zip
+          Get-FileHash rabbit-ears-win-*.zip -Algorithm SHA256 | Format-Table -AutoSize | Out-File SHA256SUMS.txt
+      - uses: actions/upload-artifact@v7
+        with:
+          name: rabbit-ears-windows
+          path: |
+            rabbit-ears-win-*.zip
+            SHA256SUMS.txt
+          retention-days: 7
+
   web:
     runs-on: ubuntu-24.04
     timeout-minutes: 15

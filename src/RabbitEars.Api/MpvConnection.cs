@@ -1,11 +1,12 @@
 using System.Collections.Concurrent;
 using System.Net.Sockets;
+using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
 
 namespace RabbitEars.Api;
 
-/// <summary>Something that runs mpv commands. The real one is a socket; tests use a stand-in.</summary>
+/// <summary>Something that runs mpv commands. The real one uses a socket or pipe; tests use a stand-in.</summary>
 public interface IMpvLink
 {
     /// <summary>
@@ -27,16 +28,15 @@ public sealed class MpvConnection : IMpvLink, IAsyncDisposable
     /// <summary>mpv answers in milliseconds; this long means it is wedged, and the box reconnects.</summary>
     private static readonly TimeSpan ReplyTimeout = TimeSpan.FromSeconds(5);
 
-    private readonly Socket _socket;
-    private readonly NetworkStream _stream;
+    private readonly Stream _stream;
+    private readonly CancellationTokenSource _closed = new();
     private readonly SemaphoreSlim _writing = new(1, 1);
     private readonly ConcurrentDictionary<long, TaskCompletionSource<JsonElement?>> _waiting = new();
     private long _lastId;
 
-    private MpvConnection(Socket socket, Action<JsonElement> onEvent)
+    private MpvConnection(Stream stream, Action<JsonElement> onEvent)
     {
-        _socket = socket;
-        _stream = new NetworkStream(socket, ownsSocket: false);
+        _stream = stream;
         Closed = Read(onEvent);
     }
 
@@ -44,16 +44,28 @@ public sealed class MpvConnection : IMpvLink, IAsyncDisposable
     public Task Closed { get; }
 
     /// <summary>
-    /// Connects to mpv's socket. Throws <see cref="SocketException"/> while mpv is not running.
+    /// Connects to the local socket or Windows pipe. A missing pipe times out after one second.
     /// <paramref name="onEvent"/> runs on the reading thread, so it must not wait on a command.
     /// </summary>
     public static async Task<MpvConnection> Open(string socketPath, Action<JsonElement> onEvent, CancellationToken cancel)
     {
+        cancel.ThrowIfCancellationRequested();
+        if (OperatingSystem.IsWindows())
+        {
+            var pipe = new NamedPipeClientStream(".", MpvEndpoint.PipeName(socketPath), PipeDirection.InOut,
+                PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+            try
+            {
+                await pipe.ConnectAsync(1000, cancel);
+                return new MpvConnection(pipe, onEvent);
+            }
+            catch { pipe.Dispose(); throw; }
+        }
         var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
         try
         {
             await socket.ConnectAsync(new UnixDomainSocketEndPoint(socketPath), cancel);
-            return new MpvConnection(socket, onEvent);
+            return new MpvConnection(new NetworkStream(socket, ownsSocket: true), onEvent);
         }
         catch
         {
@@ -64,6 +76,8 @@ public sealed class MpvConnection : IMpvLink, IAsyncDisposable
 
     public async Task<JsonElement?> Request(object command)
     {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(_closed.Token);
+        deadline.CancelAfter(ReplyTimeout);
         var id = Interlocked.Increment(ref _lastId);
         // Answers arrive on the reading thread; continuing elsewhere keeps that thread reading.
         var answer = new TaskCompletionSource<JsonElement?>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -76,19 +90,23 @@ public sealed class MpvConnection : IMpvLink, IAsyncDisposable
                 ["request_id"] = id,
             });
 
-            await _writing.WaitAsync();
+            await _writing.WaitAsync(deadline.Token);
             try
             {
-                await _stream.WriteAsync(line);
-                await _stream.WriteAsync("\n"u8.ToArray());
+                await _stream.WriteAsync(line, deadline.Token);
+                await _stream.WriteAsync("\n"u8.ToArray(), deadline.Token);
             }
             finally
             {
                 _writing.Release();
             }
 
-            return await answer.Task.WaitAsync(ReplyTimeout);
+            return await answer.Task.WaitAsync(deadline.Token);
         }
+        catch (OperationCanceledException) when (_closed.IsCancellationRequested)
+        { throw new IOException("mpv closed its control endpoint."); }
+        catch (OperationCanceledException)
+        { throw new TimeoutException("mpv did not answer within five seconds."); }
         finally
         {
             _waiting.TryRemove(id, out _);
@@ -123,6 +141,7 @@ public sealed class MpvConnection : IMpvLink, IAsyncDisposable
         }
         finally
         {
+            _closed.Cancel();
             foreach (var answer in _waiting.Values)
             {
                 answer.TrySetException(new IOException("mpv closed its control socket."));
@@ -146,17 +165,9 @@ public sealed class MpvConnection : IMpvLink, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        try
-        {
-            _socket.Shutdown(SocketShutdown.Both);
-        }
-        catch (SocketException)
-        {
-            // Already gone from mpv's side.
-        }
-        _socket.Dispose();
-        await Closed;
+        _closed.Cancel();
         await _stream.DisposeAsync();
-        _writing.Dispose();
+        await Closed;
+        // Requests may still be unwinding their semaphore lease after cancellation.
     }
 }

@@ -1,25 +1,46 @@
 using System.Net.Sockets;
+using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
 using RabbitEars.Api;
 
 namespace RabbitEars.Tests;
 
-/// <summary>The control socket, against a stand-in mpv listening on a real Unix socket.</summary>
+/// <summary>The same protocol assertions run over native Windows pipes or Unix sockets.</summary>
 public sealed class MpvConnectionTests : IDisposable
 {
     private readonly string _dir = Directory.CreateTempSubdirectory("ears-").FullName;
 
     public void Dispose() => Directory.Delete(_dir, recursive: true);
 
-    private string SocketPath => Path.Combine(_dir, "mpv.sock");
+    private string SocketPath => OperatingSystem.IsWindows()
+        ? MpvEndpoint.PipePrefix + Path.GetFileName(_dir)
+        : Path.Combine(_dir, "mpv.sock");
 
-    private Socket Listen()
+    private Listener Listen() => new(SocketPath);
+
+    private sealed class Listener : IDisposable
     {
-        var listener = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
-        listener.Bind(new UnixDomainSocketEndPoint(SocketPath));
-        listener.Listen();
-        return listener;
+        private readonly Socket? _socket;
+        private readonly NamedPipeServerStream? _pipe;
+        public Listener(string endpoint)
+        {
+            if (OperatingSystem.IsWindows())
+                _pipe = new NamedPipeServerStream(MpvEndpoint.PipeName(endpoint), PipeDirection.InOut, 1,
+                    PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+            else
+            {
+                _socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+                _socket.Bind(new UnixDomainSocketEndPoint(endpoint));
+                _socket.Listen();
+            }
+        }
+        public async Task<Stream> AcceptAsync()
+        {
+            if (_pipe is not null) { await _pipe.WaitForConnectionAsync(); return _pipe; }
+            return new NetworkStream(await _socket!.AcceptAsync(), ownsSocket: true);
+        }
+        public void Dispose() { _pipe?.Dispose(); _socket?.Dispose(); }
     }
 
     [Fact]
@@ -78,16 +99,66 @@ public sealed class MpvConnectionTests : IDisposable
     [Fact]
     public async Task No_mpv_running_is_a_socket_error_to_retry()
     {
-        await Assert.ThrowsAnyAsync<SocketException>(() => MpvConnection.Open(SocketPath, _ => { }, default));
+        if (OperatingSystem.IsWindows())
+            await Assert.ThrowsAsync<TimeoutException>(() => MpvConnection.Open(SocketPath, _ => { }, default));
+        else
+            await Assert.ThrowsAnyAsync<SocketException>(() => MpvConnection.Open(SocketPath, _ => { }, default));
     }
 
-    private static async Task<string> ReadLine(Socket socket)
+    [Fact]
+    public async Task Concurrent_answers_are_correlated_even_when_reversed()
+    {
+        using var listener = Listen();
+        var opening = MpvConnection.Open(SocketPath, _ => { }, default);
+        using var peer = await listener.AcceptAsync();
+        await using var connection = await opening;
+        var first = connection.Request(new[] { "get_property", "volume" });
+        var firstId = JsonDocument.Parse(await ReadLine(peer)).RootElement.GetProperty("request_id").GetInt64();
+        var second = connection.Request(new[] { "get_property", "time-pos" });
+        var secondId = JsonDocument.Parse(await ReadLine(peer)).RootElement.GetProperty("request_id").GetInt64();
+        await Send(peer, $$"""{"data":12,"request_id":{{secondId}},"error":"success"}""");
+        await Send(peer, $$"""{"data":65,"request_id":{{firstId}},"error":"success"}""");
+        Assert.Equal(65, (await first)!.Value.GetInt32());
+        Assert.Equal(12, (await second)!.Value.GetInt32());
+    }
+
+    [Fact]
+    public async Task Disposal_completes_a_waiting_request_and_allows_a_new_connection()
+    {
+        using (var listener = Listen())
+        {
+            var opening = MpvConnection.Open(SocketPath, _ => { }, default);
+            using var peer = await listener.AcceptAsync();
+            var connection = await opening;
+            var pending = connection.Request(new[] { "get_property", "path" });
+            await ReadLine(peer);
+            await connection.DisposeAsync();
+            await Assert.ThrowsAsync<IOException>(() => pending);
+            await Assert.ThrowsAsync<IOException>(() => connection.Request(new[] { "stop" }));
+        }
+        if (!OperatingSystem.IsWindows()) File.Delete(SocketPath);
+        using var nextListener = Listen();
+        var nextOpening = MpvConnection.Open(SocketPath, _ => { }, default);
+        using var nextPeer = await nextListener.AcceptAsync();
+        await using var next = await nextOpening;
+        Assert.False(next.Closed.IsCompleted);
+    }
+
+    [Fact]
+    public async Task Connecting_honors_cancellation()
+    {
+        using var cancel = new CancellationTokenSource();
+        cancel.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => MpvConnection.Open(SocketPath, _ => { }, cancel.Token));
+    }
+
+    private static async Task<string> ReadLine(Stream socket)
     {
         var line = new StringBuilder();
         var buffer = new byte[1];
-        while (await socket.ReceiveAsync(buffer) == 1 && buffer[0] != '\n') line.Append((char)buffer[0]);
+        while (await socket.ReadAsync(buffer) == 1 && buffer[0] != '\n') line.Append((char)buffer[0]);
         return line.ToString();
     }
 
-    private static Task Send(Socket socket, string line) => socket.SendAsync(Encoding.UTF8.GetBytes(line + "\n"));
+    private static Task Send(Stream socket, string line) => socket.WriteAsync(Encoding.UTF8.GetBytes(line + "\n")).AsTask();
 }
