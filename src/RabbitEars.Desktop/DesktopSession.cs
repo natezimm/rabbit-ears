@@ -15,18 +15,20 @@ public static class DesktopSession
         // Keep the lock file after exit: unlinking a locked inode permits a second owner.
         using var profile = LockProfile(options.StateDir);
         CheckPort(options.Port, options.Lan);
-        var apiPath = Path.Combine(appDirectory, "RabbitEars.Api");
+        var apiPath = Path.Combine(appDirectory, OperatingSystem.IsWindows() ? "RabbitEars.Api.exe" : "RabbitEars.Api");
         var configPath = Path.Combine(appDirectory, "mpv");
         if (!File.Exists(apiPath) || !File.Exists(Path.Combine(configPath, "input-desktop.conf"))
             || !File.Exists(Path.Combine(appDirectory, "wwwroot", "index.html")))
-            throw new FileNotFoundException("Incomplete desktop package. Build it with scripts/publish-mac.sh.");
+            throw new FileNotFoundException("Incomplete desktop package. Use scripts/publish-mac.sh or scripts/publish-windows.ps1 for your platform.");
         var logs = Path.Combine(options.StateDir, "logs");
         Directory.CreateDirectory(logs);
         // macOS temp paths can exceed sockaddr_un's limit; use a short, private directory.
         var socketDirectory = Path.Combine("/tmp", "re-" + Guid.NewGuid().ToString("N"));
-        if (OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("This launcher currently supports macOS.");
-        Directory.CreateDirectory(socketDirectory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
-        var socket = Path.Combine(socketDirectory, "mpv.sock");
+        if (!OperatingSystem.IsWindows())
+            Directory.CreateDirectory(socketDirectory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        var socket = OperatingSystem.IsWindows()
+            ? @"\\.\pipe\rabbitears-" + Guid.NewGuid().ToString("N")
+            : Path.Combine(socketDirectory, "mpv.sock");
         try
         {
             await using var api = new OwnedProcess(ApiStart(options, apiPath, socket), Path.Combine(logs, "api"));
@@ -34,7 +36,7 @@ public static class DesktopSession
             await using var mpv = new OwnedProcess(MpvStart(options.Mpv, configPath, socket), Path.Combine(logs, "mpv"));
             Console.WriteLine($"Rabbit Ears: http://127.0.0.1:{options.Port}/remote\nChannels: http://127.0.0.1:{options.Port}/admin");
             Console.WriteLine(options.Lan
-                ? $"Phone remote: http://<your Mac's LAN address>:{options.Port}/remote (home network only)."
+                ? $"Phone remote: http://<your computer's LAN address>:{options.Port}/remote (home network only)."
                 : "Local access only. Use --lan to enable your phone remote on your home network.");
             Console.WriteLine($"State and logs: {options.StateDir}\nClose the TV window, press q in mpv, or Ctrl+C here to quit.");
             var apiExit = api.Process.WaitForExitAsync(cancellationToken);
@@ -45,7 +47,7 @@ public static class DesktopSession
             if (mpv.Process.ExitCode != 0) throw new IOException($"mpv exited with code {mpv.Process.ExitCode}. See {logs}.");
             return 0;
         }
-        finally { Directory.Delete(socketDirectory, recursive: true); }
+        finally { if (!OperatingSystem.IsWindows()) Directory.Delete(socketDirectory, recursive: true); }
     }
 
     public static FileStream LockProfile(string directory)
@@ -66,6 +68,11 @@ public static class DesktopSession
         var start = new ProcessStartInfo(executable) { WorkingDirectory = Path.GetDirectoryName(executable)! };
         start.Environment["ASPNETCORE_ENVIRONMENT"] = "Production";
         start.Environment["DOTNET_ENVIRONMENT"] = "Production";
+        if (OperatingSystem.IsWindows())
+        {
+            start.RedirectStandardInput = true;
+            start.Environment["RABBITEARS_DESKTOP_STDIN"] = "1";
+        }
         string[] args = ["--urls", $"http://{(options.Lan ? "0.0.0.0" : "127.0.0.1")}:{options.Port}",
             "--Box:MediaRoot", options.MediaRoot, "--Box:StateDir", options.StateDir,
             "--Box:Ffprobe", options.Ffprobe, "--Box:Player:Kind", "mpv", "--Box:Player:MpvSocket", socket,

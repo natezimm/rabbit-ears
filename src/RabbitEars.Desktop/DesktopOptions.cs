@@ -6,7 +6,12 @@ namespace RabbitEars.Desktop;
 /// <summary>A user-owned desktop profile, independent of the installed release.</summary>
 public sealed record DesktopOptions(string MediaRoot, string StateDir, string Mpv, string Ffprobe, int Port, bool Lan)
 {
-    public static string DefaultProfile(string home) => Path.Combine(home, "Library", "Application Support", "RabbitEars");
+    public static string DefaultProfile(string home, string? localAppData = null) => OperatingSystem.IsWindows()
+        ? Path.Combine(localAppData ?? Path.Combine(home, "AppData", "Local"), "RabbitEars")
+        : Path.Combine(home, "Library", "Application Support", "RabbitEars");
+
+    public static string DefaultMedia(string home) => Path.Combine(home,
+        OperatingSystem.IsWindows() ? "Videos" : "Movies", "RabbitEars");
 
     /// <summary>Command line, environment, profile JSON, then desktop defaults.</summary>
     public static DesktopOptions Load(string[] args, string home, Func<string, string?> env)
@@ -22,8 +27,9 @@ public sealed record DesktopOptions(string MediaRoot, string StateDir, string Mp
             values[key[2..]] = args[i];
         }
 
+        var profile = DefaultProfile(home, env("LOCALAPPDATA"));
         var config = Path.GetFullPath(values.GetValueOrDefault("config") ?? env("RABBITEARS_CONFIG")
-            ?? Path.Combine(DefaultProfile(home), "desktop.json"));
+            ?? Path.Combine(profile, "desktop.json"));
         if (!File.Exists(config) && (values.ContainsKey("config") || env("RABBITEARS_CONFIG") is not null))
             throw new FileNotFoundException("Desktop configuration does not exist.", config);
         using var document = JsonDocument.Parse(File.Exists(config) ? File.ReadAllText(config) : "{}");
@@ -39,23 +45,26 @@ public sealed record DesktopOptions(string MediaRoot, string StateDir, string Mp
         if (!int.TryParse(Read("port", "5080"), NumberStyles.None, CultureInfo.InvariantCulture, out var port)
             || port is < 1024 or > 65535) throw new ArgumentException("Port must be between 1024 and 65535.");
         if (!bool.TryParse(Read("lan", "false"), out var lan)) throw new ArgumentException("lan must be true or false.");
-        var defaultMedia = Path.Combine(home, "Movies", "RabbitEars");
+        var defaultMedia = DefaultMedia(home);
         var media = FullPath(Read("media", defaultMedia, "Box__MediaRoot"));
         if (media == defaultMedia) Directory.CreateDirectory(media);
         if (!Directory.Exists(media)) throw new DirectoryNotFoundException($"Media folder does not exist: {media}");
         // Force an early permission check instead of silently starting with no channels.
         using (var entries = Directory.EnumerateFileSystemEntries(media).GetEnumerator()) entries.MoveNext();
-        return new(media, FullPath(Read("state", DefaultProfile(home), "Box__StateDir")),
+        return new(media, FullPath(Read("state", profile, "Box__StateDir")),
             Executable(Read("mpv", "mpv"), env("PATH"), FullPath),
             Executable(Read("ffprobe", "ffprobe", "Box__Ffprobe"), env("PATH"), FullPath), port, lan);
     }
 
     private static string Executable(string name, string? path, Func<string, string> fullPath)
     {
-        var candidates = name.Contains('/')
+        if (OperatingSystem.IsWindows() && !Path.HasExtension(name)) name += ".exe";
+        if (OperatingSystem.IsWindows() && !name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Windows dependencies must be .exe files, not shell scripts.");
+        var candidates = Path.IsPathRooted(name) || name.Contains('/') || name.Contains('\\')
             ? new[] { fullPath(name) }
             : (path ?? "").Split(Path.PathSeparator).Where(p => p.Length > 0)
-                .Concat(["/opt/homebrew/bin", "/usr/local/bin"]).Select(p => Path.Combine(p, name));
+                .Concat(OperatingSystem.IsWindows() ? [] : new[] { "/opt/homebrew/bin", "/usr/local/bin" }).Select(p => Path.Combine(p, name));
         foreach (var candidate in candidates)
         {
             if (!File.Exists(candidate)) continue;

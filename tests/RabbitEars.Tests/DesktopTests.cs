@@ -15,8 +15,8 @@ public sealed class DesktopTests : IDisposable
     private DesktopOptions Load(string[]? args = null, Dictionary<string, string>? env = null)
     {
         env ??= [];
-        env.TryAdd("RABBITEARS_MPV", "/bin/sh");
-        env.TryAdd("RABBITEARS_FFPROBE", "/bin/sh");
+        env.TryAdd("RABBITEARS_MPV", OperatingSystem.IsWindows() ? Environment.ProcessPath! : "/bin/sh");
+        env.TryAdd("RABBITEARS_FFPROBE", OperatingSystem.IsWindows() ? Environment.ProcessPath! : "/bin/sh");
         return DesktopOptions.Load(args ?? [], _root, key => env.GetValueOrDefault(key));
     }
 
@@ -24,7 +24,7 @@ public sealed class DesktopTests : IDisposable
     public void Defaults_use_user_folders_and_only_listen_locally()
     {
         var options = Load();
-        Assert.Equal(Path.Combine(_root, "Movies", "RabbitEars"), options.MediaRoot);
+        Assert.Equal(DesktopOptions.DefaultMedia(_root), options.MediaRoot);
         Assert.True(Directory.Exists(options.MediaRoot));
         Assert.Equal(DesktopOptions.DefaultProfile(_root), options.StateDir);
         Assert.Equal(5080, options.Port);
@@ -90,7 +90,7 @@ public sealed class DesktopTests : IDisposable
     {
         var start = DesktopSession.MpvStart("/Applications/My mpv", "/Users/Test user/日本語", "/tmp/re-test/mpv.sock");
         Assert.Equal("/Applications/My mpv", start.FileName);
-        Assert.Contains("--input-conf=/Users/Test user/日本語/input-desktop.conf", start.ArgumentList);
+        Assert.Contains("--input-conf=" + Path.Combine("/Users/Test user/日本語", "input-desktop.conf"), start.ArgumentList);
         Assert.Contains("--fullscreen=no", start.ArgumentList);
         Assert.Empty(start.Arguments);
     }
@@ -115,7 +115,7 @@ public sealed class DesktopTests : IDisposable
     }
 
 
-    [Fact]
+    [UnixFact]
     public async Task Cancelling_during_startup_stops_the_API_and_releases_the_profile()
     {
         var app = FakePackage("trap 'echo saved > saved; exit 0' TERM\necho ready > ready\nwhile :; do sleep 0.1; done\n");
@@ -133,7 +133,7 @@ public sealed class DesktopTests : IDisposable
         using var reopened = DesktopSession.LockProfile(options.StateDir);
     }
 
-    [Fact]
+    [UnixFact]
     public async Task API_startup_failure_is_reported_and_releases_the_profile()
     {
         var app = FakePackage("exit 17\n");
@@ -157,7 +157,7 @@ public sealed class DesktopTests : IDisposable
         return app;
     }
 
-    [Fact]
+    [UnixFact]
     public async Task Stopping_an_owned_process_allows_its_shutdown_handler_to_save()
     {
         var ready = Path.Combine(_root, "ready");
@@ -172,5 +172,14 @@ public sealed class DesktopTests : IDisposable
             while (!File.Exists(ready)) await Task.Delay(20, timeout.Token);
         }
         Assert.Equal("saved", File.ReadAllText(saved).Trim());
+    }
+}
+
+/// <summary>Shell fixtures cover Unix signals; Windows package smoke tests cover the stdin lifetime.</summary>
+public sealed class UnixFactAttribute : FactAttribute
+{
+    public UnixFactAttribute()
+    {
+        if (OperatingSystem.IsWindows()) Skip = "Unix signal fixture; Windows lifecycle uses the native package smoke test.";
     }
 }

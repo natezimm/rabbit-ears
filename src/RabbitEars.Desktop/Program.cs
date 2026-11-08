@@ -6,24 +6,25 @@ using RabbitEars.Desktop;
 if (args.Contains("--help"))
 {
     Console.WriteLine("""
-        Rabbit Ears for Mac
+        Rabbit Ears Desktop
         RabbitEars.Desktop [--config FILE] [--media FOLDER] [--state FOLDER]
                           [--port 5080] [--mpv FILE] [--ffprobe FILE] [--lan | --local]
-        Default profile: ~/Library/Application Support/RabbitEars/desktop.json
-        Default media: ~/Movies/RabbitEars (one folder per channel).
+        Mac profile: ~/Library/Application Support/RabbitEars/desktop.json
+        Windows profile: %LOCALAPPDATA%/RabbitEars/desktop.json
+        Default media: ~/Movies/RabbitEars (Mac), ~/Videos/RabbitEars (Windows).
         Settings: command line > RABBITEARS_* environment > profile JSON > defaults.
         Close the TV window or press q to quit. f toggles full screen; p is standby.
         """);
     return 0;
 }
-if (!OperatingSystem.IsMacOS())
+if (!OperatingSystem.IsMacOS() && !OperatingSystem.IsWindows())
 {
-    Console.Error.WriteLine("This desktop launcher currently supports macOS. Use the existing Linux installer on the box.");
+    Console.Error.WriteLine("This desktop launcher supports macOS and Windows. Use the existing Linux installer on the box.");
     return 1;
 }
 using var shutdown = new CancellationTokenSource();
-using var term = PosixSignalRegistration.Create(PosixSignal.SIGTERM, context => { context.Cancel = true; shutdown.Cancel(); });
-using var hangup = PosixSignalRegistration.Create(PosixSignal.SIGHUP, context => { context.Cancel = true; shutdown.Cancel(); });
+using var term = OperatingSystem.IsWindows() ? null : PosixSignalRegistration.Create(PosixSignal.SIGTERM, context => { context.Cancel = true; shutdown.Cancel(); });
+using var hangup = OperatingSystem.IsWindows() ? null : PosixSignalRegistration.Create(PosixSignal.SIGHUP, context => { context.Cancel = true; shutdown.Cancel(); });
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; shutdown.Cancel(); };
 try
 {
