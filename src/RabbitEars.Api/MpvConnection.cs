@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.IO.Pipes;
+using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 
@@ -52,8 +53,10 @@ public sealed class MpvConnection : IMpvLink, IAsyncDisposable
         cancel.ThrowIfCancellationRequested();
         if (OperatingSystem.IsWindows())
         {
+            // mpv sets the pipe owner to TokenUser. .NET CurrentUserOnly compares TokenOwner,
+            // which can be Administrators when elevated; never offer client impersonation.
             var pipe = new NamedPipeClientStream(".", MpvEndpoint.PipeName(socketPath), PipeDirection.InOut,
-                PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+                PipeOptions.Asynchronous, TokenImpersonationLevel.Anonymous);
             try
             {
                 await pipe.ConnectAsync(1000, cancel);

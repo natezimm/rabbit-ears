@@ -17,7 +17,7 @@ function Eventually([scriptblock]$Action) {
 function Request([string]$Path) { Invoke-RestMethod "$base$Path" -TimeoutSec 2 -NoProxy }
 function Ipc([string]$Endpoint, [object[]]$Command, [switch]$NoReply) {
     $pipe = [IO.Pipes.NamedPipeClientStream]::new('.', $Endpoint.Substring(9), [IO.Pipes.PipeDirection]::InOut,
-        [IO.Pipes.PipeOptions]::Asynchronous -bor [IO.Pipes.PipeOptions]::CurrentUserOnly)
+        [IO.Pipes.PipeOptions]::Asynchronous, [Security.Principal.TokenImpersonationLevel]::Anonymous)
     try {
         $pipe.Connect(3000)
         $bytes = [Text.Encoding]::UTF8.GetBytes((@{ command = $Command; request_id = 42 } | ConvertTo-Json -Compress -Depth 5) + "`n")

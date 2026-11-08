@@ -30,7 +30,9 @@ and autostart are separate work. Native CI can test
 processes and IPC; actual graphics, sound and OS prompts need manual Mac validation.
 
 Windows uses the same JSON protocol over `NamedPipeClientStream`, with bounded,
-cancellable connection attempts and same-user ownership checks. A desktop-only
+cancellable connection attempts and anonymous client impersonation. mpv enforces
+the pipe access controls. mpv uses TokenUser as owner, whereas .NET compares
+TokenOwner, which can be Administrators on an elevated client. A desktop-only
 stdin lifetime avoids exposing HTTP shutdown or broadcasting console signals to
 unrelated processes. Windows x64 CI exercises the real package; the ARM64 package
 is a candidate for Parallels testing, not a claim of hardware validation.

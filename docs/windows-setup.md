@@ -85,9 +85,12 @@ sound or Flirc hardware. Start the trial once the Windows CI package is ready.
 Logs are in `%LOCALAPPDATA%/RabbitEars/logs`. Missing libraries/executables, duplicate
 profiles and occupied ports produce errors in the launcher's terminal.
 
-Windows IPC uses a random local `\\.\pipe\rabbitears-...` name. The client requires
-same-user pipe ownership; [mpv 0.41.0](https://github.com/mpv-player/mpv/blob/v0.41.0/input/ipc-win.c)
-restricts access to the owning user and rejects remote clients. Run both as the same
+Windows IPC uses a random local `\\.\pipe\rabbitears-...` name. The client disables
+impersonation and relies on the server's access controls; [mpv 0.41.0](https://github.com/mpv-player/mpv/blob/v0.41.0/input/ipc-win.c)
+restricts access to the owning user and rejects remote clients. mpv sets the pipe owner
+to the user SID; .NET compares it to the client token owner, which may be the
+Administrators group when elevated. The client therefore does not use that
+owner-SID equality check. Run both as the same
 unelevated user. Do not replace the endpoint with a remote pipe or grant broad pipe
 permissions. A private stdin shutdown message lets normal quit and launcher EOF
 save API state without exposing a network shutdown endpoint.
