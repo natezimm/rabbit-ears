@@ -16,6 +16,7 @@ dev-media/
 .vs/
 .vscode/
 .idea/
+.ua/
 *.user
 .DS_Store
 __pycache__/
