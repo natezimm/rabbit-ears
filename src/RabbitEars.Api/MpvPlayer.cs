@@ -14,6 +14,15 @@ namespace RabbitEars.Api;
 public sealed class MpvPlayer(BoxOptions options, TvService tv, MpvScreen screen, ILogger<MpvPlayer> log)
     : BackgroundService
 {
+    private volatile bool _connected;
+
+    /// <summary>Whether mpv's control socket is open now; the health check reports it.</summary>
+    public bool Connected
+    {
+        get => _connected;
+        private set => _connected = value;
+    }
+
     private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan TickInterval = TimeSpan.FromMilliseconds(200);
 
@@ -52,6 +61,7 @@ public sealed class MpvPlayer(BoxOptions options, TvService tv, MpvScreen screen
                 }
 
                 waiting = false;
+                Connected = true;
                 log.LogInformation("Connected to mpv.");
                 await using (mpv)
                 {
@@ -70,6 +80,7 @@ public sealed class MpvPlayer(BoxOptions options, TvService tv, MpvScreen screen
                     }
                     finally
                     {
+                        Connected = false;
                         screen.Detach();
                     }
                 }

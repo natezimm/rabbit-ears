@@ -23,7 +23,11 @@ builder.Services.AddSingleton<TvService>();
 builder.Services.AddHostedService(services => services.GetRequiredService<TvService>());
 // With mpv as the box's screen, the server drives it directly; otherwise this does nothing.
 builder.Services.AddSingleton<MpvScreen>();
-builder.Services.AddHostedService<MpvPlayer>();
+builder.Services.AddSingleton<MpvPlayer>();
+builder.Services.AddHostedService(services => services.GetRequiredService<MpvPlayer>());
+builder.Services.AddTvHealth();
+// Traces, metrics and logs over OTLP, only when OTEL_EXPORTER_OTLP_ENDPOINT is set (docs/observability.md).
+builder.AddTelemetry(builder.Configuration.GetValue("Telemetry:TraceSampleRatio", 0.25));
 builder.Services.AddSignalR();
 builder.Services.AddClientRateLimit(options.RateLimit, options.Demo.Enabled);
 if (options.Demo.Enabled)
@@ -38,6 +42,7 @@ if (options.Demo.Enabled)
 }
 
 var app = builder.Build();
+RabbitEarsTelemetry.Observe(app.Services.GetRequiredService<TvService>());
 
 app.UseClientRateLimit(options.RateLimit);
 if (options.Demo.Enabled)
@@ -81,6 +86,7 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.MapGet("/api/health", () => Results.Ok(new { status = "on the air" }));
+app.MapTvHealth();
 app.MapGet("/api/state", (TvService tv, string? room) =>
     tv.Snapshot(options.Demo.Enabled ? room ?? "" : TvService.HomeRoom) is { } snapshot
         ? Results.Ok(snapshot)

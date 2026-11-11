@@ -18,6 +18,7 @@ nginx, and a domain or subdomain pointed at it.
    cd ~/rabbit-ears/demo
    docker compose up -d --build
    curl http://127.0.0.1:8620/api/health    # {"status":"on the air"}
+   curl http://127.0.0.1:8620/health        # each check: library, player
    ```
 
 2. Add [`nginx.conf`](nginx.conf) as a site, with your domain as `server_name`,
