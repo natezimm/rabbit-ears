@@ -18,6 +18,7 @@ bash scripts/dev.sh --no-build   # run with the web app as last built
 dotnet test                      # all backend tests (xUnit)
 dotnet test --filter "FullyQualifiedName~TelevisionTests.Typed_digits_tune_after_a_pause"   # one test
 dotnet test --filter "FullyQualifiedName~ShuffleDeckTests"                                  # one class
+(cd tests/RabbitEars.Tests && dotnet tool install dotnet-stryker --version 5.1.0 --tool-path ../../.tools && ../../.tools/dotnet-stryker)   # mutation testing of Core
 (cd web && npx ng build)         # web app only; output goes to src/RabbitEars.Api/wwwroot
 (cd web && npm run test:browser) # real app + API in Chromium, desktop and phone sizes
 ```
@@ -29,6 +30,9 @@ dotnet test --filter "FullyQualifiedName~ShuffleDeckTests"                      
   `/hub` to 5080.
 - The API serves the Angular build from `wwwroot`, which is git-ignored. `dotnet run`
   alone serves a stale or missing page until the web app has been built.
+- CI's backend job fails when line coverage of `RabbitEars.Core` or `RabbitEars.Api` falls under its floor
+  (`scripts/coverage-floor.py`, table in the job summary). `mutation.yml` runs Stryker.NET over Core every
+  Sunday and on demand; it reports and never fails a build.
 - There is no linter. Playwright tests in `web/e2e/` run the built Angular app
   against isolated ASP.NET Core processes with temporary media/state directories.
   Install Chromium once with `(cd web && npx playwright install chromium)`.
@@ -67,6 +71,8 @@ of the channel or volume, which is why they cannot disagree.
 - `RabbitEars.Core/Television.cs` is the TV as a pure state machine: no disk, no
   web, no threads. Time and randomness are injected, so tests single-step it.
   New TV behaviour belongs here, with a test in `TelevisionTests.cs`.
+  `ArchitectureTests` fails if Core takes a dependency on disk, network, threads, ASP.NET Core or
+  `Microsoft.Extensions`, or reads the real clock or makes an unseeded `Random`.
 - `RabbitEars.Api/TvService.cs` is the one television. `Press` takes a lock,
   applies a command, and if `Revision` changed, broadcasts a full `TvSnapshot`
   to every client over SignalR. A background loop ticks the state machine, saves
