@@ -193,6 +193,7 @@ flowchart LR
   Tapes["VCR tapes<br/>random ids + names only"] --> RoomA
   Clock["UTC broadcast clock<br/>shared schedule"] --> Rooms
   Idle["Idle after 15 min<br/>room switched off, nothing saved"] -.-> Rooms
+  Rooms -.->|"OTLP gauges: televisions, connections"| Grafana["Grafana Cloud<br/>when configured"]
 
   classDef user fill:#f8fafc,stroke:#475569,color:#0f172a
   classDef server fill:#ffedd5,stroke:#c2410c,color:#7c2d12
@@ -202,6 +203,8 @@ flowchart LR
   class PhoneA client
   class HubD,Rooms,RoomA,RoomB,Clock,Idle server
   class Tapes data
+  classDef external fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+  class Grafana external
 ```
 
 The demo page's VCR (`core/tape-deck.ts`) plays a visitor's own files from

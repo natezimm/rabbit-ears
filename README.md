@@ -51,6 +51,9 @@ remote. It plays clips cleared for a public site, since real shows cannot be.
   authentication ([ADR 0004](docs/adr/0004-demo-rooms-are-not-authentication.md)).
 - **Contracts checked by tests.** `ModelSyncTests` fails when the TypeScript
   models drift from the C# records the server sends.
+- **Health and telemetry that stay home.** `/health` tells "showing colour bars"
+  from "down", and OpenTelemetry metrics and traces go out only when an endpoint
+  is set ([observability](docs/observability.md)).
 
 ## Architecture
 

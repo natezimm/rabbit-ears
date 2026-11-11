@@ -16,6 +16,15 @@ services:
     # directly must not trust it, or a visitor could claim any address.
     environment:
       Box__RateLimit__TrustForwardedFor: "true"
+      # One JSON object per log line, so the server's logs can be searched by field.
+      Logging__Console__FormatterName: json
+      Logging__Console__FormatterOptions__UseUtcTimestamp: "true"
+      # Optional: traces, metrics and logs to Grafana Cloud, from demo/.env (docs/observability.md).
+      # Left empty, nothing is sent.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment.name=demo
     # Trial budget: verify with the staging checklist before production rollout.
     mem_limit: 256m
     cpus: 0.5

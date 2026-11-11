@@ -153,6 +153,12 @@ Change both sides together. `ModelSyncTests.cs` reads `models.ts` and fails when
 a field, type, nullability, play reason or `DEFAULT_PICTURE` value differs from
 what the server sends; a new interface also needs an entry in its `Mirrors` map.
 
+**Health and telemetry:** `/health` (`Health.cs`) reports the `library` and
+`player` checks; `/api/health` stays a cheap liveness answer. OpenTelemetry
+(`Telemetry.cs`) is registered only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set;
+the TV's gauges never carry room ids, addresses or file names. See
+`docs/observability.md`.
+
 **Media:** each folder under the media root is a channel, numbered from 2 in
 A-to-Z order. Episode ids are a hash of the relative path, and `/media/{id}`
 serves only files the scanner found, with range requests.

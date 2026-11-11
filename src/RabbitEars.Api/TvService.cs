@@ -151,6 +151,15 @@ public sealed partial class TvService : BackgroundService
         get { lock (_gate) return _rooms.Count; }
     }
 
+    /// <summary>Screens and remotes connected, across every television.</summary>
+    public int ConnectionCount
+    {
+        get { lock (_gate) return _rooms.Values.Sum(r => r.Connections); }
+    }
+
+    /// <summary>State changes broadcast since the server started.</summary>
+    public long ChangeCount => Interlocked.Read(ref _changes);
+
     /// <summary>The state of the home television.</summary>
     public TvSnapshot Snapshot() =>
         Snapshot(HomeRoom) ?? throw new InvalidOperationException("Demo mode has no home television.");
