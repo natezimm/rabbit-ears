@@ -5,7 +5,7 @@
 #   docker build -t rabbit-ears .
 #   docker run --rm -p 8080:8080 rabbit-ears     then open http://localhost:8080
 
-FROM node:24-bookworm-slim AS web
+FROM node:26-bookworm-slim AS web
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci --no-audit --no-fund
@@ -13,7 +13,7 @@ COPY web/ ./
 # Angular writes into the API's wwwroot, one folder up.
 RUN npx ng build
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS api
 WORKDIR /src
 COPY global.json Directory.Build.props ./
 COPY src/ src/
@@ -27,7 +27,7 @@ RUN apt-get update \
 COPY scripts/make-dev-media.sh /make-dev-media.sh
 RUN bash /make-dev-media.sh /media
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0
+FROM mcr.microsoft.com/dotnet/aspnet:11.0
 WORKDIR /app
 COPY --from=api /app ./
 COPY --from=web /src/src/RabbitEars.Api/wwwroot ./wwwroot

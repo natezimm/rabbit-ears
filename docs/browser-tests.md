@@ -8,7 +8,7 @@ test, including failures. Tests never connect to the home box or public site.
 
 ## Run locally
 
-Install .NET 10 (the SDK in `global.json`) and the Node version in `.nvmrc`.
+Install .NET 11 (the SDK in `global.json`) and the Node version in `.nvmrc`.
 Then, from `web/`:
 
 ```bash
