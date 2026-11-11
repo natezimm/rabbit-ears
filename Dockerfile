@@ -27,7 +27,9 @@ RUN apt-get update \
 COPY scripts/make-dev-media.sh /make-dev-media.sh
 RUN bash /make-dev-media.sh /media
 
-FROM mcr.microsoft.com/dotnet/aspnet:11.0
+# Ubuntu's chiseled image: just the .NET runtime, no shell or package manager. The API runs with
+# invariant globalization, so it needs no ICU either.
+FROM mcr.microsoft.com/dotnet/aspnet:11.0-resolute-chiseled
 WORKDIR /app
 COPY --from=api /app ./
 COPY --from=web /src/src/RabbitEars.Api/wwwroot ./wwwroot
