@@ -16,6 +16,13 @@ services:
     # directly must not trust it, or a visitor could claim any address.
     environment:
       Box__RateLimit__TrustForwardedFor: "true"
+    # Nothing is saved on the demo, so the root filesystem is read-only; the state folder
+    # (Box__StateDir=/tmp/rabbitears) lives in a small tmpfs. No capabilities, no privilege gain.
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     # Trial budget: verify with the staging checklist before production rollout.
     mem_limit: 256m
     cpus: 0.5
