@@ -1,0 +1,43 @@
+name: Mutation testing
+
+# Stryker.NET changes the TV state machine in RabbitEars.Core one small way at a time and
+# checks that a unit test fails each time. Too slow for every pull request, so it runs weekly and on demand,
+# and reports rather than gates: the score and the surviving mutants are in the run's summary and artifact.
+on:
+  schedule:
+    - cron: "0 9 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation
+  cancel-in-progress: true
+
+jobs:
+  core:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      DOTNET_NOLOGO: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
+        with:
+          global-json-file: global.json
+      - name: Install Stryker.NET
+        run: dotnet tool install dotnet-stryker --version 5.1.0 --tool-path .tools
+      - name: Mutate RabbitEars.Core
+        working-directory: tests/RabbitEars.Tests
+        run: ../../.tools/dotnet-stryker --output "$GITHUB_WORKSPACE/StrykerOutput"
+      - name: Summary
+        if: always()
+        run: cat StrykerOutput/reports/mutation-report.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: mutation-report
+          path: StrykerOutput/reports/
+          retention-days: 30

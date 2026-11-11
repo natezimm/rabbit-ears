@@ -1,0 +1,9 @@
+{
+  "stryker-config": {
+    "project": "RabbitEars.Core.csproj",
+    "reporters": ["html", "markdown", "progress"],
+    "thresholds": { "high": 80, "low": 60, "break": 0 },
+    "coverage-analysis": "perTest",
+    "concurrency": 4
+  }
+}

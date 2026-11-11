@@ -6,11 +6,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Named directly, though the API brings it, so Stryker.NET can find it to mutate. -->
+    <ProjectReference Include="../../src/RabbitEars.Core/RabbitEars.Core.csproj" />
     <ProjectReference Include="../../src/RabbitEars.Api/RabbitEars.Api.csproj" />
     <ProjectReference Include="../../src/RabbitEars.Desktop/RabbitEars.Desktop.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="11.0.0" />
+    <PackageReference Include="coverlet.collector" Version="10.1.0">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.1" />
+    <PackageReference Include="NetArchTest.Rules" Version="1.3.2" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
       <PrivateAssets>all</PrivateAssets>

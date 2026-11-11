@@ -30,3 +30,4 @@ demo/private/
 demo-media/
 web/playwright-report/
 web/test-results/
+StrykerOutput/
