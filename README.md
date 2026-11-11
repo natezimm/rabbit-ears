@@ -1,7 +1,7 @@
 # Rabbit Ears
 
 A 90s TV for the living room: folders of old shows become channels on a curved
-CRT picture, driven by a remote. ASP.NET Core (.NET 10), Angular 22, WebGL and mpv.
+CRT picture, driven by a remote. ASP.NET Core (.NET 11), Angular 22, WebGL and mpv.
 
 [![CI](https://github.com/natezimm/rabbit-ears/actions/workflows/ci.yml/badge.svg)](https://github.com/natezimm/rabbit-ears/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -85,7 +85,7 @@ pipeline. Decisions are recorded in [docs/adr/](docs/adr/).
 
 | Layer | Technology |
 | --- | --- |
-| Server | ASP.NET Core minimal APIs and SignalR on .NET 10 |
+| Server | ASP.NET Core minimal APIs and SignalR on .NET 11, C# 15 |
 | Web | Angular 22 (standalone, signals, zoneless), WebGL shader |
 | Box screen | mpv over its JSON IPC socket, a GLSL hook shader, ASS overlay text |
 | Media | ffprobe for lengths, ffmpeg for test clips and conversion |
@@ -94,7 +94,7 @@ pipeline. Decisions are recorded in [docs/adr/](docs/adr/).
 
 ## Run it locally
 
-You need the .NET 10 SDK, Node 22 or newer, and ffmpeg (for the test shows).
+You need the .NET 11 SDK, Node 26 LTS (see `.nvmrc`), and ffmpeg (for the test shows).
 
 ```bash
 bash scripts/dev.sh

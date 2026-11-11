@@ -23,7 +23,7 @@ flowchart LR
   Phone --> Box
 
   subgraph Home["Mini PC on the home network"]
-    Box["Rabbit Ears service<br/>ASP.NET Core, .NET 10"]
+    Box["Rabbit Ears service<br/>ASP.NET Core, .NET 11"]
     Screen["mpv full screen<br/>CRT shader + green OSD"]
     Media[("Media folders<br/>one per channel")]
     State[("state.json<br/>channels.json")]

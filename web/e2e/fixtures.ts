@@ -9,7 +9,7 @@ import { test as base, expect, type APIRequestContext, type Page, type Playwrigh
 type Playwright = PlaywrightWorkerArgs['playwright'];
 
 const apiRoot = fileURLToPath(new URL('../../src/RabbitEars.Api/', import.meta.url));
-const apiDll = join(apiRoot, 'bin', 'Release', 'net10.0', 'RabbitEars.Api.dll');
+const apiDll = join(apiRoot, 'bin', 'Release', 'net11.0', 'RabbitEars.Api.dll');
 export const longTitle = 'The extraordinarily long episode title that used to push the phone remote beyond the edge of the screen';
 
 /** Each test owns an actual application process and its disposable library/state. */

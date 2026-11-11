@@ -4,10 +4,13 @@ Guidance for coding agents working in this repository. `CLAUDE.md` imports this
 file, so edit this one.
 
 Rabbit Ears plays folders of old shows and movies as TV channels on a curved CRT
-picture. One ASP.NET Core process (.NET 10) owns the TV; an Angular 22 app draws
+picture. One ASP.NET Core process (.NET 11, C# 15) owns the TV; an Angular 22 app draws
 the TV page and a phone remote. It runs on a Linux mini PC in kiosk mode.
 
 ## Commands
+
+Use Node 26 LTS: `.nvmrc` drives local selection and CI, `web/package.json`
+declares `26.x`, and the Dockerfile uses Node 26. Keep them aligned.
 
 ```bash
 bash scripts/dev.sh              # build the web app, then run the box at http://localhost:5080
@@ -121,7 +124,7 @@ mpv's JSON control socket:
 mpv runs as the desktop user and the service as `rabbitears`; the socket lives
 in `/run/rabbitears-tv`, which the installer makes group-owned by `rabbitears`.
 To try mpv on a laptop, run the API with `Box__Player__Kind=mpv`, then
-`mpv --config-dir=src/RabbitEars.Api/bin/Debug/net10.0/mpv --input-ipc-server=.local/mpv.sock`
+`mpv --config-dir=src/RabbitEars.Api/bin/Debug/net11.0/mpv --input-ipc-server=.local/mpv.sock`
 from the repo root.
 
 **Demo mode** (`Box:Demo:Enabled`, set by the `Dockerfile`) is the public demo
