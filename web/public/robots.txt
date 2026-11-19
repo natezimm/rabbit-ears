@@ -7,3 +7,5 @@ Disallow: /admin
 Disallow: /api/
 Disallow: /media/
 Disallow: /hub
+
+Sitemap: https://rabbitears.nathanzimmerman.com/sitemap.xml
