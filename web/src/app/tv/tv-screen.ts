@@ -293,14 +293,16 @@ export class TvScreen {
 
     let mode: ScreenMode = view.mode;
     if (noSignal) {
-      // Snow is the honest picture for no signal, but it flickers; a still blank glass is the calm one.
-      mode = this.reducedMotion() ? 'blank' : 'snow';
+      mode = 'snow';
     } else if (!on) {
       // Going dark: the last picture stays on the glass while it collapses.
       mode = this.power > 0 ? 'video' : 'blank';
     } else if (!state?.playing) {
       mode = 'bars';
     }
+    // Snow and glitch flicker across the whole picture, whether as a transition, a cover for a
+    // slow load or no signal. A viewer who asked for less motion gets still, blank glass instead.
+    if (this.reducedMotion() && (mode === 'snow' || mode === 'glitch')) mode = 'blank';
     if (this.curved()) this.renderer?.draw(mode, on ? view.video : null, this.power, now / 1000);
   }
 

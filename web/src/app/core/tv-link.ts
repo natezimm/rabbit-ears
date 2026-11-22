@@ -135,15 +135,24 @@ export class TvLink {
     this.retryNow?.();
   }
 
+  /**
+   * True while a pause between attempts is running, which is when `retry`
+   * can start one sooner. SignalR's own automatic reconnect, after a link that
+   * worked drops, keeps its own timer and is not covered.
+   */
+  readonly canRetry = signal(false);
+
   /** Ends the current pause between attempts early; set only while one is running. */
   private retryNow: (() => void) | null = null;
 
   private wait(): Promise<void> {
     return new Promise(resolve => {
       const timer = setTimeout(() => this.retryNow?.(), RETRY_MS);
+      this.canRetry.set(true);
       this.retryNow = () => {
         clearTimeout(timer);
         this.retryNow = null;
+        this.canRetry.set(false);
         resolve();
       };
     });
