@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { encode } from 'uqr';
 
-import { LinkNotice, linkWords } from '../core/link-notice';
+import { LinkNotice } from '../core/link-notice';
 import { DemoCredit } from '../core/models';
 import { TapeDeck, fromDrop, fromPicker } from '../core/tape-deck';
 import { TvLink } from '../core/tv-link';
@@ -30,7 +30,9 @@ export class Demo {
    * Trouble with the link is told over the picture, where a visitor is looking.
    * The first moments of connecting are normal and stay quiet.
    */
-  protected readonly screenNotice = computed(() => linkWords(this.link)?.canRetry ?? false);
+  protected readonly screenNotice = computed(
+    () => !!this.link.unavailable() || this.link.status() === 'reconnecting',
+  );
 
   constructor() {
     void fetch('/api/demo/credits').then(async response => {
