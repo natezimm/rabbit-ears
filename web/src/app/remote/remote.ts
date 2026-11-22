@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal, type OnInit } from '@angular/core';
 
+import { linkWords } from '../core/link-notice';
 import { TvLink } from '../core/tv-link';
 
 const VOLUME_SEGMENTS = 20;
@@ -10,23 +11,31 @@ const VOLUME_SEGMENTS = 20;
   templateUrl: './remote.html',
   styleUrl: './remote.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '[attr.role]': 'embedded() ? null : "main"' },
 })
-export class Remote {
+export class Remote implements OnInit {
   protected readonly link = inject(TvLink);
   protected readonly canAdmin = signal(false);
+  /** True inside the demo page, which brings its own heading and landmarks and never has admin. */
+  readonly embedded = input(false);
 
-  constructor() {
+  /** Inputs are set by now, which the constructor is too early to see. */
+  ngOnInit(): void {
+    if (this.embedded()) return;
     void fetch('/api/admin/status').then(async response => {
       if (response.ok) this.canAdmin.set((await response.json()).enabled);
     }).catch(() => undefined);
   }
+
   protected readonly state = this.link.state;
   protected readonly keypad = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
   /** What the little display at the top reads. */
   protected readonly readout = computed(() => {
     const state = this.state();
-    if (!this.link.connected() || !state) return { big: 'NO LINK', small: 'Looking for the box…' };
+    const words = linkWords(this.link);
+    if (words) return { big: words.title, small: words.detail };
+    if (!state) return { big: 'CONNECTING', small: 'Tuning in to the TV…' };
     if (state.poweredOff) return { big: 'GOODBYE', small: 'Safe to unplug in a moment' };
     if (state.standby) return { big: 'STANDBY', small: 'Press power to wake' };
     if (!state.channel) return { big: 'NO CHANNELS', small: 'Add a show folder' };

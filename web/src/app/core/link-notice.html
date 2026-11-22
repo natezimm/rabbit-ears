@@ -1,0 +1,9 @@
+@if (words(); as words) {
+  <p class="notice" role="status">
+    <strong>{{ words.title }}</strong>
+    <span>{{ words.detail }}</span>
+  </p>
+  @if (words.canRetry && retry()) {
+    <button type="button" class="retry" (click)="link.retry()">Try again</button>
+  }
+}

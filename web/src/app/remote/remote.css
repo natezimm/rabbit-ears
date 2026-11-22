@@ -6,6 +6,8 @@
   --label: #a9b0a3;
   --phosphor: #3dff6e;
   --lcd: #0b1a0d;
+  /* The readout turns amber while the link is down, like a set's warning light. */
+  --warning: #ffb547;
 
   display: block;
   min-height: 100dvh;
@@ -41,8 +43,18 @@
   transition: opacity 0.2s;
 }
 
-.lcd.dim {
-  opacity: 0.55;
+/* Standby dims only the meter; the words stay at full strength so they can be read. */
+.lcd.dim .lcd-volume {
+  opacity: 0.4;
+}
+
+.lcd.offline {
+  color: var(--warning);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--warning) 55%, transparent);
+}
+
+.lcd.offline .lcd-volume {
+  visibility: hidden;
 }
 
 .lcd-big {
@@ -103,12 +115,34 @@
   transition: transform 0.05s, box-shadow 0.05s;
 }
 
-.key:active {
+.key:not(:disabled) {
+  cursor: pointer;
+}
+
+/* Only where a real pointer can hover, so a tapped key on a phone does not stay lit. */
+@media (hover: hover) {
+  .key:not(:disabled):hover {
+    filter: brightness(1.12);
+  }
+
+  .guide-row:not(:disabled):hover {
+    background: var(--body-edge);
+  }
+}
+
+.key:disabled {
+  filter: saturate(0.25) brightness(0.7);
+  cursor: not-allowed;
+}
+
+.key:active:not(:disabled) {
   transform: translateY(4px);
   box-shadow: 0 1px 0 var(--key-edge), inset 0 1px 0 rgb(255 255 255 / 0.12);
 }
 
-.key:focus-visible {
+.key:focus-visible,
+.guide-row:focus-visible,
+.admin-link:focus-visible {
   outline: 3px solid var(--phosphor);
   outline-offset: 3px;
 }
@@ -213,7 +247,15 @@
   text-align: left;
 }
 
-.guide-row:active {
+.guide-row:not(:disabled) {
+  cursor: pointer;
+}
+
+.guide-row:disabled {
+  opacity: 0.6;
+}
+
+.guide-row:active:not(:disabled) {
   background: var(--body-edge);
 }
 
@@ -250,3 +292,10 @@
 }
 
 .admin-link { color: #92e8b4; text-align: center; padding: 16px; font: 14px system-ui, sans-serif; }
+
+@media (prefers-reduced-motion: reduce) {
+  .key,
+  .lcd {
+    transition: none;
+  }
+}

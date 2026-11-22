@@ -1,9 +1,12 @@
-<div class="demo" (dragover)="onDragOver($event)" (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
+<main class="demo" (dragover)="onDragOver($event)" (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
   <section class="screen" aria-label="The television" [class.dragging]="dragging()">
-    <ears-tv-screen />
+    <ears-tv-screen [embedded]="true" />
+    @if (screenNotice()) {
+      <div class="screen-notice"><ears-link-notice /></div>
+    }
   </section>
 
-  <aside class="panel">
+  <section class="panel" aria-label="About this demo">
     <header>
       <h1>Rabbit Ears</h1>
       <p class="onboarding">Choose a channel · Enable sound<span class="phone-prompt"> · Scan QR for phone remote</span></p>
@@ -17,14 +20,14 @@
 
     <section class="lineup" aria-labelledby="lineup-title">
       <h2 id="lineup-title">What's on / Jump to channel</h2>
-      @if (!link.connected()) {
-        <p role="status">Connecting to your TV…</p>
+      @if (!link.connected() || link.unavailable()) {
+        <ears-link-notice [retry]="false" />
       } @else if (!state()?.channels?.length) {
         <p role="status">No channels available.</p>
       } @else {
         @for (channel of state()!.channels; track channel.number) {
           <button type="button" class="channel-row"
-                  [attr.aria-pressed]="channel.number === state()!.channel?.number"
+                  [attr.aria-current]="channel.number === state()!.channel?.number ? 'true' : null"
                   (click)="link.goToChannel(channel.number)">
             <span class="number">CH {{ channel.number.toString().padStart(2, '0') }}</span>
             <span class="programme"><strong>{{ channel.name }}</strong>
@@ -67,7 +70,6 @@
         <button type="button" class="vcr-button" [disabled]="tapes.committing()" (click)="tapes.cancel()">Cancel</button>
       }
       @if (tapes.error(); as error) { <p role="alert">{{ error }}</p> }
-      @if (link.unavailable(); as message) { <p role="alert">{{ message }}</p> }
     </section>
 
     <section class="phone">
@@ -82,7 +84,7 @@
       </div>
     </section>
 
-    <ears-remote class="remote" />
+    <ears-remote class="remote" [embedded]="true" />
 
     <section class="keys">
       <h2>Or use the keyboard</h2>
@@ -118,5 +120,5 @@
       } @else { <p>This demo plays generated test clips.</p> }
       <a href="https://github.com/natezimm/rabbit-ears" target="_blank" rel="noopener">Source on GitHub</a>
     </footer>
-  </aside>
-</div>
+  </section>
+</main>

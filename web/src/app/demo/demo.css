@@ -29,6 +29,26 @@
   position: absolute;
 }
 
+/* Over the picture, where a visitor is looking when the TV cannot be reached. */
+.screen-notice {
+  position: absolute;
+  left: 50%;
+  bottom: 12%;
+  width: min(360px, calc(100% - 32px));
+  transform: translateX(-50%);
+  padding: 14px 16px;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: rgb(0 0 0 / 0.85);
+  color: var(--phosphor);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.screen-notice span {
+  color: var(--text);
+}
+
 .panel {
   overflow-y: auto;
   display: grid;
@@ -155,7 +175,7 @@ footer {
   font: inherit;
   cursor: pointer;
 }
-.channel-row[aria-pressed="true"] { border-color: var(--phosphor); }
+.channel-row[aria-current="true"] { border-color: var(--phosphor); }
 .channel-row:hover { background: #252b23; }
 .number { flex-shrink: 0; color: var(--phosphor); }
 .programme { min-width: 0; overflow-wrap: anywhere; }

@@ -1,9 +1,16 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 import { HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel } from '@microsoft/signalr';
 
 import { TapeShelf, TvSnapshot } from './models';
 
 const RETRY_MS = 2000;
+
+/**
+ * Where the connection stands. `connecting` is the first attempt after the page
+ * opens, which is normal and should not read as a fault; `reconnecting` means a
+ * link that worked has been lost, or the first attempt failed.
+ */
+export type LinkStatus = 'connecting' | 'connected' | 'reconnecting';
 const ROOM_KEY = 'rabbitears.room';
 
 /**
@@ -45,7 +52,8 @@ function pickRoom(): string {
 @Injectable({ providedIn: 'root' })
 export class TvLink {
   readonly state = signal<TvSnapshot | null>(null);
-  readonly connected = signal(false);
+  readonly status = signal<LinkStatus>('connecting');
+  readonly connected = computed(() => this.status() === 'connected');
   readonly unavailable = signal<string | null>(null);
   readonly room = pickRoom();
 
@@ -59,11 +67,13 @@ export class TvLink {
   constructor() {
     this.hub.on('Unavailable', (message: string) => this.unavailable.set(message));
     this.hub.on('State', (snapshot: TvSnapshot) => this.accept(snapshot));
-    this.hub.onreconnecting(() => this.connected.set(false));
-    this.hub.onreconnected(() => this.connected.set(true));
+    this.hub.onreconnecting(() => this.status.set('reconnecting'));
+    this.hub.onreconnected(() => this.status.set('connected'));
     this.hub.onclose(() => {
-      this.connected.set(false);
-      void this.connect();
+      this.status.set('reconnecting');
+      // Pause before the next attempt: a demo that is full closes the link as
+      // soon as it opens, and coming straight back would only hammer it.
+      void this.wait().then(() => this.connect());
     });
     void this.connect();
   }
@@ -108,11 +118,35 @@ export class TvLink {
     while (this.hub.state === HubConnectionState.Disconnected) {
       try {
         await this.hub.start();
-        this.connected.set(true);
+        this.status.set('connected');
       } catch {
-        await new Promise(resolve => setTimeout(resolve, RETRY_MS));
+        this.status.set('reconnecting');
+        await this.wait();
       }
     }
+  }
+
+  /**
+   * Try again now rather than at the next scheduled attempt. A demo that turned
+   * this browser away keeps retrying on its own; this is for a visitor who
+   * would rather press a button than wait.
+   */
+  retry(): void {
+    this.retryNow?.();
+  }
+
+  /** Ends the current pause between attempts early; set only while one is running. */
+  private retryNow: (() => void) | null = null;
+
+  private wait(): Promise<void> {
+    return new Promise(resolve => {
+      const timer = setTimeout(() => this.retryNow?.(), RETRY_MS);
+      this.retryNow = () => {
+        clearTimeout(timer);
+        this.retryNow = null;
+        resolve();
+      };
+    });
   }
 
   private send(method: string, ...args: unknown[]): void {
