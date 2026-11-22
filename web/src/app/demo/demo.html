@@ -6,49 +6,36 @@
     }
   </section>
 
+  <!-- What this is, how to use a phone as the remote, the remote itself, then the rest.
+       On a phone the picture stays pinned on top with the remote straight under it. -->
   <section class="panel" aria-label="About this demo">
     <header>
       <h1>Rabbit Ears</h1>
-      <p class="onboarding">Choose a channel · Enable sound<span class="phone-prompt"> · Scan QR for phone remote</span></p>
       <p>
         A 90s TV in the browser. Folders of shows become channels on a curved tube picture,
         and something is always already on. This TV is yours alone: nobody else can change it.
       </p>
-      <p><a href="https://github.com/natezimm/rabbit-ears" target="_blank" rel="noopener">Source</a>
-        · <a href="#media-credits">Media credits</a></p>
     </header>
 
-    <section class="lineup" aria-labelledby="lineup-title">
-      <h2 id="lineup-title">What's on / Jump to channel</h2>
-      @if (!link.connected() || link.unavailable()) {
-        <ears-link-notice [retry]="false" />
-      } @else if (!state()?.channels?.length) {
-        <p role="status">No channels available.</p>
-      } @else {
-        @for (channel of state()!.channels; track channel.number) {
-          <button type="button" class="channel-row"
-                  [attr.aria-current]="channel.number === state()!.channel?.number ? 'true' : null"
-                  (click)="link.goToChannel(channel.number)">
-            <span class="number">CH {{ channel.number.toString().padStart(2, '0') }}</span>
-            <span class="programme"><strong>{{ channel.name }}</strong>
-              <small>{{ channel.title || (channel.episodes + (channel.episodes === 1 ? ' episode' : ' episodes')) }}</small></span>
-          </button>
-        }
-      }
+    <section class="phone">
+      <svg class="qr" [attr.viewBox]="'0 0 ' + qr.size + ' ' + qr.size" shape-rendering="crispEdges" role="img"
+           aria-label="QR code for the phone remote">
+        <rect [attr.width]="qr.size" [attr.height]="qr.size" fill="#fff" />
+        <path [attr.d]="qr.d" fill="#000" />
+      </svg>
+      <div>
+        <h2>Your phone is the remote</h2>
+        <p>Scan to control this TV from your phone, or <a [href]="remoteUrl" target="_blank" rel="noopener">open the remote in a new tab</a>.
+          Enable sound on this tab first: phone buttons cannot unlock its audio.</p>
+      </div>
     </section>
+
+    <!-- The remote carries the one channel list, so the guide and the buttons sit together. -->
+    <ears-remote class="remote" [embedded]="true" />
 
     <section class="vcr" aria-labelledby="vcr-title">
       <h2 id="vcr-title">VCR: play your own videos</h2>
-      <p>Try your own videos. Files stay on your device and are never uploaded.</p>
-      <p>Up to 5 videos across 3 channels. Maximum 30 minutes and 500 MB per video; 1 GB total.</p>
-      <p>MP4 with H.264 video and AAC audio recommended. Other formats depend on your browser.</p>
-      <details>
-        <summary>How loading works</summary>
-        <p>A folder of shows becomes one channel per show; loose files go on CH 00.
-          Loading replaces your previous tapes only after validation. Keep this tab open to play them.
-          Video contents stay local; titles and channel names are sent to coordinate your phone remote.
-          Non-video files are ignored. Very large or deeply nested folders are refused.</p>
-      </details>
+      <p>Files stay on your device and are never uploaded.</p>
       <div class="vcr-buttons">
         <label class="vcr-button">Insert tapes
           <input type="file" accept="video/*,.mkv" multiple [disabled]="!!tapes.progress()" (change)="onPick($event)" />
@@ -70,21 +57,18 @@
         <button type="button" class="vcr-button" [disabled]="tapes.committing()" (click)="tapes.cancel()">Cancel</button>
       }
       @if (tapes.error(); as error) { <p role="alert">{{ error }}</p> }
+      <details>
+        <summary>Limits and how loading works</summary>
+        <ul>
+          <li>Up to 5 videos across 3 channels. Maximum 30 minutes and 500 MB per video; 1 GB total.</li>
+          <li>MP4 with H.264 video and AAC audio works best. Other formats depend on your browser.</li>
+          <li>A folder of shows becomes one channel per show; loose files go on CH 00.</li>
+          <li>Loading replaces your previous tapes only after they check out. Keep this tab open to play them.</li>
+          <li>Video contents stay local; titles and channel names are sent so your phone remote can show them.</li>
+          <li>Non-video files are ignored. Very large or deeply nested folders are refused.</li>
+        </ul>
+      </details>
     </section>
-
-    <section class="phone">
-      <svg class="qr" [attr.viewBox]="'0 0 ' + qr.size + ' ' + qr.size" shape-rendering="crispEdges" role="img"
-           aria-label="QR code for the phone remote">
-        <rect [attr.width]="qr.size" [attr.height]="qr.size" fill="#fff" />
-        <path [attr.d]="qr.d" fill="#000" />
-      </svg>
-      <div>
-        <h2>Your phone is the remote</h2>
-        <p>First enable sound on this TV tab. Phone buttons cannot unlock its audio. Scan to control this TV from your phone, or <a [href]="remoteUrl" target="_blank" rel="noopener">open the remote in a new tab</a>.</p>
-      </div>
-    </section>
-
-    <ears-remote class="remote" [embedded]="true" />
 
     <section class="keys">
       <h2>Or use the keyboard</h2>

@@ -23,8 +23,8 @@ test.beforeEach(async ({ page }) => {
 
 test('first visit shows the live guide, sound action and responsive controls', async ({ page, box }, info) => {
   await page.goto(`${box.url}/demo`);
-  const guide = page.getByRole('region', { name: "What's on / Jump to channel" });
-  await expect(guide.getByRole('button', { name: /CH 02 Arthur/ })).toBeVisible();
+  const guide = page.getByRole('region', { name: "What's on" });
+  await expect(guide.getByRole('button', { name: /02 Arthur/ })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Enable sound', exact: true })).toBeVisible();
   await expect.poll(() => page.locator('video.live').evaluateAll(videos =>
     videos.some(video => (video as HTMLVideoElement).videoWidth > 0 && !(video as HTMLVideoElement).paused))
@@ -32,7 +32,6 @@ test('first visit shows the live guide, sound action and responsive controls', a
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
   if (info.project.name.startsWith('phone')) {
     await expect(page.getByRole('img', { name: 'QR code for the phone remote' })).toBeHidden();
-    await expect(page.locator('.phone-prompt')).toBeHidden();
   } else {
     await expect(page.getByRole('img', { name: 'QR code for the phone remote' })).toBeVisible();
   }
@@ -42,7 +41,7 @@ test('first visit shows the live guide, sound action and responsive controls', a
   await expect.poll(() => page.locator('video.live').evaluateAll(videos =>
     videos.some(video => !(video as HTMLVideoElement).muted && !(video as HTMLVideoElement).paused))
   ).toBeTruthy();
-  const movies = guide.getByRole('button', { name: /CH 03 Movies/ });
+  const movies = guide.getByRole('button', { name: /03 Movies/ });
   await movies.click();
   await expect(movies).toHaveAttribute('aria-current', 'true');
   await expect(page.locator('.lcd-big')).toContainText('CH 03');
@@ -60,11 +59,25 @@ test('phone remote updates this room without unlocking desktop audio or another 
     await stranger.goto(`${box.url}/remote?room=separate-room`);
     await expect(stranger.locator('.lcd-big')).toContainText('CH 02');
     await remote.getByRole('button', { name: /03 Movies/ }).click();
-    await expect(page.locator('.lineup button[aria-current="true"]')).toContainText('CH 03');
+    await expect(page.locator('.guide button[aria-current="true"]')).toHaveAccessibleName(/03 Movies/);
     await expect(sound).toBeVisible();
     await expect.poll(() => page.locator('video.live').evaluateAll(v => v.length === 1 && (v[0] as HTMLVideoElement).muted)).toBeTruthy();
     await expect(stranger.locator('.lcd-big')).toContainText('CH 02');
   } finally { await other.close(); }
+});
+
+test('on a phone the picture stays in view above the remote', async ({ page, box }, info) => {
+  test.skip(!info.project.name.startsWith('phone'), 'phone layout only');
+  await page.goto(`${box.url}/demo`);
+  const up = page.getByRole('button', { name: 'Channel up' });
+  await expect(up).toBeEnabled();
+  await up.scrollIntoViewIfNeeded();
+  const screen = await page.locator('.screen').boundingBox();
+  const key = await up.boundingBox();
+  expect(screen!.y).toBe(0);
+  expect(key!.y).toBeGreaterThan(screen!.height);
+  expect(key!.y + key!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+  await info.attach('demo-phone-scrolled', { body: await page.screenshot(), contentType: 'image/png' });
 });
 
 test('keyboard activates focused controls and retains TV shortcuts', async ({ page, box }) => {
@@ -74,13 +87,13 @@ test('keyboard activates focused controls and retains TV shortcuts', async ({ pa
   await sound.focus();
   await page.keyboard.press('Enter');
   await expect(sound).toHaveCount(0);
-  const movies = page.locator('.lineup').getByRole('button', { name: /CH 03 Movies/ });
+  const movies = page.locator('.guide').getByRole('button', { name: /03 Movies/ });
   await movies.focus();
   await page.keyboard.press('Space');
   await expect(movies).toHaveAttribute('aria-current', 'true');
   await page.evaluate(() => (document.activeElement as HTMLElement)?.blur());
   await page.keyboard.press('ArrowDown');
-  await expect(page.locator('.lineup button[aria-current="true"]')).toContainText('CH 02');
+  await expect(page.locator('.guide button[aria-current="true"]')).toHaveAccessibleName(/02 Arthur/);
   await page.keyboard.press('p');
   await expect(page.locator('.lcd-big')).toContainText('STANDBY');
   await page.keyboard.press('p');
@@ -104,8 +117,7 @@ test('unlock respects mute set by the phone remote', async ({ page, context, box
 test('says over the picture when the TV cannot be reached, and offers a retry', async ({ page, box }) => {
   await page.route('**/hub/tv**', route => route.abort());
   await page.goto(`${box.url}/demo`);
-  await expect(page.locator('.lineup').getByRole('status')).toContainText('Cannot reach the TV');
-  await expect(page.locator('.lineup button')).toHaveCount(0);
+  await expect(page.locator('.guide')).toHaveCount(0);
   await expect(page.locator('.screen-notice').getByRole('status')).toContainText('NO LINK');
   await expect(page.locator('.osd').getByRole('status')).toHaveText('NO SIGNAL');
   await expect(page.locator('.lcd-big')).toHaveText('NO LINK');
@@ -113,7 +125,7 @@ test('says over the picture when the TV cannot be reached, and offers a retry', 
 
   await page.unroute('**/hub/tv**');
   await page.locator('.screen-notice').getByRole('button', { name: 'Try again' }).click();
-  await expect(page.locator('.lineup').getByRole('button', { name: /CH 02 Arthur/ })).toBeVisible();
+  await expect(page.locator('.guide').getByRole('button', { name: /02 Arthur/ })).toBeVisible();
   await expect(page.locator('.screen-notice')).toHaveCount(0);
   await expect(page.locator('.osd').getByRole('status')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Channel up' })).toBeEnabled();
@@ -132,7 +144,7 @@ test('HTTP range seeking decodes real H.264/AAC media before and after channel c
   await page.goto(`${box.url}/demo?room=codec-check`);
   // A new demo room is registered by the SignalR handshake, not by page navigation.
   // Wait for the server-authoritative guide before probing this room's API state.
-  await expect(page.locator('.lineup').getByRole('button', { name: /CH 02 Arthur/ })).toBeVisible();
+  await expect(page.locator('.guide').getByRole('button', { name: /02 Arthur/ })).toBeVisible();
   const initial = await box.api.get('/api/state?room=codec-check');
   expect(initial.ok()).toBeTruthy();
   const state = await initial.json();
@@ -148,7 +160,7 @@ test('HTTP range seeking decodes real H.264/AAC media before and after channel c
     element.readyState >= 2 && element.videoWidth > 0 && !element.paused)).toBeTruthy();
   await video.evaluate((element: HTMLVideoElement) => { element.currentTime = 10; });
   await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.currentTime)).toBeGreaterThan(8);
-  await page.locator('.lineup').getByRole('button', { name: /CH 03 Movies/ }).click();
+  await page.locator('.guide').getByRole('button', { name: /03 Movies/ }).click();
   await expect(page.locator('.lcd-big')).toContainText('CH 03');
   await expect.poll(() => video.evaluateAll((videos: HTMLVideoElement[]) =>
     videos.some(v => v.videoWidth > 0 && v.readyState >= 2 && !v.paused))).toBeTruthy();
@@ -156,8 +168,8 @@ test('HTTP range seeking decodes real H.264/AAC media before and after channel c
 
 test('videos put in the VCR play from this browser on their own channel, and eject takes them out', async ({ page, box }) => {
   await page.goto(`${box.url}/demo?room=vcr-room`);
-  const guide = page.getByRole('region', { name: "What's on / Jump to channel" });
-  await expect(guide.getByRole('button', { name: /CH 02 Arthur/ })).toBeVisible();
+  const guide = page.getByRole('region', { name: "What's on" });
+  await expect(guide.getByRole('button', { name: /02 Arthur/ })).toBeVisible();
 
   const uploads: string[] = [];
   page.on('request', request => { if (request.method() !== 'GET' || request.url().includes('Home')) uploads.push(request.url()); });
@@ -167,7 +179,7 @@ test('videos put in the VCR play from this browser on their own channel, and eje
     buffer: await readFile(join(box.root, 'fixture.mp4')),
   });
 
-  const vcr = guide.getByRole('button', { name: /CH 00 VCR/ });
+  const vcr = guide.getByRole('button', { name: /00 VCR/ });
   await expect(vcr).toHaveAttribute('aria-current', 'true');
   await expect(page.getByRole('status').filter({ hasText: '1 video on 1 channel' })).toBeVisible();
   await expect.poll(() => page.locator('video.live').evaluateAll(videos =>
@@ -178,13 +190,13 @@ test('videos put in the VCR play from this browser on their own channel, and eje
   // Another tab on the same TV must not take the tapes away from this one.
   const second = await page.context().newPage();
   await second.goto(`${box.url}/demo?room=vcr-room`);
-  await expect(second.getByRole('button', { name: /CH 00 VCR/ })).toBeVisible();
+  await expect(second.getByRole('button', { name: /00 VCR/ })).toBeVisible();
   await second.close();
   await expect(vcr).toHaveAttribute('aria-current', 'true');
 
   await page.getByRole('button', { name: 'Eject' }).click();
   await expect(vcr).toHaveCount(0);
-  await expect(guide.locator('button[aria-current="true"]')).not.toContainText('CH 00');
+  await expect(guide.locator('button[aria-current="true"]')).not.toContainText('00 VCR');
 });
 
 test('a folder of show folders loads as one channel per show, with loose files on the VCR', async ({ page, box }) => {
@@ -194,12 +206,12 @@ test('a folder of show folders loads as one channel per show, with loose files o
     await copyFile(join(box.root, 'fixture.mp4'), join(shows, path));
   }
   await page.goto(`${box.url}/demo?room=folder-room`);
-  const guide = page.getByRole('region', { name: "What's on / Jump to channel" });
-  await expect(guide.getByRole('button', { name: /CH 02 Arthur/ })).toBeVisible();
+  const guide = page.getByRole('region', { name: "What's on" });
+  await expect(guide.getByRole('button', { name: /02 Arthur/ })).toBeVisible();
 
   await page.locator('input[webkitdirectory]').setInputFiles(shows);
 
-  await expect(guide.getByRole('button', { name: /CH 00 VCR/ })).toHaveAttribute('aria-current', 'true');
+  await expect(guide.getByRole('button', { name: /00 VCR/ })).toHaveAttribute('aria-current', 'true');
   await expect(guide.getByRole('button', { name: /Cheers.*2 episodes/ })).toBeVisible();
   await expect(guide.getByRole('button', { name: /Home videos.*1 episode/ })).toBeVisible();
   await expect(page.getByRole('status').filter({ hasText: '4 videos on 3 channels; 1 other files skipped' })).toBeVisible();
@@ -207,13 +219,13 @@ test('a folder of show folders loads as one channel per show, with loose files o
 
 test('five tapes load and invalid replacements preserve them', async ({ page, box }) => {
   await page.goto(`${box.url}/demo?room=limits-room`);
-  await expect(page.getByRole('button', { name: /CH 02 Arthur/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /02 Arthur/ })).toBeVisible();
   const picker = page.locator('input[type=file]:not([webkitdirectory])');
   const buffer = await readFile(join(box.root, 'fixture.mp4'));
   const files = Array.from({ length: 5 }, (_, i) => ({ name: `Tape ${i}.mp4`, mimeType: 'video/mp4', buffer }));
   await picker.setInputFiles(files);
   await expect(page.getByRole('status').filter({ hasText: '5 videos on 1 channel' })).toBeVisible();
-  const vcr = page.getByRole('button', { name: /CH 00 VCR/ });
+  const vcr = page.getByRole('button', { name: /00 VCR/ });
   await expect(vcr).toHaveAttribute('aria-current', 'true');
   await picker.setInputFiles([...files, { ...files[0], name: 'Sixth.mp4' }]);
   await expect(page.getByRole('alert')).toContainText('up to 5');
@@ -244,7 +256,7 @@ test('cancelled metadata probe releases its URL and keeps the previous tapes', a
     }) as typeof document.createElement;
   });
   await page.goto(`${box.url}/demo?room=cancel-room`);
-  await expect(page.getByRole('button', { name: /CH 02 Arthur/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /02 Arthur/ })).toBeVisible();
   const picker = page.locator('input[type=file]:not([webkitdirectory])');
   const file = { name: 'Tape.mp4', mimeType: 'video/mp4', buffer: await readFile(join(box.root, 'fixture.mp4')) };
   await picker.setInputFiles(file);
@@ -264,7 +276,7 @@ test('a 30-minute tape seeks near the end and resumes after channel surfing', as
   execFileSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'color=blue:size=160x120:rate=1',
     '-t', '1800', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', path]);
   await page.goto(`${box.url}/demo?room=long-tape-room`);
-  await expect(page.getByRole('button', { name: /CH 02 Arthur/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /02 Arthur/ })).toBeVisible();
   await page.locator('input[type=file]:not([webkitdirectory])').setInputFiles(path);
   const video = page.locator('video.live');
   await expect.poll(() => video.evaluateAll((v: HTMLVideoElement[]) => v.some(x => x.src.startsWith('blob:') && x.duration === 1800))).toBeTruthy();
@@ -272,13 +284,13 @@ test('a 30-minute tape seeks near the end and resumes after channel surfing', as
   await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(1779);
   // Allow the normal server position report to preserve the seek.
   await page.waitForTimeout(2500);
-  await page.locator('.lineup').getByRole('button', { name: /CH 02 Arthur/ }).click();
+  await page.locator('.guide').getByRole('button', { name: /02 Arthur/ }).click();
   await expect(page.locator('.lcd-big')).toContainText('CH 02');
   // The tape stays on screen until Arthur can play. Wait for that cut, so the
   // tape on screen after tuning back is the newly loaded one and not the old deck.
   await expect.poll(() => video.evaluateAll((v: HTMLVideoElement[]) =>
     v.length === 1 && v[0].src.includes('/media/'))).toBeTruthy();
-  await page.locator('.lineup').getByRole('button', { name: /CH 00 VCR/ }).click();
+  await page.locator('.guide').getByRole('button', { name: /00 VCR/ }).click();
   await expect.poll(() => video.evaluateAll((v: HTMLVideoElement[]) =>
     v.length === 1 && v[0].src.startsWith('blob:') && v[0].currentTime > 1779))
     .toBeTruthy();

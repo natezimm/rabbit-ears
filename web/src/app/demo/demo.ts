@@ -22,7 +22,6 @@ import { TvScreen } from '../tv/tv-screen';
 })
 export class Demo {
   protected readonly link = inject(TvLink);
-  protected readonly state = this.link.state;
   protected readonly credits = signal<DemoCredit[]>([]);
   protected readonly tapes = inject(TapeDeck);
   protected readonly dragging = signal(false);
