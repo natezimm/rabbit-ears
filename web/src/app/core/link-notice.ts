@@ -7,7 +7,7 @@ export interface LinkWords {
   /** A short label in capitals, sized for the remote's readout and the TV's display. */
   title: string;
   detail: string;
-  /** True when it is worth offering a button to try again now. */
+  /** True when a button to try again now would actually start an attempt. */
   canRetry: boolean;
 }
 
@@ -17,12 +17,12 @@ export interface LinkWords {
  */
 export function linkWords(link: TvLink): LinkWords | null {
   const refused = link.unavailable();
-  if (refused) return { title: 'BUSY', detail: refused, canRetry: true };
+  if (refused) return { title: 'BUSY', detail: refused, canRetry: link.canRetry() };
   switch (link.status()) {
     case 'connecting':
       return { title: 'CONNECTING', detail: 'Tuning in to the TV…', canRetry: false };
     case 'reconnecting':
-      return { title: 'NO LINK', detail: 'Cannot reach the TV. Trying again…', canRetry: true };
+      return { title: 'NO LINK', detail: 'Cannot reach the TV. Trying again…', canRetry: link.canRetry() };
     default:
       return null;
   }
