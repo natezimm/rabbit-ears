@@ -57,7 +57,7 @@ export class Admin {
       try {
         this.accept(await this.api.saveChannels(catalog.version, catalog.channels.map(c => c.settings)));
       } catch (error) {
-        throw new Error(`${message(error)} Your edits have been kept.`);
+        throw new Error(`${message(error)} Your edits have been kept.`, { cause: error });
       }
       this.notice.set('Lineup saved. The TV and remotes have been updated.');
     });
