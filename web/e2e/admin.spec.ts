@@ -198,3 +198,37 @@ test.describe('public demo', () => {
     await expect(page.getByRole('link', { name: 'Manage channels' })).toHaveCount(0);
   });
 });
+
+test('a mistyped address says so and links back to the pages', async ({ page, box }) => {
+  await page.goto(`${box.url}/remtoe`);
+  await expect(page.getByRole('heading', { name: 'NO SUCH CHANNEL' })).toBeVisible();
+  await expect(page).toHaveTitle(/Not found/);
+  await page.getByRole('link', { name: 'Remote' }).click();
+  await expect(page.locator('.lcd-big')).toContainText('CH 02');
+});
+
+test('leaving the editor with unsaved edits asks first', async ({ page, box }) => {
+  await page.goto(`${box.url}/admin`);
+  await page.getByRole('textbox', { name: 'Display name for Arthur' }).fill('Unsaved');
+  await expect(page.getByText('Save or discard them to rescan')).toBeVisible();
+  page.once('dialog', dialog => void dialog.dismiss());
+  await page.getByRole('link', { name: '← Remote' }).click();
+  await expect(page.getByRole('textbox', { name: 'Display name for Arthur' })).toHaveValue('Unsaved');
+  page.once('dialog', dialog => void dialog.accept());
+  await page.getByRole('link', { name: '← Remote' }).click();
+  await expect(page.locator('.lcd-big')).toContainText('CH 02');
+});
+
+test('a phone on its side shows the readout and every key without scrolling', async ({ browser, box }) => {
+  const context = await browser.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
+  try {
+    const page = await context.newPage();
+    await page.goto(`${box.url}/remote`);
+    await expect(page.locator('.lcd-big')).toContainText('CH 02');
+    for (const name of ['Power', 'Channel down', 'Volume down', 'OK', 'Last channel']) {
+      await expect(page.getByRole('button', { name, exact: true })).toBeInViewport({ ratio: 1 });
+    }
+  } finally {
+    await context.close();
+  }
+});

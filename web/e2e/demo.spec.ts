@@ -435,4 +435,20 @@ test('search engines and link previews find the demo page', async ({ page, box }
   );
   const card = await page.request.get(`${box.url}/social-card.png`);
   expect(card.ok()).toBe(true);
+  expect((await card.body()).length).toBeLessThan(300_000);
+});
+
+test('the display font arrives as WOFF2', async ({ page, box }) => {
+  const font = page.waitForResponse(response => response.url().includes('VT323'));
+  await page.goto(`${box.url}/demo`);
+  const response = await font;
+  expect(response.url()).toMatch(/\.woff2$/);
+  expect(response.headers()['content-type']).toBe('font/woff2');
+});
+
+test('a mistyped address on the demo points back to the demo', async ({ page, box }) => {
+  await page.goto(`${box.url}/demi`);
+  await expect(page.getByRole('heading', { name: 'NO SUCH CHANNEL' })).toBeVisible();
+  await page.getByRole('link', { name: 'Go to the demo' }).click();
+  await expect(page).toHaveURL(/\/demo$/);
 });

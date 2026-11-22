@@ -19,18 +19,13 @@
     </section>
   } @else if (catalog(); as lineup) {
     <div class="toolbar">
-      <span aria-live="polite">{{ busy() ? 'Working…' : dirty() ? 'Unsaved changes' : 'Lineup up to date' }}</span>
+      <span aria-live="polite">
+        {{ busy() ? 'Working…' : dirty() ? 'Unsaved changes. Save or discard them to rescan.' : 'Lineup up to date' }}
+      </span>
       <button type="button" (click)="load()" [disabled]="busy()">
         {{ dirty() ? 'Discard edits & reload' : 'Reload' }}
       </button>
-      <button
-        type="button"
-        (click)="rescan()"
-        [disabled]="busy() || dirty()"
-        title="Save or discard edits before rescanning"
-      >
-        Rescan folders
-      </button>
+      <button type="button" (click)="rescan()" [disabled]="busy() || dirty()">Rescan folders</button>
       <button type="button" class="primary" (click)="save()" [disabled]="busy() || !dirty()">Save lineup</button>
     </div>
     <p class="hint">

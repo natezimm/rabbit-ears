@@ -1,0 +1,11 @@
+<h1>NO SUCH CHANNEL</h1>
+<p>There is nothing at this address.</p>
+@if (demo() === true) {
+  <a routerLink="/demo">Go to the demo</a>
+} @else if (demo() === false) {
+  <nav aria-label="Pages">
+    <a routerLink="/remote">Remote</a>
+    <a routerLink="/tv">TV</a>
+    <a routerLink="/admin">Channel lineup</a>
+  </nav>
+}

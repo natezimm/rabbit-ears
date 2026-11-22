@@ -1,9 +1,12 @@
 import { Routes } from '@angular/router';
 
+import type { Admin } from './admin/admin';
+
 // The kiosk opens /tv; a phone that just types the box's address lands on the remote.
 export const routes: Routes = [
   {
     path: 'admin',
+    canDeactivate: [(admin: Admin) => admin.canLeave()],
     title: 'Channel lineup · Rabbit Ears',
     loadComponent: () => import('./admin/admin').then(m => m.Admin),
   },
@@ -20,5 +23,10 @@ export const routes: Routes = [
     loadComponent: () => import('./remote/remote-page').then(m => m.RemotePage),
   },
   { path: '', pathMatch: 'full', redirectTo: 'remote' },
-  { path: '**', redirectTo: 'remote' },
+  // A mistyped address says so instead of silently landing somewhere else.
+  {
+    path: '**',
+    title: 'Not found · Rabbit Ears',
+    loadComponent: () => import('./not-found/not-found').then(m => m.NotFound),
+  },
 ];

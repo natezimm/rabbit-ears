@@ -12,6 +12,7 @@ import { AdminCatalog, AdminChannel } from '../core/models';
   templateUrl: './admin.html',
   styleUrl: './admin.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(window:beforeunload)': 'onBeforeUnload($event)' },
 })
 export class Admin {
   private readonly api = inject(BoxApi);
@@ -38,6 +39,16 @@ export class Admin {
 
   constructor() {
     void this.load();
+  }
+
+  /** Asked by the router before leaving for another page of the app. */
+  canLeave(): boolean {
+    return !this.dirty() || confirm('Leave without saving your lineup changes?');
+  }
+
+  /** Closing or reloading the tab with unsaved edits gets the browser's own warning. */
+  protected onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.dirty()) event.preventDefault();
   }
 
   protected edited(): void {

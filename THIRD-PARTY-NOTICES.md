@@ -5,7 +5,8 @@ includes the following third-party material, each under its own license.
 
 ## VT323
 
-`web/public/VT323-Regular.ttf` is the VT323 font, licensed under the SIL Open
+`web/public/VT323-Regular.ttf` (and its unmodified WOFF2 packaging,
+`VT323-Regular.woff2`) is the VT323 font, licensed under the SIL Open
 Font License 1.1. The full license is in `web/public/OFL.txt`.
 
 ## Packages
