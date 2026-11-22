@@ -12,12 +12,15 @@ import {
   viewChild,
 } from '@angular/core';
 
+import { BoxApi } from '../core/box-api';
+import { formatChannel, volumeSegments } from '../core/format';
 import { ChannelInfo, DEFAULT_PICTURE, PictureConfig, TvSnapshot } from '../core/models';
 import { TapeDeck } from '../core/tape-deck';
 import { TvLink } from '../core/tv-link';
 import { CrtRenderer, ScreenMode } from './crt-renderer';
 import { Tube } from './tube';
 
+/** Like a classic set's on-screen meter; the remote's narrower readout uses fewer. */
 const VOLUME_SEGMENTS = 25;
 const POWER_OFF_SECONDS = 0.45;
 const POWER_ON_SECONDS = 0.6;
@@ -69,6 +72,7 @@ const KEYS: Record<string, (link: TvLink) => void> = {
 })
 export class TvScreen {
   private readonly link = inject(TvLink);
+  private readonly api = inject(BoxApi);
   private readonly tapes = inject(TapeDeck);
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('glass');
   private readonly deckA = viewChild.required<ElementRef<HTMLVideoElement>>('deckA');
@@ -107,11 +111,7 @@ export class TvScreen {
   protected readonly standby = computed(() => this.link.state()?.standby ?? false);
   protected readonly muted = computed(() => this.link.state()?.muted ?? false);
   /** Solid bars for the level, dots for the rest, like a classic TV volume display. */
-  protected readonly segments = computed(() => {
-    const state = this.link.state();
-    const lit = !state || state.muted ? 0 : Math.round((state.volume / 100) * VOLUME_SEGMENTS);
-    return Array.from({ length: VOLUME_SEGMENTS }, (_, index) => index < lit);
-  });
+  protected readonly segments = computed(() => volumeSegments(this.link.state(), VOLUME_SEGMENTS));
 
   private tube: Tube | null = null;
   private renderer: CrtRenderer | null = null;
@@ -183,7 +183,7 @@ export class TvScreen {
   }
 
   protected channelNumber(channel: ChannelInfo): string {
-    return String(channel.number).padStart(2, '0');
+    return formatChannel(channel.number);
   }
 
   protected onKey(event: KeyboardEvent): void {
@@ -306,8 +306,7 @@ export class TvScreen {
 
   private async loadPicture(): Promise<void> {
     try {
-      const response = await fetch('/api/picture');
-      if (response.ok) this.picture.set(await response.json());
+      this.picture.set(await this.api.picture());
     } catch {
       // The defaults are the same as the server's; carry on with those.
     }

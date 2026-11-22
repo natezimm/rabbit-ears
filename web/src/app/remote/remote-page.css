@@ -1,0 +1,22 @@
+/* The remote fills the phone, in the remote's plastic, clear of notches and home bars. */
+:host {
+  display: grid;
+  align-content: start;
+  min-height: 100dvh;
+  padding: max(18px, env(safe-area-inset-top)) 0 max(28px, env(safe-area-inset-bottom));
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
+.admin-link {
+  justify-self: center;
+  padding: 16px;
+  color: var(--settings-accent);
+  font: var(--text-sm) var(--font-ui);
+}
+
+.admin-link:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}

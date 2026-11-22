@@ -5,6 +5,76 @@
   font-display: block;
 }
 
+/*
+ * Design tokens. Every page draws from these, so the remote, the demo and the
+ * TV agree on what "phosphor green" is. The app sets --phosphor from the TV's
+ * configured display colour at start-up (app.ts), so the readouts follow it.
+ */
+:root {
+  /* Pages are dark; this also gets native controls and scrollbars drawn dark. */
+  color-scheme: dark;
+
+  /* The set's own colours. */
+  --phosphor: #3dff6e;
+  --glow: color-mix(in srgb, var(--phosphor) 55%, transparent);
+  --glow-faint: color-mix(in srgb, var(--phosphor) 28%, transparent);
+  --phosphor-dim: color-mix(in srgb, var(--phosphor) 60%, transparent);
+  --warning: #ffb547;
+  --on-phosphor: #08120a;
+
+  /* The remote's plastic and the demo's panel. */
+  --surface: #1b1d1a;
+  --surface-edge: #2a2d28;
+  --well: #111410;
+  --well-hover: #252b23;
+  --lcd: #0b1a0d;
+  --lcd-edge: #050b06;
+  --key: #3a3e38;
+  --key-edge: #20231f;
+  --text: #e8ece4;
+  --text-strong: #f3f5ef;
+  --muted: #a9b0a3;
+
+  /*
+   * The admin page is a settings screen, not part of the set, so it keeps a
+   * calmer mint accent on deep green-grey surfaces.
+   */
+  --settings-bg: #101716;
+  --settings-card: #192520;
+  --settings-field: #101a15;
+  --settings-line: #394c43;
+  --settings-control: #677e70;
+  --settings-button: #243c30;
+  --settings-text: #eef5ec;
+  --settings-muted: #b6c8bf;
+  --settings-accent: #92e8b4;
+  --settings-focus: #b5ffc7;
+  --settings-error-bg: #3a2020;
+  --settings-error-text: #ffd2ca;
+  --settings-notice-bg: #163725;
+  --settings-notice-text: #b8f5ce;
+
+  /* Type: seven steps for interface text; the TV's display scales with the picture instead. */
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'VT323', ui-monospace, monospace;
+  --text-xs: 13px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 26px;
+  --text-2xl: 34px;
+  --text-3xl: 44px;
+
+  /* Corners. */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* The one focus ring. */
+  --focus-ring: 3px solid var(--phosphor);
+  --focus-offset: 3px;
+}
+
 *,
 *::before,
 *::after {

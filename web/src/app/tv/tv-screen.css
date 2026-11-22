@@ -7,7 +7,7 @@
 /* The screen fills whatever box it is given: the whole window on the box, a
    panel on the demo page. Sizes inside are measured against it, not the window. */
 .tv {
-  --osd: #3dff6e;
+  --osd: var(--phosphor);
   position: absolute;
   inset: 0;
   container-type: size;
@@ -57,7 +57,7 @@ video {
   pointer-events: none;
 
   color: var(--osd);
-  font-family: 'VT323', ui-monospace, monospace;
+  font-family: var(--font-display);
   line-height: 1;
   white-space: nowrap;
   /* VT323 has one weight; a stroke in the same colour is the bold. */
@@ -161,17 +161,17 @@ video {
   background: rgb(0 0 0 / 0.9);
   color: #fff;
   text-align: center;
-  font: 14px/1.4 system-ui, sans-serif;
+  font: var(--text-sm) / 1.4 var(--font-ui);
   cursor: auto;
 }
 .sound-prompt button {
   min-height: 44px;
   padding: 8px 18px;
-  border: 2px solid #3dff6e;
-  border-radius: 6px;
-  background: #3dff6e;
-  color: #08120a;
-  font: bold 16px system-ui, sans-serif;
+  border: 2px solid var(--phosphor);
+  border-radius: var(--radius-sm);
+  background: var(--phosphor);
+  color: var(--on-phosphor);
+  font: bold var(--text-md) var(--font-ui);
   cursor: pointer;
 }
 .sound-prompt button:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }

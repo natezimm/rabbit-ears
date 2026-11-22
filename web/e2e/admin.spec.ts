@@ -92,6 +92,26 @@ test('retains a stale tab draft until the user discards it', async ({ page, cont
   await expect(other.getByRole('alert')).toHaveCount(0);
 });
 
+test('undoing an edit leaves nothing to save', async ({ page, box }) => {
+  await page.goto(`${box.url}/admin`);
+  const name = page.getByRole('textbox', { name: 'Display name for Arthur' });
+  const save = page.getByRole('button', { name: 'Save lineup' });
+  await name.fill('Something else');
+  await expect(save).toBeEnabled();
+  await name.fill('Arthur');
+  await expect(save).toBeDisabled();
+  await expect(page.getByText('Lineup up to date')).toBeVisible();
+});
+
+test('the remote links to the lineup editor without reloading the app', async ({ page, box }) => {
+  await page.goto(`${box.url}/remote`);
+  await expect(page.locator('.lcd-big')).toContainText('CH 02');
+  await page.evaluate(() => Object.assign(window, { sameApp: true }));
+  await page.getByRole('link', { name: 'Manage channels' }).click();
+  await expect(page.getByRole('heading', { name: 'Your channel lineup' })).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { sameApp?: boolean }).sameApp)).toBe(true);
+});
+
 test('shows validation errors and lets the user correct them', async ({ page, box }) => {
   await page.goto(`${box.url}/admin`);
   for (const group of ['Arthur', 'Movies'])
