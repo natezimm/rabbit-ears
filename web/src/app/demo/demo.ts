@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { encode } from 'uqr';
 
 import { BoxApi } from '../core/box-api';
-import { LinkNotice, linkWords } from '../core/link-notice';
+import { LinkNotice } from '../core/link-notice';
 import { DemoCredit } from '../core/models';
 import { TapeDeck, fromDrop, fromPicker } from '../core/tape-deck';
 import { TvLink } from '../core/tv-link';
@@ -40,7 +40,7 @@ export class Demo {
       `${loaded.channels === 1 ? 'channel' : 'channels'}${skipped}. ${loaded.megabytes} MB loaded.`
     );
   });
-  protected readonly screenNotice = computed(() => linkWords(this.link)?.canRetry ?? false);
+  protected readonly screenNotice = computed(() => !!this.link.unavailable() || this.link.status() === 'reconnecting');
 
   constructor() {
     // Credits are a footnote: without them the footer says the demo plays test clips.
