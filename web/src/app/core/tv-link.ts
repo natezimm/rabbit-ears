@@ -93,7 +93,8 @@ export class TvLink {
   async loadTapes(shelves: TapeShelf[], tune: boolean): Promise<void> {
     if (!this.connected()) throw new Error('Please wait for the TV to reconnect.');
     const accepted = await this.hub.invoke<boolean>('LoadTapes', shelves, tune);
-    if (!accepted) throw new Error('Tapes were refused. Use up to 5 videos on 3 channels, or wait a minute before trying again.');
+    if (!accepted)
+      throw new Error('Tapes were refused. Use up to 5 videos on 3 channels, or wait a minute before trying again.');
   }
   ejectTapes = () => this.hub.invoke('EjectTapes');
 

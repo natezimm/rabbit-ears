@@ -12,21 +12,29 @@
     <header>
       <h1>Rabbit Ears</h1>
       <p>
-        A 90s TV in the browser. Folders of shows become channels on a curved tube picture,
-        and something is always already on. This TV is yours alone: nobody else can change it.
+        A 90s TV in the browser. Folders of shows become channels on a curved tube picture, and something is always
+        already on. This TV is yours alone: nobody else can change it.
       </p>
     </header>
 
     <section class="phone">
-      <svg class="qr" [attr.viewBox]="'0 0 ' + qr.size + ' ' + qr.size" shape-rendering="crispEdges" role="img"
-           aria-label="QR code for the phone remote">
+      <svg
+        class="qr"
+        [attr.viewBox]="'0 0 ' + qr.size + ' ' + qr.size"
+        shape-rendering="crispEdges"
+        role="img"
+        aria-label="QR code for the phone remote"
+      >
         <rect [attr.width]="qr.size" [attr.height]="qr.size" fill="#fff" />
         <path [attr.d]="qr.d" fill="#000" />
       </svg>
       <div>
         <h2>Your phone is the remote</h2>
-        <p>Scan to control this TV from your phone, or <a [href]="remoteUrl" target="_blank" rel="noopener">open the remote in a new tab</a>.
-          Enable sound on this tab first: phone buttons cannot unlock its audio.</p>
+        <p>
+          Scan to control this TV from your phone, or
+          <a [href]="remoteUrl" target="_blank" rel="noopener">open the remote in a new tab</a>. Enable sound on this
+          tab first: phone buttons cannot unlock its audio.
+        </p>
       </div>
     </section>
 
@@ -37,26 +45,32 @@
       <h2 id="vcr-title">VCR: play your own videos</h2>
       <p>Files stay on your device and are never uploaded.</p>
       <div class="vcr-buttons">
-        <label class="vcr-button">Insert tapes
+        <label class="vcr-button"
+          >Insert tapes
           <input type="file" accept="video/*,.mkv" multiple [disabled]="!!tapes.progress()" (change)="onPick($event)" />
         </label>
-        <label class="vcr-button">Load a folder
+        <label class="vcr-button"
+          >Load a folder
           <input type="file" webkitdirectory multiple [disabled]="!!tapes.progress()" (change)="onPick($event)" />
         </label>
         @if (tapes.loaded()) {
-          <button type="button" class="vcr-button" [disabled]="!!tapes.progress()" (click)="tapes.eject()">Eject</button>
+          <button type="button" class="vcr-button" [disabled]="!!tapes.progress()" (click)="tapes.eject()">
+            Eject
+          </button>
         }
       </div>
-      @if (tapes.loaded(); as loaded) {
-        <p role="status">{{ loaded.tapes }} {{ loaded.tapes === 1 ? 'video' : 'videos' }} on {{ loaded.channels }}
-          {{ loaded.channels === 1 ? 'channel' : 'channels' }}@if (loaded.skipped) {; {{ loaded.skipped }} other files skipped}.
-          {{ loaded.megabytes }} MB loaded.</p>
+      @if (tapeSummary(); as summary) {
+        <p role="status">{{ summary }}</p>
       }
       @if (tapes.progress(); as progress) {
         <p role="status">{{ progress }}</p>
-        <button type="button" class="vcr-button" [disabled]="tapes.committing()" (click)="tapes.cancel()">Cancel</button>
+        <button type="button" class="vcr-button" [disabled]="tapes.committing()" (click)="tapes.cancel()">
+          Cancel
+        </button>
       }
-      @if (tapes.error(); as error) { <p role="alert">{{ error }}</p> }
+      @if (tapes.error(); as error) {
+        <p role="alert">{{ error }}</p>
+      }
       <details>
         <summary>Limits and how loading works</summary>
         <ul>
@@ -73,35 +87,61 @@
     <section class="keys">
       <h2>Or use the keyboard</h2>
       <dl>
-        <dt>↑ ↓</dt><dd>Channel</dd>
-        <dt>← →</dt><dd>Volume</dd>
-        <dt>0–9</dt><dd>Tune to a channel</dd>
-        <dt>L</dt><dd>Last channel</dd>
-        <dt>M</dt><dd>Mute</dd>
-        <dt>P</dt><dd>Power (standby)</dd>
-        <dt>F</dt><dd>Full screen</dd>
+        <dt>↑ ↓</dt>
+        <dd>Channel</dd>
+        <dt>← →</dt>
+        <dd>Volume</dd>
+        <dt>0–9</dt>
+        <dd>Tune to a channel</dd>
+        <dt>L</dt>
+        <dd>Last channel</dd>
+        <dt>M</dt>
+        <dd>Mute</dd>
+        <dt>P</dt>
+        <dd>Power (standby)</dd>
+        <dt>F</dt>
+        <dd>Full screen</dd>
       </dl>
     </section>
 
     <footer id="media-credits">
       <p>
-        Angular and ASP.NET Core with SignalR; the tube is a WebGL shader. At home it runs on a mini
-        PC with an IR remote and your own media library.
+        Angular and ASP.NET Core with SignalR; the tube is a WebGL shader. At home it runs on a mini PC with an IR
+        remote and your own media library.
       </p>
       @if (credits().length) {
         <details>
           <summary>Media credits</summary>
           @for (credit of credits(); track credit.channel + '/' + credit.title) {
             <div class="media-credit">
-              <strong>{{ credit.channel }} · {{ credit.title }}@if (credit.year) { ({{ credit.year }})}</strong>
-              <span>By {{ credit.creator }} · <a [href]="credit.sourceUrl" target="_blank" rel="noopener noreferrer">Original source</a></span>
-              <span>{{ credit.license }}@if (credit.licenseUrl) { · <a [href]="credit.licenseUrl" target="_blank" rel="noopener noreferrer">License details</a>}</span>
-              @if (credit.attribution) { <span>{{ credit.attribution }}</span> }
-              @if (credit.modifications) { <span>Changes: {{ credit.modifications }}</span> }
+              <strong
+                >{{ credit.channel }} · {{ credit.title }}
+                @if (credit.year) {
+                  ({{ credit.year }})
+                }
+              </strong>
+              <span
+                >By {{ credit.creator }} ·
+                <a [href]="credit.sourceUrl" target="_blank" rel="noopener noreferrer">Original source</a></span
+              >
+              <span
+                >{{ credit.license }}
+                @if (credit.licenseUrl) {
+                  · <a [href]="credit.licenseUrl" target="_blank" rel="noopener noreferrer">License details</a>
+                }
+              </span>
+              @if (credit.attribution) {
+                <span>{{ credit.attribution }}</span>
+              }
+              @if (credit.modifications) {
+                <span>Changes: {{ credit.modifications }}</span>
+              }
             </div>
           }
         </details>
-      } @else { <p>This demo plays generated test clips.</p> }
+      } @else {
+        <p>This demo plays generated test clips.</p>
+      }
       <a href="https://github.com/natezimm/rabbit-ears" target="_blank" rel="noopener">Source on GitHub</a>
     </footer>
   </section>

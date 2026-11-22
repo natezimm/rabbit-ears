@@ -44,7 +44,9 @@ export class TapeDeck implements OnDestroy {
     effect(() => {
       const connected = this.link.connected();
       if (connected && !wasConnected && this.shelves.length && !this.attempt)
-        void this.link.loadTapes(this.shelves, false).catch(() => this.error.set('Reconnect failed to restore your tapes. Please insert them again.'));
+        void this.link
+          .loadTapes(this.shelves, false)
+          .catch(() => this.error.set('Reconnect failed to restore your tapes. Please insert them again.'));
       wasConnected = connected;
     });
   }
@@ -52,7 +54,11 @@ export class TapeDeck implements OnDestroy {
   /** Where the TV should load an episode from, or null for a tape this tab no longer has. */
   source(episodeId: string): string | null {
     if (!episodeId.startsWith(TAPE_PREFIX)) return `/media/${episodeId}`;
-    return this.pending.get(episodeId.slice(TAPE_PREFIX.length)) ?? this.urls.get(episodeId.slice(TAPE_PREFIX.length)) ?? null;
+    return (
+      this.pending.get(episodeId.slice(TAPE_PREFIX.length)) ??
+      this.urls.get(episodeId.slice(TAPE_PREFIX.length)) ??
+      null
+    );
   }
 
   /** Validate without disturbing playback; only replace after the server accepts. */
@@ -90,11 +96,20 @@ export class TapeDeck implements OnDestroy {
       this.urls = this.pending;
       this.pending = new Map();
       this.shelves = sent;
-      this.loaded.set({ channels: sent.length, tapes: videos.length, skipped: found.length - videos.length,
-        megabytes: Math.round(videos.reduce((sum, v) => sum + v.file.size, 0) / 1_000_000 * 10) / 10 });
+      this.loaded.set({
+        channels: sent.length,
+        tapes: videos.length,
+        skipped: found.length - videos.length,
+        megabytes: Math.round((videos.reduce((sum, v) => sum + v.file.size, 0) / 1_000_000) * 10) / 10,
+      });
     } catch (error) {
-      this.error.set(attempt.signal.aborted ? 'Loading cancelled. Your previous tapes are unchanged.'
-        : error instanceof Error ? error.message : 'Could not load these videos. Please try again.');
+      this.error.set(
+        attempt.signal.aborted
+          ? 'Loading cancelled. Your previous tapes are unchanged.'
+          : error instanceof Error
+            ? error.message
+            : 'Could not load these videos. Please try again.',
+      );
     } finally {
       for (const url of this.pending.values()) URL.revokeObjectURL(url);
       this.pending.clear();
@@ -104,7 +119,9 @@ export class TapeDeck implements OnDestroy {
     }
   }
 
-  cancel(): void { if (!this.committing()) this.attempt?.abort(); }
+  cancel(): void {
+    if (!this.committing()) this.attempt?.abort();
+  }
 
   async eject(): Promise<void> {
     if (this.attempt) return;
@@ -117,8 +134,9 @@ export class TapeDeck implements OnDestroy {
       this.shelves = [];
       this.loaded.set(null);
       this.error.set(null);
-    } catch { this.error.set('Could not eject tapes. Please reconnect and try again.'); }
-    finally {
+    } catch {
+      this.error.set('Could not eject tapes. Please reconnect and try again.');
+    } finally {
       this.attempt = null;
       this.committing.set(false);
       this.progress.set(null);
@@ -161,36 +179,68 @@ export async function fromDrop(items: DataTransferItemList, cancel: AbortSignal)
   return found;
 }
 
-async function walk(entry: FileSystemEntry, folders: string[], found: FoundFile[],
-  scan: { count: number; deadline: number }, cancel: AbortSignal): Promise<void> {
+async function walk(
+  entry: FileSystemEntry,
+  folders: string[],
+  found: FoundFile[],
+  scan: { count: number; deadline: number },
+  cancel: AbortSignal,
+): Promise<void> {
   cancel.throwIfAborted();
   if (++scan.count > 1000 || folders.length > 8 || performance.now() >= scan.deadline)
     throw new Error('Folder scan limit reached. Choose a smaller or less deeply nested folder.');
   const remaining = () => Math.max(1, scan.deadline - performance.now());
   if (entry.isFile) {
-    const file = await bounded<File>((resolve, reject) => (entry as FileSystemFileEntry).file(resolve, reject), cancel, remaining());
+    const file = await bounded<File>(
+      (resolve, reject) => (entry as FileSystemFileEntry).file(resolve, reject),
+      cancel,
+      remaining(),
+    );
     found.push({ file, folders });
     return;
   }
   const reader = (entry as FileSystemDirectoryEntry).createReader();
   for (;;) {
-    const batch = await bounded<FileSystemEntry[]>((resolve, reject) => reader.readEntries(resolve, reject), cancel, remaining());
+    const batch = await bounded<FileSystemEntry[]>(
+      (resolve, reject) => reader.readEntries(resolve, reject),
+      cancel,
+      remaining(),
+    );
     if (!batch.length) return;
     for (const child of batch) await walk(child, [...folders, entry.name], found, scan, cancel);
   }
 }
 
 /** All temporary event handlers and timers leave with the operation. */
-function bounded<T>(start: (resolve: (value: T) => void, reject: (reason: unknown) => void) => void,
-  cancel: AbortSignal, timeout: number): Promise<T> {
+function bounded<T>(
+  start: (resolve: (value: T) => void, reject: (reason: unknown) => void) => void,
+  cancel: AbortSignal,
+  timeout: number,
+): Promise<T> {
   return new Promise((resolve, reject) => {
-    const finish = (action: () => void) => { clearTimeout(timer); cancel.removeEventListener('abort', abort); action(); };
+    const finish = (action: () => void) => {
+      clearTimeout(timer);
+      cancel.removeEventListener('abort', abort);
+      action();
+    };
     const abort = () => finish(() => reject(new Error('Loading cancelled.')));
-    const timer = setTimeout(() => finish(() => reject(new Error('Reading the video or folder took too long. Try a smaller selection.'))), timeout);
+    const timer = setTimeout(
+      () => finish(() => reject(new Error('Reading the video or folder took too long. Try a smaller selection.'))),
+      timeout,
+    );
     cancel.addEventListener('abort', abort, { once: true });
-    if (cancel.aborted) { abort(); return; }
-    try { start(value => finish(() => resolve(value)), error => finish(() => reject(error))); }
-    catch (error) { finish(() => reject(error)); }
+    if (cancel.aborted) {
+      abort();
+      return;
+    }
+    try {
+      start(
+        value => finish(() => resolve(value)),
+        error => finish(() => reject(error)),
+      );
+    } catch (error) {
+      finish(() => reject(error));
+    }
   });
 }
 
@@ -198,14 +248,23 @@ async function probeVideo(video: HTMLVideoElement, file: File, cancel: AbortSign
   const url = URL.createObjectURL(file);
   try {
     video.preload = 'metadata';
-    await bounded<void>((resolve, reject) => {
-      video.onloadedmetadata = () => {
-        try { validateDuration(video.duration); resolve(); } catch (error) { reject(error); }
-      };
-      video.onerror = () => reject(new Error(`Cannot read “${file.name}”. Try MP4 with H.264 video and AAC audio.`));
-      video.src = url;
-      video.load();
-    }, cancel, 10_000);
+    await bounded<void>(
+      (resolve, reject) => {
+        video.onloadedmetadata = () => {
+          try {
+            validateDuration(video.duration);
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
+        };
+        video.onerror = () => reject(new Error(`Cannot read “${file.name}”. Try MP4 with H.264 video and AAC audio.`));
+        video.src = url;
+        video.load();
+      },
+      cancel,
+      10_000,
+    );
   } finally {
     video.onloadedmetadata = null;
     video.onerror = null;

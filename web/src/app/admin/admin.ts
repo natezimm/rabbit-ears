@@ -36,7 +36,9 @@ export class Admin {
     return !!catalog && settingsOf(catalog) !== this.saved();
   });
 
-  constructor() { void this.load(); }
+  constructor() {
+    void this.load();
+  }
 
   protected edited(): void {
     this.edits.update(count => count + 1);
@@ -55,7 +57,12 @@ export class Admin {
     if (!catalog) return;
     await this.perform(async () => {
       try {
-        this.accept(await this.api.saveChannels(catalog.version, catalog.channels.map(c => c.settings)));
+        this.accept(
+          await this.api.saveChannels(
+            catalog.version,
+            catalog.channels.map(c => c.settings),
+          ),
+        );
       } catch (error) {
         throw new Error(`${message(error)} Your edits have been kept.`, { cause: error });
       }
@@ -90,9 +97,13 @@ export class Admin {
     this.busy.set(true);
     this.error.set('');
     this.notice.set('');
-    try { await action(); }
-    catch (error) { this.error.set(message(error)); }
-    finally { this.busy.set(false); }
+    try {
+      await action();
+    } catch (error) {
+      this.error.set(message(error));
+    } finally {
+      this.busy.set(false);
+    }
   }
 }
 

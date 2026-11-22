@@ -57,7 +57,10 @@ test('season and episode exclusions can remove and restore a channel', async ({ 
 test('hides and restores every channel without deleting media', async ({ page, box }) => {
   await page.goto(`${box.url}/admin`);
   for (const group of ['Arthur', 'Movies'])
-    await page.getByRole('group', { name: group, exact: true }).getByRole('checkbox', { name: 'On the dial' }).uncheck();
+    await page
+      .getByRole('group', { name: group, exact: true })
+      .getByRole('checkbox', { name: 'On the dial' })
+      .uncheck();
   await page.getByRole('button', { name: 'Save lineup' }).click();
   await expect(page.getByRole('status')).toBeVisible();
   const state: TvSnapshot = await (await box.api.get('/api/state')).json();
@@ -115,7 +118,10 @@ test('the remote links to the lineup editor without reloading the app', async ({
 test('shows validation errors and lets the user correct them', async ({ page, box }) => {
   await page.goto(`${box.url}/admin`);
   for (const group of ['Arthur', 'Movies'])
-    await page.getByRole('group', { name: group, exact: true }).getByRole('spinbutton', { name: 'Channel number' }).fill('8');
+    await page
+      .getByRole('group', { name: group, exact: true })
+      .getByRole('spinbutton', { name: 'Channel number' })
+      .fill('8');
   await page.getByRole('button', { name: 'Save lineup' }).click();
   await expect(page.getByRole('alert')).toContainText('must be unique');
   await expect(page.getByRole('group', { name: 'Arthur', exact: true }).getByRole('spinbutton')).toHaveValue('8');
@@ -180,9 +186,13 @@ test.describe('public demo', () => {
     await expect(page.getByRole('button', { name: 'Save lineup' })).toHaveCount(0);
     for (const response of [
       await box.api.get('/api/admin/channels'),
-      await box.api.put('/api/admin/channels', { headers: { 'X-RabbitEars-Admin': '1' }, data: { version: 'none', channels: [] } }),
+      await box.api.put('/api/admin/channels', {
+        headers: { 'X-RabbitEars-Admin': '1' },
+        data: { version: 'none', channels: [] },
+      }),
       await box.api.post('/api/admin/rescan', { headers: { 'X-RabbitEars-Admin': '1' } }),
-    ]) expect(response.status()).toBe(404);
+    ])
+      expect(response.status()).toBe(404);
     await page.goto(`${box.url}/remote`);
     await expect(page.getByRole('button', { name: /02 Arthur/ })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Manage channels' })).toHaveCount(0);

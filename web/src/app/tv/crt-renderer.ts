@@ -5,8 +5,16 @@ export type ScreenMode = 'video' | 'snow' | 'glitch' | 'bars' | 'blank';
 
 const MODE_INDEX: Record<ScreenMode, number> = { video: 0, snow: 1, glitch: 2, bars: 3, blank: 4 };
 const UNIFORMS = [
-  'uFrame', 'uTube', 'uTubePixels', 'uCurvature', 'uCornerRadius',
-  'uVignette', 'uScanlines', 'uMode', 'uTime', 'uPower',
+  'uFrame',
+  'uTube',
+  'uTubePixels',
+  'uCurvature',
+  'uCornerRadius',
+  'uVignette',
+  'uScanlines',
+  'uMode',
+  'uTime',
+  'uPower',
 ] as const;
 
 /** Old shows were made for 4:3 tubes; assume that until a video says otherwise. */
@@ -32,9 +40,8 @@ export class CrtRenderer {
   /** Returns null when the browser has no usable WebGL, so the caller can fall back to plain video. */
   static create(canvas: HTMLCanvasElement, crt: CrtConfig): CrtRenderer | null {
     const attributes: WebGLContextAttributes = { alpha: false, antialias: false, powerPreference: 'high-performance' };
-    const gl = (canvas.getContext('webgl2', attributes) ?? canvas.getContext('webgl', attributes)) as
-      | WebGLRenderingContext
-      | null;
+    const gl = (canvas.getContext('webgl2', attributes) ??
+      canvas.getContext('webgl', attributes)) as WebGLRenderingContext | null;
     if (!gl) return null;
     try {
       return new CrtRenderer(canvas, gl, crt);
@@ -152,7 +159,10 @@ export class CrtRenderer {
   private link(vertexSource: string, fragmentSource: string): WebGLProgram {
     const { gl } = this;
     const program = gl.createProgram();
-    for (const [type, source] of [[gl.VERTEX_SHADER, vertexSource], [gl.FRAGMENT_SHADER, fragmentSource]] as const) {
+    for (const [type, source] of [
+      [gl.VERTEX_SHADER, vertexSource],
+      [gl.FRAGMENT_SHADER, fragmentSource],
+    ] as const) {
       const shader = gl.createShader(type)!;
       gl.shaderSource(shader, source);
       gl.compileShader(shader);

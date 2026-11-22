@@ -21,7 +21,7 @@
   justify-self: start;
   min-height: 44px;
   padding: 0 16px;
-  border: 1px solid currentColor;
+  border: 1px solid currentcolor;
   border-radius: 6px;
   background: none;
   color: inherit;
@@ -30,6 +30,6 @@
 }
 
 .retry:focus-visible {
-  outline: 3px solid currentColor;
+  outline: 3px solid currentcolor;
   outline-offset: 3px;
 }

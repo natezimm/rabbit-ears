@@ -17,20 +17,54 @@
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9M6.3 6.8a8 8 0 1 0 11.4 0" /></svg>
   </button>
   <button type="button" class="key mute" [disabled]="!link.connected()" (click)="press(link.mute)" aria-label="Mute">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4zM16 9.5l4.5 5M20.5 9.5 16 14.5" /></svg>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4zM16 9.5l4.5 5M20.5 9.5 16 14.5" />
+    </svg>
   </button>
 </section>
 
 <section class="rockers">
   <div class="rocker volume">
-    <button type="button" class="key" [disabled]="!link.connected()" (click)="press(link.volumeUp)" aria-label="Volume up">+</button>
+    <button
+      type="button"
+      class="key"
+      [disabled]="!link.connected()"
+      (click)="press(link.volumeUp)"
+      aria-label="Volume up"
+    >
+      +
+    </button>
     <span aria-hidden="true">VOL</span>
-    <button type="button" class="key" [disabled]="!link.connected()" (click)="press(link.volumeDown)" aria-label="Volume down">−</button>
+    <button
+      type="button"
+      class="key"
+      [disabled]="!link.connected()"
+      (click)="press(link.volumeDown)"
+      aria-label="Volume down"
+    >
+      −
+    </button>
   </div>
   <div class="rocker channel">
-    <button type="button" class="key" [disabled]="!link.connected()" (click)="press(link.channelUp)" aria-label="Channel up">▲</button>
+    <button
+      type="button"
+      class="key"
+      [disabled]="!link.connected()"
+      (click)="press(link.channelUp)"
+      aria-label="Channel up"
+    >
+      ▲
+    </button>
     <span aria-hidden="true">CH</span>
-    <button type="button" class="key" [disabled]="!link.connected()" (click)="press(link.channelDown)" aria-label="Channel down">▼</button>
+    <button
+      type="button"
+      class="key"
+      [disabled]="!link.connected()"
+      (click)="press(link.channelDown)"
+      aria-label="Channel down"
+    >
+      ▼
+    </button>
   </div>
 </section>
 
@@ -38,7 +72,15 @@
   @for (number of keypad; track number) {
     <button type="button" class="key" [disabled]="!link.connected()" (click)="digit(number)">{{ number }}</button>
   }
-  <button type="button" class="key word" [disabled]="!link.connected()" (click)="press(link.lastChannel)" aria-label="Last channel">LAST</button>
+  <button
+    type="button"
+    class="key word"
+    [disabled]="!link.connected()"
+    (click)="press(link.lastChannel)"
+    aria-label="Last channel"
+  >
+    LAST
+  </button>
   <button type="button" class="key" [disabled]="!link.connected()" (click)="digit(0)">0</button>
   <button type="button" class="key word" [disabled]="!link.connected()" (click)="press(link.confirm)">OK</button>
 </section>
@@ -58,7 +100,9 @@
         <span class="guide-number">{{ formatChannel(channel.number) }}</span>
         <span class="guide-programme">
           <span class="guide-name">{{ channel.name }}</span>
-          <span class="guide-title">{{ channel.title || (channel.episodes + (channel.episodes === 1 ? ' episode' : ' episodes')) }}</span>
+          <span class="guide-title">{{
+            channel.title || channel.episodes + (channel.episodes === 1 ? ' episode' : ' episodes')
+          }}</span>
         </span>
       </button>
     }

@@ -18,6 +18,11 @@ export class RemotePage {
 
   constructor() {
     // Without the answer the link simply stays hidden, which is right for the demo too.
-    inject(BoxApi).adminEnabled().then(enabled => this.canAdmin.set(enabled), () => undefined);
+    inject(BoxApi)
+      .adminEnabled()
+      .then(
+        enabled => this.canAdmin.set(enabled),
+        () => undefined,
+      );
   }
 }

@@ -88,7 +88,8 @@ export class TvScreen {
    */
   private readonly reducedMotion = signal(matchMedia('(prefers-reduced-motion: reduce)').matches);
   private readonly tubePicture = computed<PictureConfig>(() =>
-    this.reducedMotion() ? { ...this.picture(), transition: 'none' } : this.picture());
+    this.reducedMotion() ? { ...this.picture(), transition: 'none' } : this.picture(),
+  );
   /**
    * Nothing has come from the box for a while. Before the first snapshot the
    * set would otherwise be a silent black rectangle; this shows snow and says
@@ -136,17 +137,24 @@ export class TvScreen {
 
     afterNextRender(() => {
       const decks = [this.deckA().nativeElement, this.deckB().nativeElement];
-      this.tube = new Tube(decks, this.tubePicture(), {
-        ended: token => this.link.episodeEnded(token),
-        failed: token => {
-          const playing = this.link.state()?.playing;
-          if (playing?.token === token && playing.episodeId.startsWith('tape-'))
-            this.tapes.error.set(`Cannot play “${playing.title}”. Try MP4 with H.264 video and AAC audio, or eject these tapes.`);
-          this.link.episodeFailed(token);
+      this.tube = new Tube(
+        decks,
+        this.tubePicture(),
+        {
+          ended: token => this.link.episodeEnded(token),
+          failed: token => {
+            const playing = this.link.state()?.playing;
+            if (playing?.token === token && playing.episodeId.startsWith('tape-'))
+              this.tapes.error.set(
+                `Cannot play “${playing.title}”. Try MP4 with H.264 video and AAC audio, or eject these tapes.`,
+              );
+            this.link.episodeFailed(token);
+          },
+          position: (token, seconds, duration) => this.link.reportPosition(token, seconds, duration),
+          soundBlocked: blocked => this.soundBlocked.set(blocked),
         },
-        position: (token, seconds, duration) => this.link.reportPosition(token, seconds, duration),
-        soundBlocked: blocked => this.soundBlocked.set(blocked),
-      }, id => this.tapes.source(id));
+        id => this.tapes.source(id),
+      );
       this.renderer = CrtRenderer.create(this.canvas().nativeElement, this.picture().crt);
       this.webgl.set(this.renderer !== null);
       this.ready.set(true);
@@ -190,8 +198,11 @@ export class TvScreen {
     this.tube?.unlockSound();
     if (event.ctrlKey || event.metaKey || event.altKey) return;
     // Leave native activation and editing keys to the focused control.
-    if (event.target instanceof Element &&
-        event.target.closest('button, a, input, select, textarea, summary, [contenteditable]')) return;
+    if (
+      event.target instanceof Element &&
+      event.target.closest('button, a, input, select, textarea, summary, [contenteditable]')
+    )
+      return;
 
     const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
     const digit = /^[0-9]$/.test(key) ? Number(key) : null;
@@ -284,9 +295,10 @@ export class TvScreen {
     const noSignal = this.noSignal();
     const on = noSignal || (!!state && !state.standby && !state.poweredOff);
     if (this.reducedMotion()) this.power = on ? 1 : 0;
-    else this.power = on
-      ? Math.min(1, this.power + elapsed / POWER_ON_SECONDS)
-      : Math.max(0, this.power - elapsed / POWER_OFF_SECONDS);
+    else
+      this.power = on
+        ? Math.min(1, this.power + elapsed / POWER_ON_SECONDS)
+        : Math.max(0, this.power - elapsed / POWER_OFF_SECONDS);
 
     const view = this.tube!.view;
     if (view.deck !== this.liveDeck()) this.liveDeck.set(view.deck);

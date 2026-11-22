@@ -4,7 +4,10 @@ import { AdminCatalog, ChannelEdit, DemoCredit, PictureConfig } from './models';
 
 /** A request to the box that did not succeed, with words fit to show the viewer. */
 export class BoxApiError extends Error {
-  constructor(message: string, readonly status: number | null) {
+  constructor(
+    message: string,
+    readonly status: number | null,
+  ) {
     super(message);
   }
 }
