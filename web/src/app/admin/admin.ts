@@ -1,33 +1,52 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+
+import { BoxApi } from '../core/box-api';
 import { AdminCatalog, AdminChannel } from '../core/models';
 
 /** Home lineup editor. The server rejects every management operation in demo mode. */
 @Component({
   selector: 'ears-admin',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './admin.html',
   styleUrl: './admin.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Admin {
+  private readonly api = inject(BoxApi);
+
   protected readonly catalog = signal<AdminCatalog | null>(null);
   protected readonly available = signal<boolean | null>(null);
   protected readonly busy = signal(false);
-  protected readonly dirty = signal(false);
   protected readonly error = signal('');
   protected readonly notice = signal('');
 
+  /** The settings as the server last confirmed them, to compare edits against. */
+  private readonly saved = signal('');
+  /**
+   * The form edits the settings objects in place, which a signal cannot see,
+   * so each edit bumps this and `dirty` looks again.
+   */
+  private readonly edits = signal(0);
+  /** True only while the lineup differs from what is saved, so undoing an edit clears it. */
+  protected readonly dirty = computed(() => {
+    this.edits();
+    const catalog = this.catalog();
+    return !!catalog && settingsOf(catalog) !== this.saved();
+  });
+
   constructor() { void this.load(); }
+
+  protected edited(): void {
+    this.edits.update(count => count + 1);
+  }
 
   protected async load(): Promise<void> {
     await this.perform(async () => {
-      const status = await this.request<{ enabled: boolean }>('/api/admin/status');
-      this.available.set(status.enabled);
-      if (status.enabled) {
-        this.catalog.set(await this.request<AdminCatalog>('/api/admin/channels'));
-        this.dirty.set(false);
-      }
+      const enabled = await this.api.adminEnabled();
+      this.available.set(enabled);
+      if (enabled) this.accept(await this.api.channels());
     });
   }
 
@@ -35,17 +54,18 @@ export class Admin {
     const catalog = this.catalog();
     if (!catalog) return;
     await this.perform(async () => {
-      this.catalog.set(await this.request<AdminCatalog>('/api/admin/channels', 'PUT', {
-        version: catalog.version, channels: catalog.channels.map(c => c.settings),
-      }));
-      this.dirty.set(false);
+      try {
+        this.accept(await this.api.saveChannels(catalog.version, catalog.channels.map(c => c.settings)));
+      } catch (error) {
+        throw new Error(`${message(error)} Your edits have been kept.`);
+      }
       this.notice.set('Lineup saved. The TV and remotes have been updated.');
     });
   }
 
   protected async rescan(): Promise<void> {
     await this.perform(async () => {
-      this.catalog.set(await this.request<AdminCatalog>('/api/admin/rescan', 'POST'));
+      this.accept(await this.api.rescan());
       this.notice.set('Media folders rescanned.');
     });
   }
@@ -57,7 +77,12 @@ export class Admin {
   protected toggle(channel: AdminChannel, kind: 'excludedEpisodes' | 'excludedSeasons', id: string): void {
     const values = channel.settings[kind];
     channel.settings[kind] = values.includes(id) ? values.filter(value => value !== id) : [...values, id];
-    this.dirty.set(true);
+    this.edited();
+  }
+
+  private accept(catalog: AdminCatalog): void {
+    this.saved.set(settingsOf(catalog));
+    this.catalog.set(catalog);
   }
 
   private async perform(action: () => Promise<void>): Promise<void> {
@@ -66,20 +91,16 @@ export class Admin {
     this.error.set('');
     this.notice.set('');
     try { await action(); }
-    catch (error) { this.error.set(error instanceof Error ? error.message : 'Could not reach the box.'); }
+    catch (error) { this.error.set(message(error)); }
     finally { this.busy.set(false); }
   }
+}
 
-  private async request<T>(url: string, method = 'GET', body?: unknown): Promise<T> {
-    const response = await fetch(url, {
-      method, cache: 'no-store',
-      headers: { 'Content-Type': 'application/json', 'X-RabbitEars-Admin': '1' },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
-    if (!response.ok) {
-      const problem = await response.json().catch(() => ({}));
-      throw new Error(problem.error ?? problem.detail ?? `Request failed (${response.status}). Your edits have been kept.`);
-    }
-    return response.json() as Promise<T>;
-  }
+/** The editable part of a lineup, in a form two lineups can be compared by. */
+function settingsOf(catalog: AdminCatalog): string {
+  return JSON.stringify(catalog.channels.map(channel => channel.settings));
+}
+
+function message(error: unknown): string {
+  return error instanceof Error ? error.message : 'Could not reach the box.';
 }

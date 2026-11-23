@@ -1,17 +1,9 @@
 :host {
-  --panel: #1b1d1a;
-  --edge: #2a2d28;
-  --well: #111410;
-  --well-hover: #252b23;
-  --text: #e8ece4;
-  --muted: #a9b0a3;
-  --phosphor: #3dff6e;
-
   display: block;
   min-height: 100dvh;
   background: #000;
   color: var(--text);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-ui);
 }
 
 /* Side by side on a laptop; on a phone the TV is pinned on top and the rest scrolls under it. */
@@ -45,11 +37,11 @@
   width: min(360px, calc(100% - 32px));
   transform: translateX(-50%);
   padding: 14px 16px;
-  border: 1px solid var(--edge);
+  border: 1px solid var(--surface-edge);
   border-radius: 8px;
   background: rgb(0 0 0 / 0.85);
   color: var(--phosphor);
-  font-size: 14px;
+  font-size: var(--text-sm);
   line-height: 1.4;
 }
 
@@ -65,30 +57,30 @@
   grid-auto-rows: max-content;
   gap: 22px;
   padding: 24px 22px 28px;
-  background: var(--panel);
-  border-left: 1px solid var(--edge);
+  background: var(--surface);
+  border-left: 1px solid var(--surface-edge);
 }
 
 h1 {
   margin: 0 0 8px;
   color: var(--phosphor);
-  font-family: 'VT323', ui-monospace, monospace;
-  font-size: 44px;
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
   font-weight: normal;
   line-height: 1;
-  text-shadow: 0 0 10px rgb(77 255 90 / 0.5);
+  text-shadow: 0 0 10px var(--glow);
 }
 
 h2 {
   margin: 0 0 6px;
-  font-size: 15px;
+  font-size: var(--text-md);
 }
 
 p,
 li {
   margin: 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--text-sm);
   line-height: 1.5;
 }
 
@@ -106,21 +98,21 @@ a {
 a:focus-visible,
 button:focus-visible,
 summary:focus-visible {
-  outline: 3px solid var(--phosphor);
-  outline-offset: 3px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
 }
 
 summary {
   color: var(--text);
-  font-size: 14px;
+  font-size: var(--text-sm);
   cursor: pointer;
 }
 
 /* The phone remote, as is; it brings its own background. */
 .remote {
   min-height: 0;
-  border: 1px solid var(--edge);
-  border-radius: 14px;
+  border: 1px solid var(--surface-edge);
+  border-radius: var(--radius-md);
 }
 
 .phone {
@@ -133,7 +125,7 @@ summary {
 .qr {
   width: 112px;
   height: 112px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 /* The VCR: real file inputs, dressed as buttons, so keyboard and screen readers get the native picker. */
@@ -154,11 +146,11 @@ summary {
   align-items: center;
   min-height: 44px;
   padding: 0 14px;
-  border: 1px solid var(--edge);
-  border-radius: 6px;
+  border: 1px solid var(--surface-edge);
+  border-radius: var(--radius-sm);
   background: var(--well);
   color: var(--text);
-  font: 20px/1 'VT323', ui-monospace, monospace;
+  font: var(--text-lg) / 1 var(--font-display);
   letter-spacing: 0.04em;
   cursor: pointer;
 }
@@ -168,8 +160,8 @@ summary {
 }
 
 .vcr-button:focus-within {
-  outline: 3px solid var(--phosphor);
-  outline-offset: 3px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
 }
 
 .vcr-button input {
@@ -184,13 +176,13 @@ summary {
   grid-template-columns: max-content 1fr;
   gap: 4px 14px;
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 .keys dt {
   color: var(--phosphor);
-  font-family: 'VT323', ui-monospace, monospace;
-  font-size: 18px;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
   line-height: 1.1;
 }
 
@@ -202,24 +194,24 @@ summary {
 footer {
   display: grid;
   gap: 8px;
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 .media-credit {
   display: grid;
   gap: 3px;
   padding: 10px 0;
-  border-bottom: 1px solid var(--edge);
+  border-bottom: 1px solid var(--surface-edge);
 }
 
 .media-credit strong {
   color: var(--text);
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 .media-credit span {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-xs);
   overflow-wrap: anywhere;
 }
 
@@ -242,7 +234,7 @@ footer {
   .panel {
     overflow: visible;
     border-left: 0;
-    border-top: 1px solid var(--edge);
+    border-top: 1px solid var(--surface-edge);
   }
 
   /* A phone is already holding the remote. */

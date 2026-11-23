@@ -248,7 +248,7 @@ rollback point; the box is updated from a laptop with `scripts/deploy.sh`.
 | `src/RabbitEars.Core/` | TV behaviour with no I/O: `Television`, `ShuffleDeck`, `Tapes`, the snapshot records in `Models.cs` |
 | `src/RabbitEars.Api/` | The process: hub, `TvService`, scanning, probing, channel catalog, admin endpoints, rate limiting, mpv driver |
 | `src/RabbitEars.Api/mpv/` | mpv's config, remote keys and `crt.glsl`, the tube maths as an mpv hook shader |
-| `web/src/app/` | Angular 22 app: `tv/`, `remote/`, `demo/`, `admin/`, and `core/` for the SignalR link and models |
+| `web/src/app/` | Angular 22 app: `tv/`, `remote/` (the `RemotePad` the page and the demo share), `demo/`, `admin/`, and `core/` for the SignalR link, the typed HTTP calls (`box-api.ts`) and models. Design tokens live on `:root` in `web/src/styles.css` |
 | `tests/` | xUnit tests for Core and Api, and Python tests for the media tooling |
 | `deploy/` | Runs on the box: systemd unit, kiosk launcher, installer |
 | `scripts/` | Runs on a laptop: dev server, publish, deploy, media conversion and demo-media tooling |

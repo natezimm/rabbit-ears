@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { encode } from 'uqr';
 
+import { BoxApi } from '../core/box-api';
 import { LinkNotice } from '../core/link-notice';
 import { DemoCredit } from '../core/models';
 import { TapeDeck, fromDrop, fromPicker } from '../core/tape-deck';
 import { TvLink } from '../core/tv-link';
-import { Remote } from '../remote/remote';
+import { RemotePad } from '../remote/remote-pad';
 import { TvScreen } from '../tv/tv-screen';
 
 /**
@@ -15,7 +16,7 @@ import { TvScreen } from '../tv/tv-screen';
  */
 @Component({
   selector: 'ears-demo',
-  imports: [TvScreen, Remote, LinkNotice],
+  imports: [TvScreen, RemotePad, LinkNotice],
   templateUrl: './demo.html',
   styleUrl: './demo.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -34,9 +35,8 @@ export class Demo {
   );
 
   constructor() {
-    void fetch('/api/demo/credits').then(async response => {
-      if (response.ok) this.credits.set(await response.json());
-    }).catch(() => undefined);
+    // Credits are a footnote: without them the footer says the demo plays test clips.
+    inject(BoxApi).credits().then(credits => this.credits.set(credits), () => undefined);
   }
 
   protected onDragOver(event: DragEvent): void {

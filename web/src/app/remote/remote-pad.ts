@@ -1,34 +1,31 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal, type OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
+import { formatChannel, volumeSegments } from '../core/format';
 import { linkWords } from '../core/link-notice';
 import { TvLink } from '../core/tv-link';
 
+/** The remote's readout is phone-narrow, so its meter has fewer steps than the TV's. */
 const VOLUME_SEGMENTS = 20;
 
-/** The phone remote: the same buttons as the handheld one, plus a channel list. */
+/**
+ * The remote itself: readout, buttons and channel list, with no page around
+ * it. The phone remote page and the demo both show this one.
+ *
+ * It talks to `TvLink` directly rather than raising events for a parent to
+ * forward: every press goes to the same one TV, and the snapshot that comes
+ * back is the only state it draws.
+ */
 @Component({
-  selector: 'ears-remote',
-  templateUrl: './remote.html',
-  styleUrl: './remote.css',
+  selector: 'ears-remote-pad',
+  templateUrl: './remote-pad.html',
+  styleUrl: './remote-pad.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '[attr.role]': 'embedded() ? null : "main"' },
 })
-export class Remote implements OnInit {
+export class RemotePad {
   protected readonly link = inject(TvLink);
-  protected readonly canAdmin = signal(false);
-  /** True inside the demo page, which brings its own heading and landmarks and never has admin. */
-  readonly embedded = input(false);
-
-  /** Inputs are set by now, which the constructor is too early to see. */
-  ngOnInit(): void {
-    if (this.embedded()) return;
-    void fetch('/api/admin/status').then(async response => {
-      if (response.ok) this.canAdmin.set((await response.json()).enabled);
-    }).catch(() => undefined);
-  }
-
   protected readonly state = this.link.state;
   protected readonly keypad = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  protected readonly formatChannel = formatChannel;
 
   /** What the little display at the top reads. */
   protected readonly readout = computed(() => {
@@ -42,20 +39,12 @@ export class Remote implements OnInit {
 
     const title = state.channels.find(channel => channel.number === state.channel?.number)?.title;
     return {
-      big: `CH ${this.pad(state.channel.number)}  ${state.channel.name}`,
+      big: `CH ${formatChannel(state.channel.number)}  ${state.channel.name}`,
       small: state.playing ? (title ?? '') : 'No signal',
     };
   });
 
-  protected readonly segments = computed(() => {
-    const state = this.state();
-    const lit = !state || state.muted ? 0 : Math.round((state.volume / 100) * VOLUME_SEGMENTS);
-    return Array.from({ length: VOLUME_SEGMENTS }, (_, index) => index < lit);
-  });
-
-  protected pad(number: number): string {
-    return String(number).padStart(2, '0');
-  }
+  protected readonly segments = computed(() => volumeSegments(this.state(), VOLUME_SEGMENTS));
 
   protected press(action: () => void): void {
     navigator.vibrate?.(8);
