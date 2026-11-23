@@ -21,6 +21,8 @@ dotnet test --filter "FullyQualifiedName~ShuffleDeckTests"                      
 (cd tests/RabbitEars.Tests && dotnet tool install dotnet-stryker --version 5.1.0 --tool-path ../../.tools && ../../.tools/dotnet-stryker)   # mutation testing of Core
 (cd web && npx ng build)         # web app only; output goes to src/RabbitEars.Api/wwwroot
 (cd web && npm run test:browser) # real app + API in Chromium, desktop and phone sizes
+(cd web && npm run lint)         # ESLint (TypeScript + templates) and stylelint
+(cd web && npm run format)       # Prettier, then stylelint --fix; CI runs format:check
 ```
 
 - Open `/tv` for the television (`f` for full screen) and `/remote` for the phone
@@ -33,10 +35,13 @@ dotnet test --filter "FullyQualifiedName~ShuffleDeckTests"                      
 - CI's backend job fails when line coverage of `RabbitEars.Core` or `RabbitEars.Api` falls under its floor
   (`scripts/coverage-floor.py`, table in the job summary). `mutation.yml` runs Stryker.NET over Core every
   Sunday and on demand; it reports and never fails a build.
-- There is no linter. Playwright tests in `web/e2e/` run the built Angular app
+- The web app is linted (angular-eslint, stylelint) and formatted (Prettier); CI fails on either.
+  Design tokens (colours, type steps, radii, focus ring) live on `:root` in
+  `web/src/styles.css`; use them rather than new literal values. Playwright tests in `web/e2e/` run the built Angular app
   against isolated ASP.NET Core processes with temporary media/state directories.
   Install Chromium once with `(cd web && npx playwright install chromium)`.
-  See `docs/browser-tests.md` for commands and report artifacts. .NET warnings
+  See `docs/browser-tests.md` for commands and report artifacts.
+  `accessibility.spec.ts` runs axe-core (WCAG 2.2 AA and best practices) on every page. .NET warnings
   are errors (`Directory.Build.props`).
 - `/admin` manages home channel metadata in `StateDir/channels.json` through
   `ChannelCatalog`. `TvService` serializes metadata saves and rescans. Folder

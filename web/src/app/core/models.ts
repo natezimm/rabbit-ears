@@ -129,7 +129,6 @@ export interface AdminCatalog {
   needsConversion: string[];
 }
 
-
 export interface DemoCredit {
   channel: string;
   title: string;

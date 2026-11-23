@@ -60,6 +60,10 @@ selection, phone-first room control, room isolation, unavailable connections,
 and desktop/phone layout. Audio denial is simulated at the media play API until a trusted local gesture;
 decoding and playback still use the real generated video. Layout screenshots are attached for both widths.
 
+`accessibility.spec.ts` runs axe-core with the WCAG 2.2 AA and best-practice
+rules on the remote (connected and with the link down), the TV, the lineup
+editor and the demo, and fails on any violation.
+
 Unexpected page errors fail the test. There are no fixed sleeps or automatic
 retries; state changes are awaited through visible UI or real responses.
 

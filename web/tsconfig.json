@@ -3,10 +3,7 @@
     "target": "ES2022",
     "module": "preserve",
     "moduleResolution": "bundler",
-    "lib": [
-      "ES2022",
-      "DOM"
-    ],
+    "lib": ["ES2022", "DOM"],
     "strict": true,
     "experimentalDecorators": true,
     "importHelpers": true,
@@ -17,7 +14,5 @@
   "angularCompilerOptions": {
     "strictTemplates": true
   },
-  "files": [
-    "src/main.ts"
-  ]
+  "files": ["src/main.ts"]
 }

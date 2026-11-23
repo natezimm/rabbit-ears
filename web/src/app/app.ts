@@ -13,9 +13,11 @@ export class App {
   constructor() {
     // The TV's display colour is a box setting; the remote and demo readouts
     // take it too, so changing it never leaves them a different green.
-    inject(BoxApi).picture().then(
-      picture => document.documentElement.style.setProperty('--phosphor', picture.osd.color),
-      () => undefined, // The stylesheet's default is the server's default.
-    );
+    inject(BoxApi)
+      .picture()
+      .then(
+        picture => document.documentElement.style.setProperty('--phosphor', picture.osd.color),
+        () => undefined, // The stylesheet's default is the server's default.
+      );
   }
 }

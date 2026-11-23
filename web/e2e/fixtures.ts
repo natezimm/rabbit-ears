@@ -10,7 +10,8 @@ type Playwright = PlaywrightWorkerArgs['playwright'];
 
 const apiRoot = fileURLToPath(new URL('../../src/RabbitEars.Api/', import.meta.url));
 const apiDll = join(apiRoot, 'bin', 'Release', 'net11.0', 'RabbitEars.Api.dll');
-export const longTitle = 'The extraordinarily long episode title that used to push the phone remote beyond the edge of the screen';
+export const longTitle =
+  'The extraordinarily long episode title that used to push the phone remote beyond the edge of the screen';
 
 /** Each test owns an actual application process and its disposable library/state. */
 export class TestBox {
@@ -19,9 +20,15 @@ export class TestBox {
   log = '';
   private child?: ChildProcess;
 
-  constructor(readonly root: string, private readonly playwright: Playwright, private readonly demo: boolean) {}
+  constructor(
+    readonly root: string,
+    private readonly playwright: Playwright,
+    private readonly demo: boolean,
+  ) {}
 
-  get mediaRoot(): string { return join(this.root, 'media'); }
+  get mediaRoot(): string {
+    return join(this.root, 'media');
+  }
 
   async addMedia(relative: string): Promise<void> {
     const path = join(this.mediaRoot, relative);
@@ -51,11 +58,14 @@ export class TestBox {
       const timeout = setTimeout(() => reject(new Error(`App startup timed out.\n${this.log}`)), 20_000);
       const finish = (error?: Error): void => {
         clearTimeout(timeout);
-        if (error) reject(error); else resolve();
+        if (error) reject(error);
+        else resolve();
       };
       this.child!.on('error', error => finish(error));
       this.child!.on('exit', (code, signal) => finish(new Error(`App exited (${code ?? signal}).\n${this.log}`)));
-      this.child!.stderr!.on('data', chunk => { this.log += chunk.toString(); });
+      this.child!.stderr!.on('data', chunk => {
+        this.log += chunk.toString();
+      });
       this.child!.stdout!.on('data', chunk => {
         this.log += chunk.toString();
         const address = this.log.match(/Now listening on: (http:\/\/127\.0\.0\.1:\d+)/);
@@ -76,7 +86,11 @@ export class TestBox {
     const exited = once(child, 'exit');
     child.kill('SIGTERM');
     const timeout = setTimeout(() => child.kill('SIGKILL'), 5_000);
-    try { await exited; } finally { clearTimeout(timeout); }
+    try {
+      await exited;
+    } finally {
+      clearTimeout(timeout);
+    }
     this.child = undefined;
   }
 
@@ -95,10 +109,29 @@ export const test = base.extend<{ box: TestBox; demoMode: boolean; runtimeErrors
     try {
       if (demoMode) {
         // Real generated footage exercises video decoding and audio restrictions.
-        execFileSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'testsrc2=size=160x120:rate=15',
-          '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=44100', '-t', '30',
-          '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-movflags', '+faststart',
-          join(root, 'fixture.mp4')]);
+        execFileSync('ffmpeg', [
+          '-v',
+          'error',
+          '-f',
+          'lavfi',
+          '-i',
+          'testsrc2=size=160x120:rate=15',
+          '-f',
+          'lavfi',
+          '-i',
+          'sine=frequency=440:sample_rate=44100',
+          '-t',
+          '30',
+          '-c:v',
+          'libx264',
+          '-pix_fmt',
+          'yuv420p',
+          '-c:a',
+          'aac',
+          '-movflags',
+          '+faststart',
+          join(root, 'fixture.mp4'),
+        ]);
       }
       for (const path of [
         'Arthur/Season 1/First episode.mp4',
@@ -107,8 +140,7 @@ export const test = base.extend<{ box: TestBox; demoMode: boolean; runtimeErrors
         'Old Rips/Needs converting.mkv',
       ]) {
         await box.addMedia(path);
-        if (demoMode && path.endsWith('.mp4'))
-          await copyFile(join(root, 'fixture.mp4'), join(box.mediaRoot, path));
+        if (demoMode && path.endsWith('.mp4')) await copyFile(join(root, 'fixture.mp4'), join(box.mediaRoot, path));
       }
       await box.start();
       await use(box);
@@ -119,15 +151,20 @@ export const test = base.extend<{ box: TestBox; demoMode: boolean; runtimeErrors
       await rm(root, { recursive: true, force: true });
     }
   },
-  runtimeErrors: [async ({ context }, use, testInfo) => {
-    const errors: string[] = [];
-    const watch = (page: Page): void => { page.on('pageerror', error => errors.push(error.message)); };
-    context.pages().forEach(watch);
-    context.on('page', watch);
-    await use();
-    context.off('page', watch);
-    if (testInfo.status === testInfo.expectedStatus) expect(errors, 'Uncaught browser errors').toEqual([]);
-  }, { auto: true }],
+  runtimeErrors: [
+    async ({ context }, use, testInfo) => {
+      const errors: string[] = [];
+      const watch = (page: Page): void => {
+        page.on('pageerror', error => errors.push(error.message));
+      };
+      context.pages().forEach(watch);
+      context.on('page', watch);
+      await use();
+      context.off('page', watch);
+      if (testInfo.status === testInfo.expectedStatus) expect(errors, 'Uncaught browser errors').toEqual([]);
+    },
+    { auto: true },
+  ],
 });
 
 export { expect };

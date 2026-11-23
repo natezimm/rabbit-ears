@@ -95,9 +95,13 @@ button.primary {
   font-weight: 700;
 }
 
-button:disabled {
-  opacity: 0.5;
-  cursor: default;
+/* Disabled reads as switched off, not as a faded version of the accent. */
+button:disabled,
+button.primary:disabled {
+  border-color: var(--settings-line);
+  background: transparent;
+  color: var(--settings-muted);
+  cursor: not-allowed;
 }
 
 .fields {
@@ -203,7 +207,7 @@ li {
   overflow-wrap: anywhere;
 }
 
-@media (max-width: 650px) {
+@media (width <= 650px) {
   main {
     padding: 24px 16px 60px;
   }

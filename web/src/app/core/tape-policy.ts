@@ -17,7 +17,8 @@ export function validateSelection(found: FoundFile[]): FoundFile[] {
   if (!videos.length) throw new Error('No videos found. Try an MP4 with H.264 video and AAC audio.');
   if (videos.length > MAX_TAPES) throw new Error('Choose up to 5 videos. Your previous tapes are unchanged.');
   if (videos.some(v => v.file.size > 500_000_000)) throw new Error('Each video must be 500 MB or smaller.');
-  if (videos.reduce((sum, v) => sum + v.file.size, 0) > 1_000_000_000) throw new Error('Choose videos totalling 1 GB or less.');
+  if (videos.reduce((sum, v) => sum + v.file.size, 0) > 1_000_000_000)
+    throw new Error('Choose videos totalling 1 GB or less.');
   if (shelve(videos).length > MAX_SHELVES) throw new Error('Choose up to 3 channels, including loose files on CH 00.');
   return videos;
 }
@@ -78,4 +79,3 @@ export function clip(text: string, max: number): string {
   const plain = text.replace(/\p{Cc}/gu, ' ').trim() || 'Untitled';
   return plain.length > max ? plain.slice(0, max) : plain;
 }
-

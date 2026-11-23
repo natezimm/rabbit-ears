@@ -30,13 +30,26 @@ export class Demo {
    * Trouble with the link is told over the picture, where a visitor is looking.
    * The first moments of connecting are normal and stay quiet.
    */
-  protected readonly screenNotice = computed(
-    () => !!this.link.unavailable() || this.link.status() === 'reconnecting',
-  );
+  /** What the VCR holds, as one sentence; built here so template formatting cannot change its spacing. */
+  protected readonly tapeSummary = computed(() => {
+    const loaded = this.tapes.loaded();
+    if (!loaded) return null;
+    const skipped = loaded.skipped ? `; ${loaded.skipped} other files skipped` : '';
+    return (
+      `${loaded.tapes} ${loaded.tapes === 1 ? 'video' : 'videos'} on ${loaded.channels} ` +
+      `${loaded.channels === 1 ? 'channel' : 'channels'}${skipped}. ${loaded.megabytes} MB loaded.`
+    );
+  });
+  protected readonly screenNotice = computed(() => !!this.link.unavailable() || this.link.status() === 'reconnecting');
 
   constructor() {
     // Credits are a footnote: without them the footer says the demo plays test clips.
-    inject(BoxApi).credits().then(credits => this.credits.set(credits), () => undefined);
+    inject(BoxApi)
+      .credits()
+      .then(
+        credits => this.credits.set(credits),
+        () => undefined,
+      );
   }
 
   protected onDragOver(event: DragEvent): void {

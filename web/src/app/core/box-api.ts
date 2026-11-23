@@ -1,10 +1,13 @@
 import { Injectable } from '@angular/core';
 
-import { AdminCatalog, ChannelEdit, DemoCredit, PictureConfig } from './models';
+import { AdminCatalog, ChannelEdit, DemoCredit, DemoInfo, PictureConfig } from './models';
 
 /** A request to the box that did not succeed, with words fit to show the viewer. */
 export class BoxApiError extends Error {
-  constructor(message: string, readonly status: number | null) {
+  constructor(
+    message: string,
+    readonly status: number | null,
+  ) {
     super(message);
   }
 }
@@ -26,6 +29,11 @@ export class BoxApi {
       throw error;
     });
     return this.pictureRequest;
+  }
+
+  /** Whether this is the public demo site rather than a box at home. */
+  async demoEnabled(): Promise<boolean> {
+    return (await this.request<DemoInfo>('/api/demo')).enabled;
   }
 
   credits(): Promise<DemoCredit[]> {

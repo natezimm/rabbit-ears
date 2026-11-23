@@ -9,6 +9,7 @@
 /* Side by side on a laptop; on a phone the TV is pinned on top and the rest scrolls under it. */
 .demo {
   display: grid;
+
   /* A fixed width would leave the picture only 624 px on a 1024 px window. */
   grid-template-columns: minmax(0, 1fr) clamp(320px, 30vw, 420px);
   height: 100dvh;
@@ -39,7 +40,7 @@
   padding: 14px 16px;
   border: 1px solid var(--surface-edge);
   border-radius: 8px;
-  background: rgb(0 0 0 / 0.85);
+  background: rgb(0 0 0 / 85%);
   color: var(--phosphor);
   font-size: var(--text-sm);
   line-height: 1.4;
@@ -53,6 +54,7 @@
   overflow-y: auto;
   display: grid;
   align-content: start;
+
   /* Rows take their content's height; the panel scrolls rather than squeezing them. */
   grid-auto-rows: max-content;
   gap: 22px;
@@ -215,7 +217,7 @@ footer {
   overflow-wrap: anywhere;
 }
 
-@media (max-width: 860px) {
+@media (width <= 860px) {
   .demo {
     grid-template-columns: minmax(0, 1fr);
     height: auto;

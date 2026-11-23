@@ -1,7 +1,11 @@
 /* The retro terminal face used for the on-screen display. */
 @font-face {
   font-family: 'VT323';
-  src: url('/VT323-Regular.ttf') format('truetype');
+
+  /* The TTF stays alongside for mpv's subtitle renderer on the box; browsers take the small WOFF2. */
+  src:
+    url('/VT323-Regular.woff2') format('woff2'),
+    url('/VT323-Regular.ttf') format('truetype');
   font-display: block;
 }
 
@@ -55,7 +59,7 @@
   --settings-notice-text: #b8f5ce;
 
   /* Type: seven steps for interface text; the TV's display scales with the picture instead. */
-  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', roboto, sans-serif;
   --font-display: 'VT323', ui-monospace, monospace;
   --text-xs: 13px;
   --text-sm: 14px;

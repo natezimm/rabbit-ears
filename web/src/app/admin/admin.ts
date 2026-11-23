@@ -12,6 +12,7 @@ import { AdminCatalog, AdminChannel } from '../core/models';
   templateUrl: './admin.html',
   styleUrl: './admin.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(window:beforeunload)': 'onBeforeUnload($event)' },
 })
 export class Admin {
   private readonly api = inject(BoxApi);
@@ -36,7 +37,19 @@ export class Admin {
     return !!catalog && settingsOf(catalog) !== this.saved();
   });
 
-  constructor() { void this.load(); }
+  constructor() {
+    void this.load();
+  }
+
+  /** Asked by the router before leaving for another page of the app. */
+  canLeave(): boolean {
+    return !this.dirty() || confirm('Leave without saving your lineup changes?');
+  }
+
+  /** Closing or reloading the tab with unsaved edits gets the browser's own warning. */
+  protected onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.dirty()) event.preventDefault();
+  }
 
   protected edited(): void {
     this.edits.update(count => count + 1);
@@ -55,9 +68,14 @@ export class Admin {
     if (!catalog) return;
     await this.perform(async () => {
       try {
-        this.accept(await this.api.saveChannels(catalog.version, catalog.channels.map(c => c.settings)));
+        this.accept(
+          await this.api.saveChannels(
+            catalog.version,
+            catalog.channels.map(c => c.settings),
+          ),
+        );
       } catch (error) {
-        throw new Error(`${message(error)} Your edits have been kept.`);
+        throw new Error(`${message(error)} Your edits have been kept.`, { cause: error });
       }
       this.notice.set('Lineup saved. The TV and remotes have been updated.');
     });
@@ -90,9 +108,13 @@ export class Admin {
     this.busy.set(true);
     this.error.set('');
     this.notice.set('');
-    try { await action(); }
-    catch (error) { this.error.set(message(error)); }
-    finally { this.busy.set(false); }
+    try {
+      await action();
+    } catch (error) {
+      this.error.set(message(error));
+    } finally {
+      this.busy.set(false);
+    }
   }
 }
 

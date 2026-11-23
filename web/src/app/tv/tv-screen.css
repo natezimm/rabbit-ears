@@ -8,6 +8,7 @@
    panel on the demo page. Sizes inside are measured against it, not the window. */
 .tv {
   --osd: var(--phosphor);
+
   position: absolute;
   inset: 0;
   container-type: size;
@@ -55,11 +56,11 @@ video {
   height: min(100cqh, 100cqw * 3 / 4);
   container-type: size;
   pointer-events: none;
-
   color: var(--osd);
   font-family: var(--font-display);
   line-height: 1;
   white-space: nowrap;
+
   /* VT323 has one weight; a stroke in the same colour is the bold. */
   -webkit-text-stroke: 0.035em var(--osd);
   paint-order: stroke fill;
@@ -68,7 +69,7 @@ video {
 /* Soft phosphor bloom, with a faint dark edge so it stays legible over bright video. */
 .glow .osd {
   text-shadow:
-    0 0 0.05em rgb(0 0 0 / 0.9),
+    0 0 0.05em rgb(0 0 0 / 90%),
     0 0 0.12em var(--osd),
     0 0 0.32em var(--osd);
 }
@@ -158,12 +159,13 @@ video {
   right: 10%;
   padding: 12px;
   border-radius: 8px;
-  background: rgb(0 0 0 / 0.9);
+  background: rgb(0 0 0 / 90%);
   color: #fff;
   text-align: center;
   font: var(--text-sm) / 1.4 var(--font-ui);
   cursor: auto;
 }
+
 .sound-prompt button {
   min-height: 44px;
   padding: 8px 18px;
@@ -174,8 +176,15 @@ video {
   font: bold var(--text-md) var(--font-ui);
   cursor: pointer;
 }
-.sound-prompt button:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
-.sound-prompt p { margin: 8px 0 0; }
+
+.sound-prompt button:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
+}
+
+.sound-prompt p {
+  margin: 8px 0 0;
+}
 
 /* On the demo page the pointer is how a visitor gets sound and finds the remote. */
 :host-context(.demo) .tv {
