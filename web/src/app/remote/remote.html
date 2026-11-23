@@ -47,7 +47,7 @@
 
   @if (state()?.channels?.length) {
     <section class="guide" aria-labelledby="guide-title">
-      <h2 id="guide-title">Channels</h2>
+      <h2 id="guide-title">What's on</h2>
       @for (channel of state()!.channels; track channel.number) {
         <button
           type="button"
@@ -58,8 +58,10 @@
           (click)="tune(channel.number)"
         >
           <span class="guide-number">{{ pad(channel.number) }}</span>
-          <span class="guide-name">{{ channel.name }}</span>
-          <span class="guide-count">{{ channel.episodes }} ep</span>
+          <span class="guide-programme">
+            <span class="guide-name">{{ channel.name }}</span>
+            <span class="guide-title">{{ channel.title || (channel.episodes + (channel.episodes === 1 ? ' episode' : ' episodes')) }}</span>
+          </span>
         </button>
       }
     </section>

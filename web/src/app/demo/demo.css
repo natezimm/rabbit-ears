@@ -1,6 +1,8 @@
 :host {
   --panel: #1b1d1a;
   --edge: #2a2d28;
+  --well: #111410;
+  --well-hover: #252b23;
   --text: #e8ece4;
   --muted: #a9b0a3;
   --phosphor: #3dff6e;
@@ -12,10 +14,11 @@
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Side by side on a laptop; on a phone the TV sits on top and the rest scrolls under it. */
+/* Side by side on a laptop; on a phone the TV is pinned on top and the rest scrolls under it. */
 .demo {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 400px;
+  /* A fixed width would leave the picture only 624 px on a 1024 px window. */
+  grid-template-columns: minmax(0, 1fr) clamp(320px, 30vw, 420px);
   height: 100dvh;
 }
 
@@ -27,6 +30,11 @@
 /* The TV fills the whole window on the box; here it fills its half of the page. */
 .screen ears-tv-screen {
   position: absolute;
+}
+
+.screen.dragging {
+  outline: 3px dashed var(--phosphor);
+  outline-offset: -3px;
 }
 
 /* Over the picture, where a visitor is looking when the TV cannot be reached. */
@@ -76,15 +84,43 @@ h2 {
   font-size: 15px;
 }
 
-p {
+p,
+li {
   margin: 0;
   color: var(--muted);
   font-size: 14px;
   line-height: 1.5;
 }
 
+ul {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
 a {
   color: var(--phosphor);
+}
+
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible {
+  outline: 3px solid var(--phosphor);
+  outline-offset: 3px;
+}
+
+summary {
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* The phone remote, as is; it brings its own background. */
+.remote {
+  min-height: 0;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
 }
 
 .phone {
@@ -98,6 +134,49 @@ a {
   width: 112px;
   height: 112px;
   border-radius: 6px;
+}
+
+/* The VCR: real file inputs, dressed as buttons, so keyboard and screen readers get the native picker. */
+.vcr {
+  display: grid;
+  gap: 10px;
+}
+
+.vcr-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vcr-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: var(--well);
+  color: var(--text);
+  font: 20px/1 'VT323', ui-monospace, monospace;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.vcr-button:hover {
+  background: var(--well-hover);
+}
+
+.vcr-button:focus-within {
+  outline: 3px solid var(--phosphor);
+  outline-offset: 3px;
+}
+
+.vcr-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .keys dl {
@@ -120,28 +199,44 @@ a {
   color: var(--muted);
 }
 
-/* The phone remote, as is; it brings its own background. */
-.remote {
-  min-height: 0;
-  border-radius: 14px;
-  border: 1px solid var(--edge);
-}
-
 footer {
   display: grid;
   gap: 8px;
   font-size: 14px;
 }
 
+.media-credit {
+  display: grid;
+  gap: 3px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--edge);
+}
+
+.media-credit strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.media-credit span {
+  color: var(--muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 860px) {
   .demo {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
+    grid-template-columns: minmax(0, 1fr);
     height: auto;
   }
 
+  /* Pinned, so a visitor pressing a button below can see what it did. The cap
+     leaves room for the readout and the first rows of keys under it. */
   .screen {
-    aspect-ratio: 4 / 3;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    height: min(40dvh, 75vw);
+    background: #000;
   }
 
   .panel {
@@ -150,72 +245,17 @@ footer {
     border-top: 1px solid var(--edge);
   }
 
-  /* A phone already has the remote on screen right here. */
+  /* A phone is already holding the remote. */
   .phone,
   .keys {
     display: none;
   }
-}
 
-.onboarding { color: var(--text); margin-bottom: 8px; }
-.lineup { min-width: 0; }
-.channel-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  min-height: 48px;
-  margin-top: 6px;
-  padding: 10px;
-  border: 1px solid var(--edge);
-  border-radius: 6px;
-  background: #111410;
-  color: var(--text);
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
+  /* Straight under the picture, so the first press shows its result without scrolling. */
+  .remote {
+    order: -1;
+    margin: -24px -22px 0;
+    border: 0;
+    border-radius: 0;
+  }
 }
-.channel-row[aria-current="true"] { border-color: var(--phosphor); }
-.channel-row:hover { background: #252b23; }
-.number { flex-shrink: 0; color: var(--phosphor); }
-.programme { min-width: 0; overflow-wrap: anywhere; }
-.programme strong, .programme small { display: block; }
-.programme small { color: var(--muted); margin-top: 3px; }
-a:focus-visible, button:focus-visible, summary:focus-visible {
-  outline: 3px solid var(--phosphor);
-  outline-offset: 3px;
-}
-@media (max-width: 860px) {
-  .phone-prompt { display: none; }
-}
-
-.media-credit { display: grid; gap: 3px; padding: 10px 0; border-bottom: 1px solid var(--edge); }
-.media-credit strong { font-size: 14px; color: var(--text); }
-.media-credit span { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
-
-/* The VCR: real file inputs, dressed as buttons, so keyboard and screen readers get the native picker. */
-.vcr { display: grid; gap: 10px; }
-.vcr-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
-.vcr-button {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 14px;
-  border: 1px solid var(--edge);
-  border-radius: 6px;
-  background: #111410;
-  color: var(--text);
-  font: 20px/1 'VT323', ui-monospace, monospace;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-}
-.vcr-button:hover { background: #252b23; }
-.vcr-button:focus-within { outline: 3px solid var(--phosphor); outline-offset: 3px; }
-.vcr-button input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-.screen.dragging { outline: 3px dashed var(--phosphor); outline-offset: -3px; }

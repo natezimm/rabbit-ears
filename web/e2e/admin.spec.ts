@@ -21,13 +21,13 @@ test('saves labels, numbering and playback modes across a server restart', async
 test('a connected remote receives lineup changes without reloading', async ({ page, context, box }) => {
   const remote = await context.newPage();
   await remote.goto(`${box.url}/remote`);
-  await expect(remote.getByRole('button', { name: /02 Arthur 2 ep/ })).toBeVisible();
+  await expect(remote.getByRole('button', { name: /02 Arthur/ })).toBeVisible();
   await page.goto(`${box.url}/admin`);
   const arthur = page.getByRole('group', { name: 'Arthur', exact: true });
   await arthur.getByRole('textbox', { name: 'Display name for Arthur' }).fill('PBS Kids');
   await arthur.getByRole('spinbutton', { name: 'Channel number' }).fill('8');
   await page.getByRole('button', { name: 'Save lineup' }).click();
-  await expect(remote.getByRole('button', { name: /08 PBS Kids 2 ep/ })).toBeVisible();
+  await expect(remote.getByRole('button', { name: /08 PBS Kids/ })).toBeVisible();
   await expect(remote.getByRole('button', { name: /02 Arthur/ })).toHaveCount(0);
 });
 
@@ -146,7 +146,7 @@ test('long names fit the editor and remote at the configured screen width', asyn
   await page.getByRole('button', { name: 'Save lineup' }).click();
   await expect(page.getByRole('status')).toBeVisible();
   await page.goto(`${box.url}/remote`);
-  await page.getByRole('button', { name: /03 A{80} 1 ep/ }).click();
+  await page.getByRole('button', { name: /03 A{80}/ }).click();
   await expect(page.locator('.lcd')).toContainText(longTitle);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
 });
@@ -164,7 +164,7 @@ test.describe('public demo', () => {
       await box.api.post('/api/admin/rescan', { headers: { 'X-RabbitEars-Admin': '1' } }),
     ]) expect(response.status()).toBe(404);
     await page.goto(`${box.url}/remote`);
-    await expect(page.getByRole('button', { name: /02 Arthur 2 ep/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /02 Arthur/ })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Manage channels' })).toHaveCount(0);
   });
 });

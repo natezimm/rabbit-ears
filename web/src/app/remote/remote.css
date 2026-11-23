@@ -274,8 +274,14 @@
   text-shadow: 0 0 8px rgb(77 255 90 / 0.55);
 }
 
-.guide-name {
+.guide-programme {
+  display: grid;
   flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.guide-name {
   overflow: hidden;
   font-size: 17px;
   text-overflow: ellipsis;
@@ -286,9 +292,12 @@
   font-weight: 700;
 }
 
-.guide-count {
+.guide-title {
+  overflow: hidden;
   color: var(--label);
   font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .admin-link { color: #92e8b4; text-align: center; padding: 16px; font: 14px system-ui, sans-serif; }
