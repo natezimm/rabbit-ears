@@ -7,6 +7,7 @@ import {
   computed,
   effect,
   inject,
+  input,
   signal,
   viewChild,
 } from '@angular/core';
@@ -20,6 +21,8 @@ import { Tube } from './tube';
 const VOLUME_SEGMENTS = 25;
 const POWER_OFF_SECONDS = 0.45;
 const POWER_ON_SECONDS = 0.6;
+/** How long a page may wait for its first picture before the set admits there is no signal. */
+const NO_SIGNAL_MS = 2000;
 
 /**
  * The remote, as the Flirc sends it: a plain keyboard. Arrows are the
@@ -59,6 +62,7 @@ const KEYS: Record<string, (link: TvLink) => void> = {
   styleUrl: './tv-screen.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
+    '[attr.role]': 'embedded() ? null : "main"',
     '(document:keydown)': 'onKey($event)',
     '(document:pointerdown)': 'onTouch()',
   },
@@ -70,7 +74,24 @@ export class TvScreen {
   private readonly deckA = viewChild.required<ElementRef<HTMLVideoElement>>('deckA');
   private readonly deckB = viewChild.required<ElementRef<HTMLVideoElement>>('deckB');
 
+  /** True inside the demo page, which supplies the page's landmarks itself. */
+  readonly embedded = input(false);
+
   protected readonly picture = signal<PictureConfig>(DEFAULT_PICTURE);
+  /**
+   * A viewer who asked for less motion gets straight cuts and no power
+   * animation: the snow and glitch transitions flash the whole picture.
+   */
+  private readonly reducedMotion = signal(matchMedia('(prefers-reduced-motion: reduce)').matches);
+  private readonly tubePicture = computed<PictureConfig>(() =>
+    this.reducedMotion() ? { ...this.picture(), transition: 'none' } : this.picture());
+  /**
+   * Nothing has come from the box for a while. Before the first snapshot the
+   * set would otherwise be a silent black rectangle; this shows snow and says
+   * so instead. A link lost mid-programme leaves the picture playing.
+   */
+  private readonly waitedTooLong = signal(false);
+  protected readonly noSignal = computed(() => this.waitedTooLong() && !this.link.state());
   protected readonly banner = signal<ChannelInfo | null>(null);
   protected readonly message = signal<string | null>(null);
   protected readonly volumeShown = signal(false);
@@ -115,7 +136,7 @@ export class TvScreen {
 
     afterNextRender(() => {
       const decks = [this.deckA().nativeElement, this.deckB().nativeElement];
-      this.tube = new Tube(decks, this.picture(), {
+      this.tube = new Tube(decks, this.tubePicture(), {
         ended: token => this.link.episodeEnded(token),
         failed: token => {
           const playing = this.link.state()?.playing;
@@ -138,13 +159,21 @@ export class TvScreen {
     });
 
     effect(() => {
-      const picture = this.picture();
+      const picture = this.tubePicture();
       if (!this.ready()) return;
       this.tube?.configure(picture);
       this.renderer?.configure(picture.crt);
     });
 
+    const motion = matchMedia('(prefers-reduced-motion: reduce)');
+    const onMotion = (event: MediaQueryListEvent) => this.reducedMotion.set(event.matches);
+    motion.addEventListener('change', onMotion);
+
+    const noSignalTimer = window.setTimeout(() => this.waitedTooLong.set(true), NO_SIGNAL_MS);
+
     inject(DestroyRef).onDestroy(() => {
+      motion.removeEventListener('change', onMotion);
+      clearTimeout(noSignalTimer);
       cancelAnimationFrame(this.animation);
       clearTimeout(this.bannerTimer);
       clearTimeout(this.volumeTimer);
@@ -252,8 +281,10 @@ export class TvScreen {
     this.lastFrameAt = now;
 
     const state = this.link.state();
-    const on = !!state && !state.standby && !state.poweredOff;
-    this.power = on
+    const noSignal = this.noSignal();
+    const on = noSignal || (!!state && !state.standby && !state.poweredOff);
+    if (this.reducedMotion()) this.power = on ? 1 : 0;
+    else this.power = on
       ? Math.min(1, this.power + elapsed / POWER_ON_SECONDS)
       : Math.max(0, this.power - elapsed / POWER_OFF_SECONDS);
 
@@ -261,12 +292,17 @@ export class TvScreen {
     if (view.deck !== this.liveDeck()) this.liveDeck.set(view.deck);
 
     let mode: ScreenMode = view.mode;
-    if (!on) {
+    if (noSignal) {
+      mode = 'snow';
+    } else if (!on) {
       // Going dark: the last picture stays on the glass while it collapses.
       mode = this.power > 0 ? 'video' : 'blank';
     } else if (!state?.playing) {
       mode = 'bars';
     }
+    // Snow and glitch flicker across the whole picture, whether as a transition, a cover for a
+    // slow load or no signal. A viewer who asked for less motion gets still, blank glass instead.
+    if (this.reducedMotion() && (mode === 'snow' || mode === 'glitch')) mode = 'blank';
     if (this.curved()) this.renderer?.draw(mode, on ? view.video : null, this.power, now / 1000);
   }
 

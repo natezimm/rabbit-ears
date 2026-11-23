@@ -3,7 +3,7 @@
        and are only looked at directly when WebGL is unavailable. -->
   <video #deckA [class.live]="liveDeck() === 0" playsinline></video>
   <video #deckB [class.live]="liveDeck() === 1" playsinline></video>
-  <canvas #glass></canvas>
+  <canvas #glass role="img" aria-label="Television picture"></canvas>
 
   <!-- The on-screen display is laid out inside a 4:3 safe area so it always
        sits over the picture, never out in the black bars. -->
@@ -18,6 +18,8 @@
 
     @if (message(); as text) {
       <div class="message">{{ text }}</div>
+    } @else if (noSignal()) {
+      <div class="message" role="status">NO SIGNAL</div>
     }
 
     @if (standby()) {
@@ -34,8 +36,6 @@
         </div>
       </div>
     }
-
-
   </div>
   @if (soundBlocked() && !standby()) {
     <div class="sound-prompt">

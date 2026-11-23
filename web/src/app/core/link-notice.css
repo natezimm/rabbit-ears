@@ -1,0 +1,35 @@
+:host {
+  display: grid;
+  gap: 10px;
+}
+
+.notice {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+/* The label borrows the TV's display face so it reads as the set talking. */
+.notice strong {
+  font-family: 'VT323', ui-monospace, monospace;
+  font-size: 1.6em;
+  font-weight: normal;
+  line-height: 1;
+}
+
+.retry {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.retry:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+}
